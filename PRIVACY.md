@@ -1,10 +1,10 @@
-# Política de Privacidade — RVL Libras
+# Política de Privacidade — Soletra
 
 **Versão 0.2.0 — última atualização: 15/09/2026**
 
 ## Resumo
 
-O RVL Libras exibe a imagem da câmera do usuário no painel lateral e, quando o usuário ativa o
+O Soletra exibe a imagem da câmera do usuário no painel lateral e, quando o usuário ativa o
 reconhecimento, calcula **no próprio dispositivo** 21 pontos de referência da mão para
 identificar sinais do alfabeto manual de Libras e compor um texto.
 

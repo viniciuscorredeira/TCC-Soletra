@@ -1,5 +1,5 @@
 /**
- * RVL Libras — spike da Fase 0.
+ * Soletra — spike da Fase 0.
  *
  * Portão de decisão da arquitetura: prova (ou derruba) a hipótese de que o
  * @mediapipe/tasks-vision 1.0.1 executa sob a CSP do Manifest V3 com apenas

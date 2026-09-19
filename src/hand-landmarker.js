@@ -1,5 +1,5 @@
 /**
- * RVL Libras — adaptador do MediaPipe HandLandmarker.
+ * Soletra — adaptador do MediaPipe HandLandmarker.
  *
  * Fino de propósito: é o único módulo do projeto que depende de WASM e de
  * `chrome.*`, e portanto o único que não roda nos testes em Node. Toda a lógica

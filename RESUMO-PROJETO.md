@@ -1,4 +1,4 @@
-# Resumo do Projeto — RVL Libras
+# Resumo do Projeto — Soletra
 
 **Documento gerado em:** 15/09/2026
 **Versão do projeto:** 0.2.0 (`manifest.json`)
@@ -246,7 +246,7 @@ node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json
 1. Chrome: `chrome://extensions` — Edge: `edge://extensions`
 2. Ative **Modo do desenvolvedor**
 3. **Carregar sem compactação** → selecione a raiz do repositório
-4. Clique no ícone do RVL Libras para abrir o painel
+4. Clique no ícone do Soletra para abrir o painel
 
 **Diagnóstico de latência:** abrir `spike/spike.html` como página da extensão. Mede latência por
 delegate separando quadros com e sem mão rastreada (regimes de custo diferentes — sem

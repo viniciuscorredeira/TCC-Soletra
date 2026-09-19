@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "RVL Libras",
+  "name": "Soletra — Libras",
   "version": "0.2.0",
   "description": "Reconhece sinais estáticos do alfabeto de Libras pela câmera e compõe texto pesquisável. Processamento 100% local, sem envio de vídeo.",
   "minimum_chrome_version": "114",
@@ -17,7 +17,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "RVL Libras — abrir painel",
+    "default_title": "Soletra — abrir painel",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

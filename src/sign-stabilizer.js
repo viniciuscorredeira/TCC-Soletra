@@ -1,5 +1,5 @@
 /**
- * RVL Libras — máquina de estados da confirmação de sinal.
+ * Soletra — máquina de estados da confirmação de sinal.
  *
  * Reconhecer quadro a quadro produziria uma enxurrada de caracteres a cada
  * tremor da mão. Este módulo transforma o fluxo ruidoso do classificador em

@@ -1,5 +1,5 @@
 /**
- * RVL Libras — service worker.
+ * Soletra — service worker.
  *
  * Dois papéis: abrir o painel lateral no clique do ícone (com queda para uma
  * aba dedicada quando a API sidePanel não existir, abaixo do Chrome/Edge 114),
@@ -17,7 +17,7 @@ async function enableSidePanelOnActionClick() {
     await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
     return true;
   } catch (error) {
-    console.warn('[RVL Libras] sidePanel indisponível:', error);
+    console.warn('[Soletra] sidePanel indisponível:', error);
     return false;
   }
 }
@@ -37,7 +37,7 @@ chrome.action.onClicked.addListener(async (tab) => {
       await chrome.sidePanel.open({ windowId: tab.windowId });
       return;
     } catch (error) {
-      console.warn('[RVL Libras] falha ao abrir o painel:', error);
+      console.warn('[Soletra] falha ao abrir o painel:', error);
     }
   }
   chrome.tabs.create({ url: chrome.runtime.getURL(PANEL_PATH) });

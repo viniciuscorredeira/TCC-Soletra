@@ -17,7 +17,7 @@ function show(text, kind) {
 
 function notifyPanel(state) {
   // O painel pode estar fechado; a rejeição é esperada e não é um erro.
-  chrome.runtime.sendMessage({ type: 'rvl:permission-result', state }).catch(() => {});
+  chrome.runtime.sendMessage({ type: 'soletra:permission-result', state }).catch(() => {});
 }
 
 async function requestPermission() {

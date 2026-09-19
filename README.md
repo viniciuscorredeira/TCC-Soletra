@@ -1,4 +1,7 @@
-# RVL Libras
+# Soletra
+
+**Soletra** — porque é literalmente o que a extensão faz: soletra com as mãos, letra por letra.
+O termo técnico é *datilologia*.
 
 Extensão de navegador (Manifest V3, Chrome e Edge) que acessa a câmera do usuário, exibe o
 vídeo em tempo real em um **painel lateral** e reconhece sinais estáticos do alfabeto manual
@@ -148,7 +151,7 @@ service worker cai para abrir `sidepanel/panel.html` em uma aba dedicada.
 1. Chrome: `chrome://extensions` — Edge: `edge://extensions`
 2. Ative **Modo do desenvolvedor**
 3. **Carregar sem compactação** e selecione a raiz deste repositório
-4. Clique no ícone do RVL Libras na barra de ferramentas para abrir o painel
+4. Clique no ícone do Soletra na barra de ferramentas para abrir o painel
 
 ## Fluxo de permissão de câmera
 
@@ -196,6 +199,7 @@ src/sign-stabilizer.js        máquina de confirmação e trava anti-repetição
 src/sign-classes.js           catálogo de classes estáticas, dinâmicas e números
 src/sign-model-store.js       persistência, quota, export/import com validação de esquema
 src/text-composer.js          composição do texto e normalização para a busca
+src/migracao-storage.js       migra as chaves de storage do nome antigo (RVL Libras)
 
 vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados

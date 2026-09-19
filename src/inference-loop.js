@@ -1,5 +1,5 @@
 /**
- * RVL Libras — agendador do loop de inferência.
+ * Soletra — agendador do loop de inferência.
  *
  * Separado do adaptador do MediaPipe de propósito: aqui mora a lógica sutil
  * (descarte de quadros, timestamps monotônicos, cancelamento), que é testável

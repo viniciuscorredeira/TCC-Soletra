@@ -1,5 +1,5 @@
 /**
- * RVL Libras — orquestrador do reconhecimento.
+ * Soletra — orquestrador do reconhecimento.
  *
  * Amarra adaptador, loop, normalização, classificador, estabilizador e
  * composição num só objeto que expõe UM callback de estado — o mesmo padrão do
@@ -20,8 +20,8 @@ import { CONJUNTO_PADRAO, classesDoConjunto } from './sign-classes.js';
 
 /** @typedef {'desligado'|'carregando'|'pronto'|'reconhecendo'|'treinando'|'erro'} EstadoReconhecimento */
 
-const CHAVE_TEXTO = 'rvl.texto';
-const CHAVE_PREFS = 'rvl.reconhecimento.prefs';
+const CHAVE_TEXTO = 'soletra.texto';
+const CHAVE_PREFS = 'soletra.reconhecimento.prefs';
 
 /** Intervalo entre amostras na captura de treino: amostras coladas no tempo
  *  são quase idênticas e inflam o modelo sem acrescentar variabilidade. */

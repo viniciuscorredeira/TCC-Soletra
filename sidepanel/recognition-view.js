@@ -1,5 +1,5 @@
 /**
- * RVL Libras — view do reconhecimento.
+ * Soletra — view do reconhecimento.
  *
  * Só desenha: recebe a snapshot do SignRecognizer e devolve eventos de usuário.
  * Nenhuma regra de reconhecimento mora aqui, pelo mesmo motivo que render() do

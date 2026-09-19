@@ -1,5 +1,5 @@
 /**
- * RVL Libras — composição do texto reconhecido.
+ * Soletra — composição do texto reconhecido.
  *
  * Mantém a string que aparece na text-box e notifica quem a exibe. Fica
  * separado do estabilizador porque as duas coisas mudam por motivos

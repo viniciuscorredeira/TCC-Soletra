@@ -1,5 +1,5 @@
 /**
- * RVL Libras — controlador de captura de vídeo.
+ * Soletra — controlador de captura de vídeo.
  *
  * Encapsula todo o ciclo de vida do MediaStream (enumerar, iniciar, parar,
  * reiniciar) e expõe um único callback de estado para a UI. Nenhum frame sai

@@ -1,5 +1,5 @@
 /**
- * RVL Libras — normalização dos landmarks da mão em vetor de características.
+ * Soletra — normalização dos landmarks da mão em vetor de características.
  *
  * Transforma os 21 pontos do MediaPipe num vetor de 63 números comparável entre
  * usuários, distâncias da câmera e resoluções. É o módulo mais delicado do

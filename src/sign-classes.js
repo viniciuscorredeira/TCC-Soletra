@@ -1,5 +1,5 @@
 /**
- * RVL Libras — catálogo de classes reconhecíveis.
+ * Soletra — catálogo de classes reconhecíveis.
  *
  * O alfabeto manual brasileiro mistura configurações estáticas com sinais que
  * exigem movimento. Esta versão reconhece apenas as estáticas: um classificador

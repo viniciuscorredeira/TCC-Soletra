@@ -1,5 +1,5 @@
 /**
- * RVL Libras — view do treino.
+ * Soletra — view do treino.
  *
  * Grade de classes com contagem de amostras, captura assistida e os botões de
  * exportar/importar/apagar. Os dois últimos não são conveniência: apagar e

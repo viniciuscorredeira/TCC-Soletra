@@ -3,10 +3,11 @@ import { SignRecognizer } from '../src/sign-recognizer.js';
 import { montarRecognitionView } from './recognition-view.js';
 import { montarTrainingView } from './training-view.js';
 import { confirmar } from './dialogo.js';
+import { migrarChaves } from '../src/migracao-storage.js';
 
-const PREF_KEY = 'rvl.preferredDeviceId';
-const CHAVE_CONSENTIMENTO = 'rvl.consentimento.reconhecimento';
-const CHAVE_AVISO_BUSCA = 'rvl.avisoBuscaAceito';
+const PREF_KEY = 'soletra.preferredDeviceId';
+const CHAVE_CONSENTIMENTO = 'soletra.consentimento.reconhecimento';
+const CHAVE_AVISO_BUSCA = 'soletra.avisoBuscaAceito';
 
 const el = {
   body: document.body,
@@ -200,7 +201,7 @@ el.btnPermission.addEventListener('click', openPermissionTab);
 
 // A aba de permissão avisa quando o usuário decide, para atualizar os rótulos.
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg?.type !== 'rvl:permission-result') return;
+  if (msg?.type !== 'soletra:permission-result') return;
   if (msg.state === 'granted') {
     el.btnPermission.hidden = true;
     // ensureDeviceLabels destrava os nomes reais das câmeras; a mensagem vem
@@ -322,7 +323,7 @@ const trainingView = montarTrainingView({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rvl-libras-modelo-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `soletra-modelo-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showMessage('Modelo exportado.', 'info');
@@ -392,6 +393,11 @@ window.addEventListener('pagehide', () => {
     state: 'idle',
     error: null,
     devices: controller.devices,
+  // Antes de qualquer leitura: o produto se chamava "RVL Libras" e prefixava as
+  // chaves com `rvl.`. Sem esta passada, o modelo treinado continuaria no disco
+  // sob nomes que ninguém mais lê.
+  await migrarChaves(chrome.storage.local);
+
     activeDeviceId: preferred,
     track: null
   });

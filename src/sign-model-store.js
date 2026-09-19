@@ -1,5 +1,5 @@
 /**
- * RVL Libras — persistência do modelo treinado pelo usuário.
+ * Soletra — persistência do modelo treinado pelo usuário.
  *
  * As amostras são vetores numéricos, nunca imagens: o que fica gravado no
  * dispositivo é a geometria normalizada da mão, não a foto dela. Ainda assim é
@@ -23,9 +23,18 @@ export const ESQUEMA = 1;
  * 2 → limiar pela separação entre classes + teste de razão
  */
 export const VERSAO_CALIBRACAO = 2;
-export const CHAVE_INDICE = 'rvl.modelo.v1.indice';
-export const PREFIXO_CLASSE = 'rvl.modelo.v1.classe.';
-export const FORMATO_ARQUIVO = 'rvl-libras-modelo';
+export const CHAVE_INDICE = 'soletra.modelo.v1.indice';
+export const PREFIXO_CLASSE = 'soletra.modelo.v1.classe.';
+export const FORMATO_ARQUIVO = 'soletra-modelo';
+
+/**
+ * O produto se chamou "RVL Libras" e gravava o formato com esse nome. A
+ * validação compara com `!==` estrito, então recusar o valor antigo tornaria
+ * inútil todo `.json` já exportado por um usuário — inclusive o que ele guardou
+ * justamente como cópia de segurança antes de atualizar. A exportação grava só
+ * o nome novo; a importação aceita os dois.
+ */
+export const FORMATOS_ACEITOS = [FORMATO_ARQUIVO, 'rvl-libras-modelo'];
 
 /** Recomendado por classe; acima disso o ganho de acurácia não paga o tempo. */
 export const AMOSTRAS_RECOMENDADAS = 20;
@@ -182,7 +191,7 @@ export class SignModelStore {
    */
   static validarArquivo(objeto) {
     if (!objeto || typeof objeto !== 'object') return { ok: false, erro: 'Arquivo não é um JSON de objeto.' };
-    if (objeto.formato !== FORMATO_ARQUIVO) {
+    if (!FORMATOS_ACEITOS.includes(objeto.formato)) {
       return { ok: false, erro: `Formato desconhecido: ${objeto.formato ?? '(ausente)'}.` };
     }
     if (objeto.esquema !== ESQUEMA) {

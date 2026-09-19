@@ -109,7 +109,7 @@ const vetor = (base) => Array.from({ length: DIMENSOES }, (_, i) => base + i * 0
   await store.atualizarParametros({ tauAbs: 0.42, mao: 'esquerda' });
 
   const arquivo = await store.exportar();
-  assert.equal(arquivo.formato, 'rvl-libras-modelo');
+  assert.equal(arquivo.formato, 'soletra-modelo');
   assert.equal(arquivo.mao, 'esquerda');
   assert.equal(arquivo.tauAbs, 0.42);
 
@@ -131,17 +131,17 @@ const vetor = (base) => Array.from({ length: DIMENSOES }, (_, i) => base + i * 0
   const casos = [
     [null, 'objeto nulo'],
     [{ formato: 'outra-coisa' }, 'formato errado'],
-    [{ formato: 'rvl-libras-modelo', esquema: 99 }, 'esquema incompatível'],
+    [{ formato: 'soletra-modelo', esquema: 99 }, 'esquema incompatível'],
     [
-      { formato: 'rvl-libras-modelo', esquema: 1, versaoFeatures: VERSAO_FEATURES + 5, classes: {} },
+      { formato: 'soletra-modelo', esquema: 1, versaoFeatures: VERSAO_FEATURES + 5, classes: {} },
       'versão de features diferente'
     ],
     [
-      { formato: 'rvl-libras-modelo', esquema: 1, versaoFeatures: VERSAO_FEATURES, classes: { A: [[1, 2, 3]] } },
+      { formato: 'soletra-modelo', esquema: 1, versaoFeatures: VERSAO_FEATURES, classes: { A: [[1, 2, 3]] } },
       'dimensão errada'
     ],
     [
-      { formato: 'rvl-libras-modelo', esquema: 1, versaoFeatures: VERSAO_FEATURES, classes: { Ω: [vetor(0)] } },
+      { formato: 'soletra-modelo', esquema: 1, versaoFeatures: VERSAO_FEATURES, classes: { Ω: [vetor(0)] } },
       'classe fora do catálogo'
     ]
   ];
@@ -178,7 +178,7 @@ const vetor = (base) => Array.from({ length: DIMENSOES }, (_, i) => base + i * 0
   await store.adicionarAmostra('A', vetor(0));
 
   const arquivo = {
-    formato: 'rvl-libras-modelo',
+    formato: 'soletra-modelo',
     esquema: 1,
     versaoFeatures: VERSAO_FEATURES,
     classes: { A: [vetor(9)], B: [vetor(3)] }
@@ -189,6 +189,36 @@ const vetor = (base) => Array.from({ length: DIMENSOES }, (_, i) => base + i * 0
   assert.equal(classes.A.length, 2, 'mesclar soma as amostras da classe');
   assert.equal(classes.B.length, 1, 'e traz as classes novas');
   console.log('OK  cenário 8 — modo mesclar soma sem descartar o treino anterior');
+}
+
+// --- Cenário 8b: arquivo exportado antes do rename continua importável --
+// O produto se chamava "RVL Libras" e gravava esse nome no campo `formato`. A
+// validação é estrita, então recusá-lo tornaria inútil justamente a cópia de
+// segurança que o usuário exportou antes de atualizar.
+{
+  const legado = {
+    formato: 'rvl-libras-modelo',
+    esquema: 1,
+    versaoFeatures: VERSAO_FEATURES,
+    mao: 'direita',
+    classes: { A: [vetor(0)], S: [vetor(2)] }
+  };
+
+  const v = SignModelStore.validarArquivo(legado);
+  assert.equal(v.ok, true, `arquivo legado deve ser aceito, erro: ${v.erro}`);
+  assert.equal(v.contagem, 2);
+
+  const store = new SignModelStore(areaFalsa());
+  const r = await store.importar(legado, 'substituir');
+  assert.equal(r.classes, 2);
+
+  const { classes } = await store.carregar();
+  assert.deepEqual(Object.keys(classes).sort(), ['A', 'S']);
+
+  // E a exportação grava só o nome novo.
+  const exportado = await store.exportar();
+  assert.equal(exportado.formato, 'soletra-modelo');
+  console.log('OK  cenário 8b — .json exportado antes do rename ainda importa');
 }
 
 // --- Cenário 9: limpar apaga tudo (direito de eliminação) -------------

@@ -1,5 +1,5 @@
 /**
- * RVL Libras — classificador KNN sobre vetores de características.
+ * Soletra — classificador KNN sobre vetores de características.
  *
  * KNN em vez de rede neural porque o modelo é treinado pelo próprio usuário,
  * no navegador, com ~20 amostras por classe: não há dados nem tempo para
