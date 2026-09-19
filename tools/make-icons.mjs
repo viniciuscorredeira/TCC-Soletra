@@ -1,120 +1,66 @@
 /**
- * Gera os PNGs de ícone da extensão sem dependências externas.
+ * Gera os PNGs de ícone da extensão a partir da arte do Soletra.
  * Uso: node tools/make-icons.mjs
  *
- * O desenho é definido em coordenadas normalizadas e amostrado com
- * supersampling 4x4, o que mantém as bordas legíveis já em 16px.
+ * A arte em `icons/soletra-logo.png` é um lockup: a marca (as mãos com a lupa)
+ * sobre a palavra "Soletra". Só a marca vai para o ícone — a 16px o texto vira
+ * um borrão ilegível, e o ícone da barra de ferramentas é lido a 16px na maior
+ * parte do tempo.
+ *
+ * O corte entre marca e palavra é encontrado pela linha de menor densidade
+ * entre 60% e 85% da altura, em vez de ficar cravado num número: assim a arte
+ * pode ser reexportada com outro enquadramento sem quebrar o gerador.
  */
-import { deflateSync } from 'node:zlib';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { decodificar, codificar, limites, paraQuadrado } from './png.mjs';
 
-const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'icons');
-const SIZES = [16, 32, 48, 128];
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ARTE = join(RAIZ, 'icons', 'soletra-logo.png');
+const SAIDA = join(RAIZ, 'icons');
 
-const CRC_TABLE = (() => {
-  const table = new Int32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    table[n] = c;
+const TAMANHOS = [16, 32, 48, 128];
+
+/** Densidade de pixels opacos em cada linha da imagem. */
+function densidadePorLinha(w, h, rgba) {
+  const d = new Float64Array(h);
+  for (let y = 0; y < h; y++) {
+    let n = 0;
+    for (let x = 0; x < w; x++) if (rgba[(y * w + x) * 4 + 3] > 128) n++;
+    d[y] = n / w;
   }
-  return table;
-})();
-
-function crc32(buf) {
-  let c = 0xffffffff;
-  for (const byte of buf) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
+  return d;
 }
 
-function chunk(type, data) {
-  const len = Buffer.alloc(4);
-  len.writeUInt32BE(data.length);
-  const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE(crc32(body));
-  return Buffer.concat([len, body, crc]);
-}
-
-function encodePng(width, height, rgba) {
-  const raw = Buffer.alloc((width * 4 + 1) * height);
-  for (let y = 0; y < height; y++) {
-    raw[y * (width * 4 + 1)] = 0; // filtro None
-    rgba.copy(raw, y * (width * 4 + 1) + 1, y * width * 4, (y + 1) * width * 4);
+/** Linha de menor densidade na faixa onde o lockup costuma separar. */
+function encontrarCorte(w, h, rgba) {
+  const d = densidadePorLinha(w, h, rgba);
+  let corte = Math.floor(h * 0.75);
+  let min = Infinity;
+  for (let y = Math.floor(h * 0.6); y < Math.floor(h * 0.85); y++) {
+    if (d[y] < min) { min = d[y]; corte = y; }
   }
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(width, 0);
-  ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // RGBA
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(raw, { level: 9 })),
-    chunk('IEND', Buffer.alloc(0))
-  ]);
+  return { corte, densidade: min };
 }
 
-const WHITE = [255, 255, 255];
-const DEEP = [26, 30, 84];
+const arte = decodificar(readFileSync(ARTE));
+const { corte, densidade } = encontrarCorte(arte.w, arte.h, arte.rgba);
 
-function insideRoundRect(x, y, radius) {
-  const cx = Math.min(Math.max(x, radius), 1 - radius);
-  const cy = Math.min(Math.max(y, radius), 1 - radius);
-  return Math.hypot(x - cx, y - cy) <= radius;
-}
+// Limites da marca, já descontando a palavra abaixo do corte.
+const marca = limites(arte.w, corte, arte.rgba);
 
-function circle(x, y, cx, cy, r) {
-  return Math.hypot(x - cx, y - cy) <= r;
-}
+console.log(`arte ${arte.w}×${arte.h}`);
+console.log(`corte em y=${corte} (${Math.round((corte / arte.h) * 100)}% da altura, densidade ${(densidade * 100).toFixed(1)}%)`);
+console.log(`marca ${marca.x1 - marca.x0 + 1}×${marca.y1 - marca.y0 + 1} px\n`);
 
-/** Cor em [0,1]² — fundo indigo com uma lente e o indicador de gravação. */
-function sample(x, y) {
-  if (!insideRoundRect(x, y, 0.22)) return [0, 0, 0, 0];
-
-  const t = (x + y) / 2;
-  const bg = [
-    Math.round(91 + (122 - 91) * t),
-    Math.round(108 + (61 - 108) * t),
-    Math.round(255 + (255 - 255) * t)
-  ];
-
-  if (circle(x, y, 0.76, 0.24, 0.075)) return [...WHITE, 255];
-  if (circle(x, y, 0.5, 0.53, 0.135)) return [...DEEP, 255];
-  if (circle(x, y, 0.5, 0.53, 0.27)) return [...WHITE, 255];
-  return [...bg, 255];
-}
-
-function render(size) {
-  const ss = 4;
-  const rgba = Buffer.alloc(size * size * 4);
-  for (let py = 0; py < size; py++) {
-    for (let px = 0; px < size; px++) {
-      let r = 0, g = 0, b = 0, a = 0;
-      for (let sy = 0; sy < ss; sy++) {
-        for (let sx = 0; sx < ss; sx++) {
-          const [cr, cg, cb, ca] = sample((px + (sx + 0.5) / ss) / size, (py + (sy + 0.5) / ss) / size);
-          const w = ca / 255;
-          r += cr * w; g += cg * w; b += cb * w; a += ca;
-        }
-      }
-      const n = ss * ss;
-      const alpha = a / n;
-      const wsum = a / 255 || 1;
-      const i = (py * size + px) * 4;
-      rgba[i] = Math.round(r / wsum);
-      rgba[i + 1] = Math.round(g / wsum);
-      rgba[i + 2] = Math.round(b / wsum);
-      rgba[i + 3] = Math.round(alpha);
-    }
-  }
-  return encodePng(size, size, rgba);
-}
-
-for (const size of SIZES) {
-  const file = join(OUT_DIR, `icon${size}.png`);
-  writeFileSync(file, render(size));
-  console.log('gerado', file);
+for (const lado of TAMANHOS) {
+  // Margem menor nos tamanhos pequenos: a 16px cada pixel de respiro custa
+  // caro, e o ícone já é recortado com folga pela própria arte.
+  const margem = lado <= 32 ? 0.02 : 0.05;
+  const rgba = paraQuadrado(arte, { lado, margem, recorte: marca });
+  const arquivo = join(SAIDA, `icon${lado}.png`);
+  const png = codificar(lado, lado, rgba);
+  writeFileSync(arquivo, png);
+  console.log(`  icon${lado}.png`.padEnd(18) + `${(png.length / 1024).toFixed(1)} KB`);
 }

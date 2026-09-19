@@ -231,8 +231,10 @@ src/search-targets.js         catálogo de plataformas de busca e montagem das U
 
 vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados
-tools/make-icons.mjs          gera icons/*.png sem dependências
+tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
+tools/make-icons.mjs          gera os ícones da extensão a partir de icons/soletra-logo.png
 tools/preparar-logos.mjs      limpa, apara e reduz as logos de logos/ para icons/plataformas/
+icons/soletra-logo.png        arte da marca; origem dos ícones da extensão
 spike/spike.html|js           diagnóstico de CSP e latência (não faz parte do fluxo)
 tests/todos.mjs               roda a suíte inteira
 ```
