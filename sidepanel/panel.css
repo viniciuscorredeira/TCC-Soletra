@@ -219,6 +219,9 @@ select:disabled { opacity: 0.55; }
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -226,6 +229,8 @@ select:disabled { opacity: 0.55; }
   color: var(--text);
   font: inherit;
   font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
@@ -309,7 +314,13 @@ select:disabled { opacity: 0.55; }
   background: transparent;
   color: var(--text-dim);
   cursor: pointer;
+  white-space: nowrap;
 }
+
+/* Fatias iguais: com largura pelo conteúdo, "Tolerante" fica muito maior que
+   "Normal" e o controle parece desalinhado. flex-basis 0 ignora o texto. */
+.segmented--cheio { display: flex; width: 100%; }
+.segmented--cheio .seg { flex: 1 1 0; padding-inline: 4px; text-align: center; }
 
 .seg + .seg { border-left: 1px solid var(--border); }
 .seg--on { background: var(--accent); color: #fff; }
@@ -388,16 +399,53 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 
 /* --- Treino --------------------------------------------------------------- */
 
-.treino { border-top: 1px solid var(--border); padding-top: 8px; }
-.treino summary { cursor: pointer; font-weight: 600; font-size: 12px; }
-.treino__resumo { color: var(--text-dim); font-weight: 400; }
-.treino__corpo { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; }
+/* Uma única aparência para toda seção recolhível do painel. */
+.secao { border-top: 1px solid var(--border); padding-top: 8px; }
+
+.secao__titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+}
+
+.secao__titulo::-webkit-details-marker { display: none; }
+
+.secao__titulo::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid currentColor;
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+  transition: transform 120ms ease;
+  opacity: 0.7;
+}
+
+.secao[open] > .secao__titulo::before { transform: rotate(90deg); }
+
+.secao__contador {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.secao__corpo { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; }
 
 .grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 5px; }
+
+.classe-wrap { position: relative; display: flex; }
 
 .classe {
   font: inherit;
   position: relative;
+  flex: 1;
   padding: 7px 0 10px;
   border: 1px solid var(--border);
   border-radius: 7px;
@@ -431,21 +479,113 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
   font-size: 12px;
 }
 
-/* Diálogo inline: o painel lateral não é lugar confiável para window.confirm. */
-.dialogo {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+/* Modal de confirmação.
+   window.confirm() não é confiável no painel lateral, e as confirmações deste
+   projeto são de conformidade ou destrutivas — "aceitar em silêncio" seria o
+   pior resultado possível. Daí um modal próprio, centralizado e bloqueante. */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: modal-fundo 130ms ease-out;
 }
 
-.dialogo__titulo { font-size: 12px; }
-.dialogo__texto { margin: 0; font-size: 12px; color: var(--text-dim); }
-.dialogo[hidden] { display: none; }
+.modal__caixa {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.38);
+  animation: modal-caixa 150ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
 
-.ajustes { border-top: 1px solid var(--border); padding-top: 8px; }
-.ajustes summary { cursor: pointer; font-size: 12px; color: var(--text-dim); }
-.ajustes__corpo { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; }
+.modal__titulo { font-size: 13px; line-height: 1.35; }
+.modal__texto { margin: 0; font-size: 12px; color: var(--text-dim); }
+
+/* Confirmar à direita: o polegar e o olho terminam o texto ali, e a ação
+   destrutiva não fica no caminho de um clique apressado. */
+/* Duas colunas iguais em vez de largura pelo conteúdo: "Sim" e "Não" têm
+   tamanhos muito diferentes, e encostados à direita deixavam a caixa torta. */
+.modal__acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+/* A regra de .btn--primary só faz sentido dentro do grid .buttons. */
+.modal__acoes .btn--primary { grid-column: auto; }
+
+.modal__acoes .btn--destrutivo {
+  background: var(--err);
+  border-color: var(--err);
+  color: #fff;
+}
+
+.modal__acoes .btn--destrutivo:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--err) 82%, #000);
+  border-color: color-mix(in srgb, var(--err) 82%, #000);
+}
+
+@keyframes modal-fundo {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-caixa {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal, .modal__caixa { animation: none; }
+}
+
+
+/* Exclusão por classe: fica fora do botão de treino porque um <button> não
+   pode conter outro, e só aparece quando há o que apagar. */
+.classe__x {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  line-height: 14px;
+  font-size: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.classe__x:hover { background: var(--err); border-color: var(--err); color: #fff; }
+
+.classe--parcial { color: var(--text); border-color: color-mix(in srgb, var(--warn) 40%, var(--border)); }
+
+.dica-grade { margin: 0; font-size: 11px; color: var(--text-dim); }
+
+/* Exportar e Importar juntos; Apagar modelo empurrado para o lado oposto,
+   porque é destrutivo e não deve ficar encostado nos outros dois. */
+/* Três colunas iguais. Com flex e margin-left:auto o layout mudava conforme a
+   largura do painel: às vezes em linha, às vezes com o destrutivo sozinho
+   embaixo. A ação destrutiva continua no extremo oposto, agora previsivelmente. */
+.acoes-modelo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.acoes-modelo .btn { padding-inline: 4px; font-size: 12px; }

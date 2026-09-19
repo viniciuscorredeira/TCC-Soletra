@@ -252,11 +252,19 @@ export class SignRecognizer {
     this._emitir();
   }
 
+  /**
+   * Encerra a captura. O estado é derrubado e emitido ANTES da recalibração:
+   * ela lê o modelo inteiro do storage e pode levar centenas de milissegundos,
+   * e esperar por isso faria o Cancelar parecer travado justamente quando o
+   * usuário quer sair.
+   */
   async pararCaptura() {
     const tinha = Boolean(this.captura?.capturadas);
     this.captura = null;
+    this.estado = this.loop.rodando ? 'reconhecendo' : this.estado;
+    this._emitir();
+
     if (tinha) await this._recalibrar();
-    if (this.loop.rodando) this._definirEstado('reconhecendo');
     this._emitir();
   }
 
@@ -278,6 +286,16 @@ export class SignRecognizer {
   async apagarModelo() {
     await this.store.limpar();
     await this.recarregarModelo();
+  }
+
+  /**
+   * Apaga uma classe só. Uma letra que saiu ruim não deveria custar o modelo
+   * inteiro — e τ_abs precisa ser recalibrado, porque a dispersão que o define
+   * mudou com a remoção.
+   */
+  async apagarClasse(classe) {
+    await this.store.removerClasse(classe);
+    await this._recalibrar();
   }
 
   async importarModelo(objeto, modo = 'substituir') {

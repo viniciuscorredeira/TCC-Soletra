@@ -36,6 +36,7 @@ export function montarRecognitionView(acoes) {
     avisoDinamicas: document.getElementById('avisoDinamicas'),
     avisoPoucas: document.getElementById('avisoPoucas'),
     avisoMao: document.getElementById('avisoMao'),
+    ajustesResumo: document.getElementById('ajustesResumo'),
     segRigor: [...document.querySelectorAll('[data-rigor]')],
     segPerm: [...document.querySelectorAll('[data-perm]')]
   };
@@ -114,6 +115,12 @@ export function montarRecognitionView(acoes) {
     for (const seg of el.segPerm) {
       seg.classList.toggle('seg--on', Number(seg.dataset.perm) === s.permanencia);
     }
+
+    // O resumo da aba mostra o ajuste atual sem precisar abri-la.
+    const rotuloRigor = el.segRigor.find((b) => b.classList.contains('seg--on'))?.textContent;
+    const rotuloPerm = el.segPerm.find((b) => b.classList.contains('seg--on'))?.textContent;
+    el.ajustesResumo.textContent =
+      rotuloRigor && rotuloPerm ? `${rotuloRigor} · ${rotuloPerm}` : '';
 
     // Um classificador por vizinhança compara o gesto com o que conhece: com
     // uma classe só, não existe "com o que" comparar, e tudo vira essa classe.

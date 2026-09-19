@@ -233,7 +233,8 @@ async function consentimentoConcedido() {
       'partir dos quadros da câmera. Nenhuma imagem é gravada nem enviada para servidor algum. ' +
       'Os sinais que você treinar ficam salvos como números no seu navegador, e podem ser ' +
       'exportados ou apagados a qualquer momento em "Treinar sinais".',
-    confirmar: 'Entendi, ativar'
+    confirmar: 'Entendi, ativar',
+    cancelar: 'Agora não'
   });
 
   if (ok) {
@@ -352,12 +353,26 @@ const trainingView = montarTrainingView({
       texto:
         `O arquivo traz ${v.contagem} amostras de ${Object.keys(v.classes).length} classes ` +
         `(mão ${v.mao}). Isso vai substituir o modelo atual.`,
-      confirmar: 'Substituir'
+      confirmar: 'Substituir',
+      cancelar: 'Cancelar'
     });
     if (!substituir) return;
 
     try {
       const r = await reconhecedor.importarModelo(objeto, 'substituir');
+  async apagarClasse(classe) {
+    const ok = await confirmar({
+      titulo: `Apagar as amostras de "${classe}"?`,
+      texto:
+        `As amostras gravadas para "${classe}" serão removidas deste dispositivo e ` +
+        'não há como desfazer. As outras classes continuam intactas.',
+      perigo: true
+    });
+    if (!ok) return;
+    await reconhecedor.apagarClasse(classe);
+    showMessage(`Amostras de "${classe}" apagadas.`, 'info');
+  },
+
       showMessage(`Modelo importado: ${r.amostras} amostras em ${r.classes} classes.`, 'info');
     } catch (err) {
       showMessage(err?.message || 'Falha ao importar o modelo.', 'error');
@@ -366,15 +381,22 @@ const trainingView = montarTrainingView({
 
   async apagarModelo() {
     const ok = await confirmar({
-      titulo: 'Apagar o modelo treinado',
-      texto: 'Todas as amostras gravadas serão removidas deste dispositivo. Não há como desfazer.',
-      confirmar: 'Apagar'
+      titulo: 'Apagar todo o modelo treinado?',
+      texto:
+        'Todas as amostras de todas as classes serão removidas deste dispositivo. ' +
+        'Não há como desfazer — considere exportar o modelo antes.',
+      perigo: true
     });
     if (!ok) return;
     await reconhecedor.apagarModelo();
     showMessage('Modelo apagado.', 'info');
   }
 });
+
+  // Antes de qualquer leitura: o produto se chamava "RVL Libras" e prefixava as
+  // chaves com `rvl.`. Sem esta passada, o modelo treinado continuaria no disco
+  // sob nomes que ninguém mais lê.
+  await migrarChaves(chrome.storage.local);
 
 window.addEventListener('pagehide', () => {
   controller.dispose();
@@ -393,11 +415,6 @@ window.addEventListener('pagehide', () => {
     state: 'idle',
     error: null,
     devices: controller.devices,
-  // Antes de qualquer leitura: o produto se chamava "RVL Libras" e prefixava as
-  // chaves com `rvl.`. Sem esta passada, o modelo treinado continuaria no disco
-  // sob nomes que ninguém mais lê.
-  await migrarChaves(chrome.storage.local);
-
     activeDeviceId: preferred,
     track: null
   });

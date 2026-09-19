@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RVL Libras</title>
+    <title>Soletra</title>
     <link rel="stylesheet" href="panel.css" />
   </head>
   <body>
     <header class="topbar">
-      <h1 class="title">RVL Libras</h1>
+      <h1 class="title">Soletra</h1>
       <span id="statusBadge" class="badge badge--idle">
         <span class="dot" aria-hidden="true"></span>
         <span id="statusText">Parada</span>
@@ -61,15 +61,6 @@
           </div>
         </div>
 
-        <div id="dialogo" class="dialogo" role="alertdialog" aria-labelledby="dialogoTitulo" hidden>
-          <strong id="dialogoTitulo" class="dialogo__titulo"></strong>
-          <p id="dialogoTexto" class="dialogo__texto"></p>
-          <div class="buttons">
-            <button id="dialogoOk" type="button" class="btn btn--primary"></button>
-            <button id="dialogoCancelar" type="button" class="btn">Cancelar</button>
-          </div>
-        </div>
-
         <div id="recoBody" class="reco__body" hidden>
           <div class="reco__leitura">
             <div id="ring" class="ring" style="--p: 0">
@@ -105,23 +96,26 @@
             Pesquisar
           </button>
 
-          <details class="ajustes">
-            <summary>Ajustar sensibilidade</summary>
-            <div class="ajustes__corpo">
+          <details class="secao">
+            <summary class="secao__titulo">
+              Ajustar sensibilidade
+              <span id="ajustesResumo" class="secao__contador"></span>
+            </summary>
+            <div class="secao__corpo">
               <div class="field">
                 <span class="field__label">Rigor do reconhecimento</span>
-                <div class="segmented" role="group" aria-label="Rigor">
-                  <button id="rigor125" type="button" class="seg" data-rigor="1.25">Tolerante</button>
-                  <button id="rigor100" type="button" class="seg seg--on" data-rigor="1">Normal</button>
-                  <button id="rigor080" type="button" class="seg" data-rigor="0.8">Exigente</button>
+                <div class="segmented segmented--cheio" role="group" aria-label="Rigor do reconhecimento">
+                  <button type="button" class="seg" data-rigor="1.25">Tolerante</button>
+                  <button type="button" class="seg seg--on" data-rigor="1">Normal</button>
+                  <button type="button" class="seg" data-rigor="0.8">Exigente</button>
                 </div>
               </div>
               <div class="field">
                 <span class="field__label">Tempo para confirmar</span>
-                <div class="segmented" role="group" aria-label="Tempo para confirmar">
-                  <button id="perm450" type="button" class="seg" data-perm="450">Rápido</button>
-                  <button id="perm700" type="button" class="seg seg--on" data-perm="700">Normal</button>
-                  <button id="perm1000" type="button" class="seg" data-perm="1000">Calmo</button>
+                <div class="segmented segmented--cheio" role="group" aria-label="Tempo para confirmar">
+                  <button type="button" class="seg" data-perm="450">Rápido</button>
+                  <button type="button" class="seg seg--on" data-perm="700">Normal</button>
+                  <button type="button" class="seg" data-perm="1000">Calmo</button>
                 </div>
               </div>
             </div>
@@ -132,16 +126,19 @@
           <p id="avisoMao" class="message message--warn" hidden></p>
         </div>
 
-        <details id="treinoBox" class="treino">
-          <summary>Treinar sinais <span id="treinoResumo" class="treino__resumo"></span></summary>
-          <div class="treino__corpo">
+        <details id="treinoBox" class="secao">
+          <summary class="secao__titulo">
+            Treinar sinais
+            <span id="treinoResumo" class="secao__contador"></span>
+          </summary>
+          <div class="secao__corpo">
             <p class="reco__dica">
               Faça o sinal e mantenha a mão parada: a extensão grava várias amostras seguidas.
               Cerca de 20 por classe costuma bastar.
             </p>
             <div class="field">
               <span class="field__label">Mão dominante</span>
-              <div class="segmented" role="group" aria-label="Mão dominante">
+              <div class="segmented segmented--cheio" role="group" aria-label="Mão dominante">
                 <button id="btnDireita" type="button" class="seg seg--on" data-mao="direita">Direita</button>
                 <button id="btnEsquerda" type="button" class="seg" data-mao="esquerda">Esquerda</button>
               </div>
@@ -151,10 +148,13 @@
               <span id="capturaTexto"></span>
               <button id="btnCancelarCaptura" type="button" class="btn">Cancelar</button>
             </div>
-            <div class="buttons">
-              <button id="btnExportar" type="button" class="btn">Exportar modelo</button>
-              <button id="btnImportar" type="button" class="btn">Importar modelo</button>
-              <button id="btnApagarModelo" type="button" class="btn btn--perigo">Apagar modelo</button>
+            <p class="dica-grade">
+              Clique numa classe para treinar. O <strong>×</strong> apaga só as amostras dela.
+            </p>
+            <div class="acoes-modelo">
+              <button id="btnExportar" type="button" class="btn">Exportar</button>
+              <button id="btnImportar" type="button" class="btn">Importar</button>
+              <button id="btnApagarModelo" type="button" class="btn btn--perigo" title="Apagar o modelo inteiro">Apagar tudo</button>
             </div>
             <input id="arquivoModelo" type="file" accept="application/json,.json" hidden />
           </div>
@@ -166,6 +166,24 @@
       <span id="streamInfo">—</span>
       <span class="footer__note">Vídeo processado localmente</span>
     </footer>
+
+    <!-- Fora do <main>: precisa cobrir o painel inteiro, inclusive o vídeo. -->
+    <div id="dialogoFundo" class="modal" hidden>
+      <div
+        class="modal__caixa"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="dialogoTitulo"
+        aria-describedby="dialogoTexto"
+      >
+        <strong id="dialogoTitulo" class="modal__titulo"></strong>
+        <p id="dialogoTexto" class="modal__texto"></p>
+        <div class="modal__acoes">
+          <button id="dialogoOk" type="button" class="btn btn--primary">Sim</button>
+          <button id="dialogoCancelar" type="button" class="btn">Não</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="panel.js"></script>
   </body>

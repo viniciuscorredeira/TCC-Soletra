@@ -187,7 +187,7 @@ permission/request.html|js    aba de topo para o prompt nativo de câmera
 sidepanel/panel.html|css|js   interface principal
 sidepanel/recognition-view.js UI do reconhecimento (anel de progresso, text-box, busca)
 sidepanel/training-view.js    UI do treino (grade de classes, exportar/importar/apagar)
-sidepanel/dialogo.js          confirmação inline (window.confirm não é confiável no painel)
+sidepanel/dialogo.js          modal de confirmação (window.confirm não é confiável no painel)
 
 src/camera-controller.js      ciclo de vida do MediaStream — inalterado desde a v0.1.0
 src/sign-recognizer.js        orquestrador; expõe um onStateChange, como o CameraController
