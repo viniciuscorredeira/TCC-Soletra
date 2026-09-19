@@ -20,9 +20,12 @@ export const ESQUEMA = 1;
  *
  * 1 → limiar pela dispersão interna das classes (rejeitava sinais legítimos:
  *     media o tremor durante a captura, não a variação ao refazer o sinal)
- * 2 → limiar pela separação entre classes + teste de razão
+ * 2 → limiar pela separação entre classes + teste de razão (encolhia conforme
+ *     classes eram adicionadas: apertava justamente com o alfabeto completo)
+ * 3 → limiar constante (LIMIAR_DISTANCIA_PADRAO), elevado só pela dispersão
+ *     interna, + teste de razão — ver calibrarTauAbs em sign-classifier
  */
-export const VERSAO_CALIBRACAO = 2;
+export const VERSAO_CALIBRACAO = 3;
 export const CHAVE_INDICE = 'soletra.modelo.v1.indice';
 export const PREFIXO_CLASSE = 'soletra.modelo.v1.classe.';
 export const FORMATO_ARQUIVO = 'soletra-modelo';

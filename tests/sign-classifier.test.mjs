@@ -104,7 +104,8 @@ function modeloSintetico() {
 // classe saem quase idênticas. Calibrar o limiar pela dispersão interna media o
 // tremor durante a captura, não a variação do usuário ao refazer o sinal depois:
 // o limiar ficava ~3× menor que a distância real de consulta e rejeitava 100%
-// dos sinais legítimos. O limiar tem de vir da separação ENTRE classes.
+// dos sinais legítimos. A dispersão interna só pode elevar o limiar, nunca
+// baixá-lo do padrão constante.
 {
   const quaseIdenticas = (base) =>
     Array.from({ length: 20 }, (_, i) => vetor(base, i * 0.0005)); // dispersão ~0
@@ -127,7 +128,7 @@ function modeloSintetico() {
   const consulta = vetor(0, 0.3); // usuário refez o sinal com variação real
   assert.equal(c.classificar(consulta).classe, 'A', 'sinal refeito com variação deve ser aceito');
 
-  console.log('OK  cenário 7 — limiar vem da separação entre classes, não do tremor da captura');
+  console.log('OK  cenário 7 — tremor da captura não baixa o limiar abaixo do padrão');
 }
 
 // --- Cenário 7b: com uma classe só, o limiar não pode aceitar tudo ---------
