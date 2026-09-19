@@ -12,6 +12,7 @@ const SUITES = [
   'text-composer.test.mjs',
   'inference-loop.test.mjs',
   'sign-model-store.test.mjs',
+  'search-targets.test.mjs',
   'migracao-storage.test.mjs',
   'integracao.test.mjs'
 ];

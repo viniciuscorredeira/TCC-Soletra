@@ -6,6 +6,8 @@
  * e executar a pesquisa pedida pelo painel.
  */
 
+import { urlDaBusca, ID_BUSCADOR_PADRAO } from '../src/search-targets.js';
+
 const PANEL_PATH = 'sidepanel/panel.html';
 
 /** Usado apenas se o buscador padrão do usuário não puder ser acionado. */
@@ -54,27 +56,41 @@ chrome.action.onClicked.addListener(async (tab) => {
  * A aba é criada primeiro e passada por `tabId`, que é mutuamente exclusivo com
  * `disposition`: assim não sobra nenhuma inferência de destino a ser feita.
  */
-async function pesquisar(termo) {
+async function pesquisar(termo, plataforma) {
   const texto = String(termo || '').trim();
   if (!texto) return { ok: false, erro: 'Texto vazio.' };
 
+  // Plataforma com URL própria: basta abrir a aba já no endereço certo.
+  const url = urlDaBusca(plataforma, texto);
+  if (url) {
+    await chrome.tabs.create({ url, active: true });
+    return { ok: true, via: plataforma };
+  }
+
+  if (plataforma !== ID_BUSCADOR_PADRAO) {
+    return { ok: false, erro: `Plataforma desconhecida: ${plataforma}.` };
+  }
+
+  // Buscador padrão: só o navegador sabe qual é. A aba é criada ANTES e passada
+  // por tabId porque `disposition` obriga o navegador a inferir o destino a
+  // partir de quem chamou — e o painel lateral não é uma aba.
   const aba = await chrome.tabs.create({ active: true });
 
   try {
     await chrome.search.query({ text: texto, tabId: aba.id });
     return { ok: true, via: 'buscador-padrão' };
   } catch (error) {
-    // Buscador padrão indisponível: cai para a busca do Google na mesma aba já
-    // aberta, para o usuário não ficar com uma aba em branco e nenhum resultado.
-    console.warn('[RVL Libras] chrome.search indisponível, usando fallback:', error);
+    // Cai para o Google na mesma aba já aberta, para o usuário não ficar com
+    // uma aba em branco e nenhum resultado.
+    console.warn('[Soletra] chrome.search indisponível, usando fallback:', error);
     await chrome.tabs.update(aba.id, { url: BUSCA_FALLBACK + encodeURIComponent(texto) });
     return { ok: true, via: 'google', aviso: error?.message || String(error) };
   }
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
-  if (msg?.type !== 'rvl:pesquisar') return undefined;
-  pesquisar(msg.termo)
+  if (msg?.type !== 'soletra:pesquisar') return undefined;
+  pesquisar(msg.termo, msg.plataforma)
     .then(responder)
     .catch((error) => responder({ ok: false, erro: error?.message || String(error) }));
   return true; // mantém o canal aberto para a resposta assíncrona

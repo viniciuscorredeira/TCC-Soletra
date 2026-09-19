@@ -26,7 +26,7 @@ clicar no botão "Pesquisar" — e apenas nesse momento. Veja "Compartilhamento 
 | **Vetor de 63 números (21 pontos normalizados)** | Classificar a configuração de mão | Memória; janela de votação de ~400 ms | Descartado a cada quadro |
 | **Amostras de treino gravadas pelo usuário** | Modelo KNN pessoal de reconhecimento | `chrome.storage.local`, no perfil do navegador | Até o usuário apagar o modelo ou desinstalar a extensão |
 | **Texto composto** | Montar a palavra ou frase | `chrome.storage.session` | Até fechar o navegador |
-| **Termo enviado ao buscador** | Abrir a pesquisa solicitada | **Sai do dispositivo** — vai ao mecanismo de busca padrão do usuário | Fora do controle da extensão |
+| **Termo enviado à plataforma escolhida** | Abrir a pesquisa solicitada | **Sai do dispositivo** — vai à plataforma que o usuário selecionou | Fora do controle da extensão |
 | Preferências (`deviceId`, mão dominante, tempo de confirmação, rigor) | Restaurar a configuração do usuário | `chrome.storage.local` | Até a desinstalação |
 
 As amostras de treino são **vetores numéricos, não imagens**: o que fica gravado é a geometria
@@ -39,20 +39,34 @@ não declara `host_permissions` e não executa content scripts em páginas visit
 
 **Até a versão 0.1.0 não havia nenhum.** A partir da 0.2.0 há exatamente um ponto de saída:
 
-Ao clicar em **"Pesquisar"**, o texto composto é enviado ao **mecanismo de busca padrão do
-navegador** (Google, Bing, DuckDuckGo — o que o usuário tiver configurado), por meio da API
-`chrome.search`. Esse mecanismo é um serviço de terceiro, com política de privacidade própria,
-fora do controle da Integrativa.
+Ao clicar em **"Pesquisar"**, a extensão abre um seletor e **não envia nada até que o usuário
+escolha o destino**. Os destinos possíveis são:
+
+| Plataforma | Endereço |
+|---|---|
+| Buscador padrão do navegador | definido pelo usuário nas configurações do navegador (`chrome.search`) |
+| Google | `google.com/search` |
+| YouTube | `youtube.com/results` |
+| Google Maps | `google.com/maps/search` |
+| Amazon | `amazon.com.br/s` |
+| Wikipédia | `pt.wikipedia.org` |
+
+Cada uma é um serviço de terceiro, com política de privacidade própria, fora do controle da
+Integrativa.
 
 Salvaguardas implementadas no código, não apenas neste documento:
 
 1. A pesquisa **só é iniciada por clique explícito**. Não há disparo automático ao confirmar um
    caractere, ao detectar pausa ou por qualquer outra heurística.
-2. Na primeira vez, a extensão exibe um aviso informando que o texto será enviado a um serviço
-   de terceiro, e pede confirmação.
-3. A pesquisa abre em **nova aba**, para que o usuário veja para onde o texto foi.
-4. Se o buscador padrão não puder ser acionado, a extensão recorre à busca do Google
-   e **avisa** o usuário de que isso aconteceu.
+2. **O destino é sempre escolhido pelo usuário**, no momento da pesquisa. Fechar o seletor pelo
+   ×, pelo Cancelar, pela tecla Esc ou clicando fora **não envia nada**.
+3. O seletor exibe **o termo que será enviado** e mantém visível, em todas as pesquisas, a
+   informação de que o texto sai do dispositivo apenas para a plataforma escolhida. Isso
+   substitui o aviso único da versão anterior: a informação passa a aparecer no momento exato
+   da decisão, e não uma única vez na estreia.
+4. A pesquisa abre em **nova aba**, para que o usuário veja para onde o texto foi.
+5. Se o buscador padrão não puder ser acionado, a extensão recorre à busca do Google e
+   **avisa** o usuário de que isso aconteceu.
 
 Nenhum quadro de vídeo, nenhuma imagem e nenhum vetor de pontos é transmitido — nem ao
 buscador, nem a qualquer outro destino.
@@ -76,7 +90,7 @@ Medidas adotadas, correspondentes aos direitos do titular:
 | Consentimento específico e destacado antes da primeira ativação do reconhecimento, com data do aceite registrada | Diálogo no painel lateral | art. 7º, I e art. 11, I |
 | Botão **"Apagar modelo"**, que remove todas as amostras do dispositivo | "Treinar sinais" | art. 18, VI (eliminação) |
 | Botão **"Exportar modelo"**, que entrega as amostras em JSON legível | "Treinar sinais" | art. 18, V (portabilidade) |
-| Aviso de envio a terceiro antes da primeira pesquisa | Diálogo no painel lateral | transparência (art. 6º, VI) |
+| Escolha explícita do destino a cada pesquisa, com o termo à vista e aviso permanente de saída do dispositivo | Seletor de plataforma no painel lateral | transparência (art. 6º, VI) |
 | Processamento local como padrão arquitetural, sem alternativa remota | Toda a extensão | necessidade (art. 6º, III) |
 | Revogação a qualquer momento | Permissão de câmera nas configurações do navegador; desinstalação | art. 8º, § 5º |
 
@@ -101,7 +115,7 @@ configurações do navegador e desinstalar a extensão — o que remove todo o c
 |---|---|
 | `sidePanel` | Exibir a interface no painel lateral, que mantém a câmera visível durante a navegação |
 | `storage` | Guardar as amostras de treino do usuário e suas preferências, localmente |
-| `search` | Abrir uma pesquisa com o texto composto, **somente** mediante clique explícito |
+| `search` | Abrir a pesquisa no mecanismo padrão do navegador quando o usuário escolhe essa opção no seletor |
 | Câmera (via `getUserMedia`, não declarada no manifesto) | Capturar a imagem para exibição e extração local dos pontos da mão |
 
 A extensão **não utiliza código remoto**: todo o WebAssembly e o modelo de detecção de mãos

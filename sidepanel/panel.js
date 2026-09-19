@@ -3,11 +3,11 @@ import { SignRecognizer } from '../src/sign-recognizer.js';
 import { montarRecognitionView } from './recognition-view.js';
 import { montarTrainingView } from './training-view.js';
 import { confirmar } from './dialogo.js';
+import { escolherPlataforma } from './seletor-plataforma.js';
 import { migrarChaves } from '../src/migracao-storage.js';
 
 const PREF_KEY = 'soletra.preferredDeviceId';
 const CHAVE_CONSENTIMENTO = 'soletra.consentimento.reconhecimento';
-const CHAVE_AVISO_BUSCA = 'soletra.avisoBuscaAceito';
 
 const el = {
   body: document.body,
@@ -245,28 +245,22 @@ async function consentimentoConcedido() {
   return ok;
 }
 
-/** A busca é o único ponto em que algo sai do dispositivo — e só por clique. */
+/**
+ * A busca é o único ponto em que algo sai do dispositivo. O seletor é o
+ * consentimento: nada é enviado antes de o usuário apontar para onde, e fechar
+ * sem escolher não dispara nada.
+ */
 async function pesquisar() {
   const termo = reconhecedor.composer.paraBusca();
   if (!termo) return;
 
-  const g = await chrome.storage.local.get(CHAVE_AVISO_BUSCA);
-  if (!g?.[CHAVE_AVISO_BUSCA]) {
-    const ok = await confirmar({
-      titulo: 'Pesquisar fora da extensão',
-      texto:
-        `O texto "${termo}" será enviado ao mecanismo de busca padrão do seu navegador, ` +
-        'que é um serviço de terceiro. Tudo o mais permanece no seu dispositivo.',
-      confirmar: 'Pesquisar'
-    });
-    if (!ok) return;
-    await chrome.storage.local.set({ [CHAVE_AVISO_BUSCA]: true });
-  }
+  const plataforma = await escolherPlataforma(termo);
+  if (!plataforma) return;
 
   // A pesquisa é executada pelo service worker: o painel lateral não é uma aba,
   // e pedir navegação daqui derrubava o navegador.
   try {
-    const r = await chrome.runtime.sendMessage({ type: 'rvl:pesquisar', termo });
+    const r = await chrome.runtime.sendMessage({ type: 'soletra:pesquisar', termo, plataforma });
     if (r?.ok === false) {
       showMessage(`Não foi possível abrir a pesquisa: ${r.erro}`, 'error');
     } else if (r?.via === 'google') {
@@ -360,6 +354,12 @@ const trainingView = montarTrainingView({
 
     try {
       const r = await reconhecedor.importarModelo(objeto, 'substituir');
+      showMessage(`Modelo importado: ${r.amostras} amostras em ${r.classes} classes.`, 'info');
+    } catch (err) {
+      showMessage(err?.message || 'Falha ao importar o modelo.', 'error');
+    }
+  },
+
   async apagarClasse(classe) {
     const ok = await confirmar({
       titulo: `Apagar as amostras de "${classe}"?`,
@@ -371,12 +371,6 @@ const trainingView = montarTrainingView({
     if (!ok) return;
     await reconhecedor.apagarClasse(classe);
     showMessage(`Amostras de "${classe}" apagadas.`, 'info');
-  },
-
-      showMessage(`Modelo importado: ${r.amostras} amostras em ${r.classes} classes.`, 'info');
-    } catch (err) {
-      showMessage(err?.message || 'Falha ao importar o modelo.', 'error');
-    }
   },
 
   async apagarModelo() {
@@ -393,17 +387,17 @@ const trainingView = montarTrainingView({
   }
 });
 
-  // Antes de qualquer leitura: o produto se chamava "RVL Libras" e prefixava as
-  // chaves com `rvl.`. Sem esta passada, o modelo treinado continuaria no disco
-  // sob nomes que ninguém mais lê.
-  await migrarChaves(chrome.storage.local);
-
 window.addEventListener('pagehide', () => {
   controller.dispose();
   reconhecedor.dispose();
 });
 
 (async function init() {
+  // Antes de qualquer leitura: o produto se chamava "RVL Libras" e prefixava as
+  // chaves com `rvl.`. Sem esta passada, o modelo treinado continuaria no disco
+  // sob nomes que ninguém mais lê.
+  await migrarChaves(chrome.storage.local);
+
   const permission = await CameraController.permissionState();
   const preferred = await loadPreferredDeviceId();
 

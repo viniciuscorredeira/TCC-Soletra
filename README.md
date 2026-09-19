@@ -9,7 +9,7 @@ de Libras, compondo um texto que pode ser pesquisado no navegador.
 
 Todo o processamento é **local**: os pontos da mão são extraídos por WebAssembly empacotado
 dentro da extensão. Nenhum quadro de vídeo é gravado ou transmitido. A única informação que
-sai do dispositivo é o texto que o usuário escolhe pesquisar, ao clicar em "Pesquisar".
+sai do dispositivo é o texto que o usuário escolhe pesquisar, na plataforma que ele selecionar.
 
 ## Funcionalidades
 
@@ -43,8 +43,31 @@ Câmera → MediaPipe HandLandmarker → 21 pontos (x,y,z)
        → normalização → vetor de 63 números
        → KNN sobre as amostras do usuário
        → estabilização temporal → caractere confirmado
-       → text-box → Pesquisar
+       → text-box → Pesquisar → escolha da plataforma
 ```
+
+O botão **Pesquisar** abre um seletor com seis destinos — buscador padrão do navegador,
+Google, YouTube, Google Maps, Amazon e Wikipédia — e o termo reconhecido já vai embutido na URL
+de cada um. Nada é enviado antes da escolha: fechar o seletor não dispara pesquisa nenhuma.
+O catálogo fica em [src/search-targets.js](src/search-targets.js), com as URLs fixadas por
+teste.
+
+As logos ficam empacotadas na extensão, preparadas por `node tools/preparar-logos.mjs` a partir
+de `logos/`. Nenhuma imagem é carregada da rede: a CSP do Manifest V3 a bloquearia, e a
+interface não pode depender de conexão para se desenhar.
+
+Três dos cinco arquivos de origem eram capturas de um preview de transparência — o quadriculado
+estava **gravado nos pixels**, não era canal alfa (Maps, Amazon e Wikipédia tinham 0% de
+transparência). A ferramenta reconhece esse fundo pelo que ele é: um padrão que **alterna** em
+células regulares. Um limiar de cor não serviria — a logo da Wikipédia é um globo branco sobre
+xadrez branco-e-cinza-claro, e "todo pixel claro é fundo" a apagaria inteira.
+
+O período e a fase saem das trocas de tom na primeira linha e na primeira coluna, com período
+**fracionário e por eixo**: a logo da Amazon vem redimensionada, com células de 19,93 px em x e
+20,08 px em y. Arredondar para 20 fazia o padrão previsto inverter na metade oposta da imagem
+(86% de acerto no topo, 14% na base), e usar a média dos eixos derrubava o encaixe de 94,8% para
+65,8%. Depois a ferramenta apara ao conteúdo, centraliza num quadrado e reduz para 96×96 com
+alfa pré-multiplicado — de 167 KB de entrada para 18 KB empacotados.
 
 | Etapa | Onde | Decisão |
 |---|---|---|
@@ -123,7 +146,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 node tests/todos.mjs
 ```
 
-63 cenários, em Node puro, sem framework e sem dependências. Os módulos de lógica são todos
+85 cenários, em Node puro, sem framework e sem dependências. Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
 (`src/hand-landmarker.js`) é fino de propósito e validado pelo diagnóstico acima.
 
@@ -138,6 +161,9 @@ Cenários que merecem destaque por travarem bugs silenciosos:
   regride faz o MediaPipe devolver resultado vazio em silêncio.
 - **Versão de normalização** — um modelo gravado com outra `VERSAO_FEATURES` é recusado, não
   reinterpretado: reinterpretar não daria erro, daria queda de acurácia sem causa aparente.
+- **URL de busca com caractere reservado** — a text-box aceita edição manual, então um `&` ou
+  `#` digitado ali é entrada de usuário: precisa ficar contido no parâmetro, sem injetar nada
+  na URL do terceiro.
 
 ## Por que painel lateral e não popup
 
@@ -188,6 +214,7 @@ sidepanel/panel.html|css|js   interface principal
 sidepanel/recognition-view.js UI do reconhecimento (anel de progresso, text-box, busca)
 sidepanel/training-view.js    UI do treino (grade de classes, exportar/importar/apagar)
 sidepanel/dialogo.js          modal de confirmação (window.confirm não é confiável no painel)
+sidepanel/seletor-plataforma.js  modal de escolha do destino da pesquisa
 
 src/camera-controller.js      ciclo de vida do MediaStream — inalterado desde a v0.1.0
 src/sign-recognizer.js        orquestrador; expõe um onStateChange, como o CameraController
@@ -200,10 +227,12 @@ src/sign-classes.js           catálogo de classes estáticas, dinâmicas e núm
 src/sign-model-store.js       persistência, quota, export/import com validação de esquema
 src/text-composer.js          composição do texto e normalização para a busca
 src/migracao-storage.js       migra as chaves de storage do nome antigo (RVL Libras)
+src/search-targets.js         catálogo de plataformas de busca e montagem das URLs
 
 vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados
 tools/make-icons.mjs          gera icons/*.png sem dependências
+tools/preparar-logos.mjs      limpa, apara e reduz as logos de logos/ para icons/plataformas/
 spike/spike.html|js           diagnóstico de CSP e latência (não faz parte do fluxo)
 tests/todos.mjs               roda a suíte inteira
 ```
