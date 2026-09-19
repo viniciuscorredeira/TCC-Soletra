@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RVL Libras</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1 class="title">RVL Libras</h1>
+      <span id="statusBadge" class="badge badge--idle">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="statusText">Parada</span>
+      </span>
+    </header>
+
+    <main>
+      <section class="stage" aria-label="Pré-visualização da câmera">
+        <video id="preview" playsinline autoplay muted></video>
+        <div id="placeholder" class="placeholder">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="placeholder__icon">
+            <path d="M4 6h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />
+            <path d="m17 11 4-2.5v7L17 13Z" />
+          </svg>
+          <p id="placeholderText">Câmera parada</p>
+        </div>
+        <span id="liveTag" class="live-tag" hidden>AO VIVO</span>
+      </section>
+
+      <p id="message" class="message" role="status" aria-live="polite" hidden></p>
+
+      <section class="controls">
+        <label class="field">
+          <span class="field__label">Dispositivo</span>
+          <select id="deviceSelect" aria-label="Selecionar câmera">
+            <option value="">Procurando câmeras…</option>
+          </select>
+        </label>
+
+        <div class="buttons">
+          <button id="btnStart" type="button" class="btn btn--primary">Iniciar câmera</button>
+          <button id="btnStop" type="button" class="btn" disabled>Parar</button>
+          <button id="btnReload" type="button" class="btn" disabled>Recarregar</button>
+        </div>
+
+        <button id="btnPermission" type="button" class="btn btn--ghost" hidden>
+          Conceder acesso à câmera
+        </button>
+      </section>
+
+      <section class="reco" aria-label="Reconhecimento de Libras">
+        <div class="reco__head">
+          <label class="switch">
+            <input id="chkReco" type="checkbox" />
+            <span>Reconhecimento</span>
+          </label>
+          <div class="segmented" role="group" aria-label="Conjunto de sinais">
+            <button id="btnLetras" type="button" class="seg seg--on" data-conjunto="letras">Letras</button>
+            <button id="btnNumeros" type="button" class="seg" data-conjunto="numeros">Números</button>
+          </div>
+        </div>
+
+        <div id="dialogo" class="dialogo" role="alertdialog" aria-labelledby="dialogoTitulo" hidden>
+          <strong id="dialogoTitulo" class="dialogo__titulo"></strong>
+          <p id="dialogoTexto" class="dialogo__texto"></p>
+          <div class="buttons">
+            <button id="dialogoOk" type="button" class="btn btn--primary"></button>
+            <button id="dialogoCancelar" type="button" class="btn">Cancelar</button>
+          </div>
+        </div>
+
+        <div id="recoBody" class="reco__body" hidden>
+          <div class="reco__leitura">
+            <div id="ring" class="ring" style="--p: 0">
+              <span id="ringChar" class="ring__char">–</span>
+              <svg id="ringLock" class="ring__lock" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                <path d="M7 10V7a5 5 0 0 1 10 0v3" />
+                <rect x="5" y="10" width="14" height="10" rx="2" />
+              </svg>
+            </div>
+            <div class="reco__medidas">
+              <p id="recoDica" class="reco__dica">Mostre a mão para a câmera.</p>
+              <div class="bar" aria-hidden="true"><i id="barProx" style="width: 0%"></i></div>
+              <span id="recoPerf" class="reco__perf">—</span>
+            </div>
+          </div>
+
+          <label class="field">
+            <span class="field__label">Texto reconhecido</span>
+            <textarea id="txtSaida" rows="2" spellcheck="false"
+              aria-describedby="recoDica" placeholder="Os caracteres confirmados aparecem aqui"></textarea>
+          </label>
+
+          <div class="buttons">
+            <button id="btnEspaco" type="button" class="btn">Espaço</button>
+            <button id="btnApagar" type="button" class="btn">Apagar</button>
+            <button id="btnRepetir" type="button" class="btn" title="Confirmar de novo a letra travada">
+              Repetir letra
+            </button>
+            <button id="btnLimpar" type="button" class="btn">Limpar</button>
+          </div>
+
+          <button id="btnPesquisar" type="button" class="btn btn--primary" disabled>
+            Pesquisar
+          </button>
+
+          <details class="ajustes">
+            <summary>Ajustar sensibilidade</summary>
+            <div class="ajustes__corpo">
+              <div class="field">
+                <span class="field__label">Rigor do reconhecimento</span>
+                <div class="segmented" role="group" aria-label="Rigor">
+                  <button id="rigor125" type="button" class="seg" data-rigor="1.25">Tolerante</button>
+                  <button id="rigor100" type="button" class="seg seg--on" data-rigor="1">Normal</button>
+                  <button id="rigor080" type="button" class="seg" data-rigor="0.8">Exigente</button>
+                </div>
+              </div>
+              <div class="field">
+                <span class="field__label">Tempo para confirmar</span>
+                <div class="segmented" role="group" aria-label="Tempo para confirmar">
+                  <button id="perm450" type="button" class="seg" data-perm="450">Rápido</button>
+                  <button id="perm700" type="button" class="seg seg--on" data-perm="700">Normal</button>
+                  <button id="perm1000" type="button" class="seg" data-perm="1000">Calmo</button>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <p id="avisoPoucas" class="message message--warn" hidden></p>
+          <p class="reco__aviso" id="avisoDinamicas"></p>
+          <p id="avisoMao" class="message message--warn" hidden></p>
+        </div>
+
+        <details id="treinoBox" class="treino">
+          <summary>Treinar sinais <span id="treinoResumo" class="treino__resumo"></span></summary>
+          <div class="treino__corpo">
+            <p class="reco__dica">
+              Faça o sinal e mantenha a mão parada: a extensão grava várias amostras seguidas.
+              Cerca de 20 por classe costuma bastar.
+            </p>
+            <div class="field">
+              <span class="field__label">Mão dominante</span>
+              <div class="segmented" role="group" aria-label="Mão dominante">
+                <button id="btnDireita" type="button" class="seg seg--on" data-mao="direita">Direita</button>
+                <button id="btnEsquerda" type="button" class="seg" data-mao="esquerda">Esquerda</button>
+              </div>
+            </div>
+            <div id="gradeClasses" class="grade"></div>
+            <div id="capturaStatus" class="captura" hidden>
+              <span id="capturaTexto"></span>
+              <button id="btnCancelarCaptura" type="button" class="btn">Cancelar</button>
+            </div>
+            <div class="buttons">
+              <button id="btnExportar" type="button" class="btn">Exportar modelo</button>
+              <button id="btnImportar" type="button" class="btn">Importar modelo</button>
+              <button id="btnApagarModelo" type="button" class="btn btn--perigo">Apagar modelo</button>
+            </div>
+            <input id="arquivoModelo" type="file" accept="application/json,.json" hidden />
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span id="streamInfo">—</span>
+      <span class="footer__note">Vídeo processado localmente</span>
+    </footer>
+
+    <script type="module" src="panel.js"></script>
+  </body>
+</html>

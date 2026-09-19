@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl --version)",
+      "Bash(grep -o 'createNamedFunction[^;]\\\\{0,160\\\\}' wasm/vision_wasm_internal.js)",
+      "Bash(node tools/verificar-vendor.mjs --gerar)",
+      "Bash(node tools/verificar-vendor.mjs)",
+      "Bash(node tests/sign-features.test.mjs)",
+      "Bash(node tests/sign-stabilizer.test.mjs)",
+      "Bash(node tests/todos.mjs)",
+      "Bash(node tests/inference-loop.test.mjs)",
+      "Bash(node -e \"const m=require\\('./manifest.json'\\); console.log\\('JSON válido'\\); console.log\\('permissions:', m.permissions.join\\(', '\\)\\); console.log\\('CSP:', m.content_security_policy.extension_pages\\);\")",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(node tests/sign-model-store.test.mjs)",
+      "Bash(node tests/todos.mjs 2>&1 | grep -cE \"^OK\" && node tests/todos.mjs 2>&1 | tail -2 && echo \"=== IDs no HTML vs referenciados no JS ===\" && grep -oE 'getElementById\\\\\\('\"'\"'[a-zA-Z]+'\"'\"'\\\\\\)' sidepanel/*.js | sed \"s/.*getElementById\\('//;s/'\\)//\" | sort -u > /tmp/ids_js.txt && grep -oE 'id=\"[a-zA-Z]+\"' sidepanel/panel.html | sed 's/id=\"//;s/\"//' | sort -u > /tmp/ids_html.txt && echo \"referenciados no JS mas ausentes no HTML:\" && comm -23 /tmp/ids_js.txt /tmp/ids_html.txt)",
+      "Read(//tmp/**)",
+      "Bash(python -)",
+      "Bash(node diag.mjs)",
+      "Bash(node tests/sign-classifier.test.mjs)",
+      "Bash(node tests/integracao.test.mjs)",
+      "WebSearch",
+      "WebFetch(domain:developer.chrome.com)",
+      "Bash(node --check background/service-worker.js)",
+      "Bash(node --check sidepanel/panel.js)",
+      "Bash(node final.mjs)",
+      "Bash(node --check sidepanel/recognition-view.js)"
+    ]
+  }
+}

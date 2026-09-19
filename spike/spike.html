@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RVL Libras — diagnóstico MediaPipe</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        margin: 0;
+        padding: 20px;
+        font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        max-width: 860px;
+      }
+      h1 { font-size: 18px; margin: 0 0 4px; }
+      p.sub { margin: 0 0 16px; opacity: 0.7; }
+      .linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+      button {
+        font: inherit;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(128, 128, 128, 0.45);
+        background: #5b6cff;
+        color: #fff;
+        cursor: pointer;
+      }
+      button.secundario { background: transparent; color: inherit; }
+      button:disabled { opacity: 0.5; cursor: default; }
+      video { width: 320px; border-radius: 8px; background: #000; transform: scaleX(-1); }
+      canvas { display: none; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: rgba(128, 128, 128, 0.12);
+        border-radius: 8px;
+        padding: 12px;
+        margin: 0;
+        font: 12px/1.55 ui-monospace, "Cascadia Code", Consolas, monospace;
+      }
+      .veredito { font-weight: 600; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; }
+      .veredito--ok { background: rgba(32, 160, 90, 0.18); }
+      .veredito--erro { background: rgba(200, 50, 50, 0.18); }
+      .veredito[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Diagnóstico MediaPipe — Fase 0</h1>
+    <p class="sub">
+      Verifica se <code>@mediapipe/tasks-vision</code> roda sob a CSP do Manifest V3, e mede a
+      latência de <code>detectForVideo</code>. Nada aqui faz parte da extensão final.
+    </p>
+
+    <div id="veredito" class="veredito" hidden></div>
+
+    <div class="linha">
+      <button id="btnRodar" type="button">Rodar diagnóstico</button>
+      <button id="btnCopiar" type="button" class="secundario" disabled>Copiar relatório</button>
+    </div>
+
+    <div class="linha">
+      <video id="preview" playsinline autoplay muted></video>
+      <canvas id="canvasGpu" width="640" height="480"></canvas>
+    </div>
+
+    <pre id="log">Clique em "Rodar diagnóstico".</pre>
+
+    <script type="module" src="spike.js"></script>
+  </body>
+</html>

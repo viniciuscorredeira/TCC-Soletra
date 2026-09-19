@@ -1,0 +1,31 @@
+{
+  "pacote": "@mediapipe/tasks-vision",
+  "versao": "1.0.1",
+  "geradoEm": "2026-09-16T00:35:51.066Z",
+  "arquivos": [
+    {
+      "caminho": "vision_bundle.mjs",
+      "origem": "https://unpkg.com/@mediapipe/tasks-vision@1.0.1/vision_bundle.mjs",
+      "bytes": 155439,
+      "sha256": "d885630c297c0b20b1fe86096cb06291c4c8080876f27852e724f24ac603713f"
+    },
+    {
+      "caminho": "wasm/vision_wasm_internal.js",
+      "origem": "https://unpkg.com/@mediapipe/tasks-vision@1.0.1/wasm/vision_wasm_internal.js",
+      "bytes": 323377,
+      "sha256": "e170ee67dd4e16c1a6fcd8840a206687e5a59b22c20e4a902bc445b095454d73"
+    },
+    {
+      "caminho": "wasm/vision_wasm_internal.wasm",
+      "origem": "https://unpkg.com/@mediapipe/tasks-vision@1.0.1/wasm/vision_wasm_internal.wasm",
+      "bytes": 11756954,
+      "sha256": "8da277a733926eacd0474b8704b36742d6ec3231c57a860c5b889dff8f1df886"
+    },
+    {
+      "caminho": "hand_landmarker.task",
+      "origem": "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+      "bytes": 7819105,
+      "sha256": "fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1"
+    }
+  ]
+}

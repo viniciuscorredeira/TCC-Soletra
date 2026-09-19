@@ -1,0 +1,235 @@
+# RVL Libras
+
+Extensão de navegador (Manifest V3, Chrome e Edge) que acessa a câmera do usuário, exibe o
+vídeo em tempo real em um **painel lateral** e reconhece sinais estáticos do alfabeto manual
+de Libras, compondo um texto que pode ser pesquisado no navegador.
+
+Todo o processamento é **local**: os pontos da mão são extraídos por WebAssembly empacotado
+dentro da extensão. Nenhum quadro de vídeo é gravado ou transmitido. A única informação que
+sai do dispositivo é o texto que o usuário escolhe pesquisar, ao clicar em "Pesquisar".
+
+## Funcionalidades
+
+| Recurso | Comportamento |
+|---|---|
+| Seleção de dispositivo | Dropdown alimentado por `enumerateDevices()`; trocar a câmera reabre o stream sem recarregar a extensão |
+| Iniciar câmera | `getUserMedia()` com o `deviceId` selecionado (1280×720 / 30 fps ideais, sem áudio) |
+| Parar transmissão | `track.stop()` em todas as tracks e `srcObject = null` — o LED da câmera apaga |
+| Recarregar | Reenumera dispositivos preservando o estado: só reabre o stream se a câmera estava ativa; se estava desligada, continua desligada (apenas limpa erro anterior) |
+| Estado visual | Badge (Parada / Iniciando / Ativa / Erro), tag AO VIVO e resolução/fps no rodapé |
+| Preferência | A última câmera escolhida é salva em `chrome.storage.local` |
+
+O vídeo é exibido espelhado (`scaleX(-1)`), como convém a quem sinaliza olhando para a própria imagem.
+
+### Nomes reais dos dispositivos
+
+O navegador só preenche `MediaDeviceInfo.label` depois que a origem obteve acesso à câmera ao
+menos uma vez — antes disso `enumerateDevices()` devolve strings vazias e o dropdown não teria
+como distinguir uma câmera da outra. Com a permissão **já concedida**, `ensureDeviceLabels()`
+abre um `getUserMedia` relâmpago e encerra as tracks na mesma tacada, o que destrava os nomes
+(`Iriun Webcam`, `Integrated Camera`, …) sem deixar a câmera ligada e sem disparar prompt.
+Sem permissão, o priming é evitado e o painel exibe o aviso para autorizar o acesso.
+
+## Reconhecimento de Libras
+
+O usuário treina os sinais com a própria mão, na própria câmera, e o modelo fica no
+dispositivo. Não há dataset externo, não há etapa de treino em Python, não há TensorFlow.js.
+
+```
+Câmera → MediaPipe HandLandmarker → 21 pontos (x,y,z)
+       → normalização → vetor de 63 números
+       → KNN sobre as amostras do usuário
+       → estabilização temporal → caractere confirmado
+       → text-box → Pesquisar
+```
+
+| Etapa | Onde | Decisão |
+|---|---|---|
+| Detecção dos pontos | `@mediapipe/tasks-vision` 1.0.1, delegate **CPU** | Medido: CPU p50 22,9 ms contra 58,4 ms no GPU, que ainda paga readback de textura e exige um contexto WebGL num painel que o usuário recolhe |
+| Normalização | [src/sign-features.js](src/sign-features.js) | Invariante a posição, escala e resolução; **preserva** rotação, que é parâmetro fonológico da língua |
+| Classificação | [src/sign-classifier.js](src/sign-classifier.js) | KNN k=5 ponderado por 1/d, com limiar de rejeição calibrado da dispersão interna das classes |
+| Confirmação | [src/sign-stabilizer.js](src/sign-stabilizer.js) | O sinal precisa persistir ~700 ms; a mesma letra não repete enquanto a mão não sai dela |
+
+### Cobertura
+
+Reconhece as **21 letras de configuração estática** (A B C D E F G I L M N O P Q R S T U V W Y)
+e os **10 dígitos**. **H, J, K, X e Z envolvem movimento** e ficam fora desta versão: um
+classificador quadro-a-quadro não representa trajetória, e fingir que representa produziria
+confusão sistemática em vez de erro honesto. A extensão avisa isso na interface, e a text-box
+aceita edição manual para completá-las.
+
+Letras e números compartilham configurações de mão (O≡0, V≡2, W≡3), por isso os dois conjuntos
+nunca são classificados juntos — um seletor no painel alterna entre eles.
+
+### Como digitar letra dupla
+
+Formar o sinal, **relaxar a mão por meio segundo**, formar de novo. Ao relaxar, o vetor sai da
+vizinhança de toda classe e o classificador rejeita — é essa rejeição que destrava a repetição.
+Sem ela, "PASSO" sairia "PASO". Há também um botão "Repetir letra" como via de escape acessível.
+
+Trocar de letra não exige pausa: a troca é inequívoca e confirma direto.
+
+### Treino
+
+Em "Treinar sinais", escolha a mão dominante, clique numa classe e mantenha o sinal variando
+levemente o ângulo — a extensão grava ~20 amostras espaçadas no tempo. Ao fim, o limiar de
+rejeição é recalibrado automaticamente.
+
+O modelo pode ser **exportado e importado** em JSON (~400 KB): treine uma vez e distribua o
+arquivo junto com a extensão. Isso também atende os direitos de portabilidade e eliminação
+previstos na LGPD — ver [PRIVACY.md](PRIVACY.md).
+
+## MediaPipe vendorizado e a CSP do Manifest V3
+
+O Manifest V3 proíbe `'unsafe-eval'`, e é comum ler que isso impede usar MediaPipe em
+extensões. Essa limitação vale para o pacote **legado** (`@mediapipe/hands`, `holistic`), cujo
+glue Emscripten gerava funções com `new Function()`. O pacote atual, `@mediapipe/tasks-vision`,
+não tem nenhuma ocorrência de `new Function` nem de `eval(` — o `createNamedFunction` foi
+reescrito com `Object.defineProperty`. Basta declarar:
+
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+}
+```
+
+Sem declarar, o WebAssembly é bloqueado; declarando qualquer coisa além disso, o Chrome recusa
+a instalação.
+
+Os ~20 MB de binários ficam em `vendor/mediapipe/`, **commitados no repositório** — CDN é
+proibido pela CSP e conta como "código remoto" na revisão das lojas. A versão é fixada em
+`@1.0.1` de propósito: `@latest` publica builds `rc.<data>` diários.
+
+```
+node tools/verificar-vendor.mjs          confere os SHA-256
+node tools/verificar-vendor.mjs --gerar  regrava INTEGRIDADE.json
+```
+
+O `FilesetResolver` não é usado: o `WasmFileset` é montado à mão, o que evita a sonda SIMD em
+runtime (que apontaria para um par `_nosimd_` deliberadamente não vendorizado).
+
+### Diagnóstico
+
+`spike/spike.html`, aberta como página da extensão, mede latência por delegate separando
+quadros com e sem mão rastreada — os dois são regimes de custo diferentes, porque sem
+rastreamento o MediaPipe roda o detector de palma a cada quadro.
+
+## Testes
+
+```
+node tests/todos.mjs
+```
+
+63 cenários, em Node puro, sem framework e sem dependências. Os módulos de lógica são todos
+funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
+(`src/hand-landmarker.js`) é fino de propósito e validado pelo diagnóstico acima.
+
+Cenários que merecem destaque por travarem bugs silenciosos:
+
+- **Invariância a resolução** — a mesma mão em 640×480 e 1280×720 precisa gerar vetores
+  idênticos. Falha se a correção de *aspect ratio* for esquecida, e o sintoma seria um modelo
+  que para de funcionar ao trocar de webcam, sem erro nenhum.
+- **Letra dupla** — S por 800 ms, pausa de 250 ms, S por 800 ms deve produzir `['S','S']`;
+  com pausa de 100 ms, apenas `['S']`.
+- **Timestamp monotônico** — trocar de câmera reinicia o `mediaTime`, e um timestamp que
+  regride faz o MediaPipe devolver resultado vazio em silêncio.
+- **Versão de normalização** — um modelo gravado com outra `VERSAO_FEATURES` é recusado, não
+  reinterpretado: reinterpretar não daria erro, daria queda de acurácia sem causa aparente.
+
+## Por que painel lateral e não popup
+
+O popup de extensão fecha ao perder o foco, o que destrói o documento e encerra o `MediaStream`.
+Para manter a câmera visível enquanto o usuário navega, a interface usa `chrome.sidePanel`
+(Chrome/Edge 114+). O clique no ícone abre o painel; se a API não estiver disponível, o
+service worker cai para abrir `sidepanel/panel.html` em uma aba dedicada.
+
+## Instalação em modo desenvolvedor
+
+1. Chrome: `chrome://extensions` — Edge: `edge://extensions`
+2. Ative **Modo do desenvolvedor**
+3. **Carregar sem compactação** e selecione a raiz deste repositório
+4. Clique no ícone do RVL Libras na barra de ferramentas para abrir o painel
+
+## Fluxo de permissão de câmera
+
+Extensões não têm uma permissão `"camera"` no manifesto: o acesso passa pelo `getUserMedia()`
+na página da extensão e pelo prompt do navegador. O diálogo nativo **não é exibido dentro do
+painel lateral**, então a extensão encaminha o usuário para `permission/request.html`, aberta
+em aba de topo. Concedida ali, a permissão vale para toda a origem `chrome-extension://<id>`
+e o painel passa a abrir o stream diretamente (e a ver os rótulos dos dispositivos).
+
+Se a permissão foi negada uma vez, é preciso removê-la em
+`chrome://settings/content/camera` → entrada `chrome-extension://<id>`.
+
+## Erros tratados
+
+| Exceção do `getUserMedia` | Mensagem ao usuário |
+|---|---|
+| `NotAllowedError` | Permissão negada — oferece o botão de autorização |
+| `NotFoundError` | Nenhuma câmera encontrada |
+| `NotReadableError` | Câmera em uso por outro aplicativo ou aba |
+| `OverconstrainedError` | Dispositivo selecionado indisponível |
+| `AbortError` / `SecurityError` | Captura interrompida pelo SO / contexto inseguro |
+
+Além disso: `devicechange` detecta câmeras conectadas e removidas, e `track.onended` captura
+a desconexão física do dispositivo em uso durante a transmissão.
+
+## Estrutura
+
+```
+manifest.json                 MV3, permissões sidePanel + storage + search, CSP com wasm-unsafe-eval
+background/service-worker.js  abre o painel lateral no clique do ícone (fallback: aba)
+permission/request.html|js    aba de topo para o prompt nativo de câmera
+
+sidepanel/panel.html|css|js   interface principal
+sidepanel/recognition-view.js UI do reconhecimento (anel de progresso, text-box, busca)
+sidepanel/training-view.js    UI do treino (grade de classes, exportar/importar/apagar)
+sidepanel/dialogo.js          confirmação inline (window.confirm não é confiável no painel)
+
+src/camera-controller.js      ciclo de vida do MediaStream — inalterado desde a v0.1.0
+src/sign-recognizer.js        orquestrador; expõe um onStateChange, como o CameraController
+src/hand-landmarker.js        adaptador do MediaPipe (único módulo dependente de WASM)
+src/inference-loop.js         agendador rVFC, throttle adaptativo, timestamp monotônico
+src/sign-features.js          landmarks → 63 números; tem VERSAO_FEATURES
+src/sign-classifier.js        KNN ponderado, rejeição, calibração de limiar
+src/sign-stabilizer.js        máquina de confirmação e trava anti-repetição
+src/sign-classes.js           catálogo de classes estáticas, dinâmicas e números
+src/sign-model-store.js       persistência, quota, export/import com validação de esquema
+src/text-composer.js          composição do texto e normalização para a busca
+
+vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
+tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados
+tools/make-icons.mjs          gera icons/*.png sem dependências
+spike/spike.html|js           diagnóstico de CSP e latência (não faz parte do fluxo)
+tests/todos.mjs               roda a suíte inteira
+```
+
+## Publicação nas lojas
+
+Chrome Web Store e Edge Add-ons exigem justificativa de uso da câmera e URL de política de
+privacidade. Ver [PRIVACY.md](PRIVACY.md) — a justificativa a declarar é:
+*"A extensão exibe a imagem da câmera do próprio usuário na interface, localmente, sem
+gravação nem transmissão."*
+
+## Próximos passos
+
+- **Letras dinâmicas (H, J, K, X, Z e o Ç)** — exigem um segundo pipeline com componente
+  temporal: buffer de landmarks e classificador de sequência, com dataset próprio.
+- **Matriz de confusão e avaliação leave-one-out** (`src/sign-eval.js`) — para medir quais
+  pares de configurações realmente colidem, em vez de supor que são só O≡0 e V≡2.
+- **Ablação da normalização** — rotação ligada versus desligada, peso do eixo z, e o efeito de
+  acrescentar as distâncias ponta-de-dedo→punho ao vetor (`VERSAO_FEATURES` 2).
+- Captura em segundo plano via `offscreen` document, para manter o modelo quente entre
+  aberturas do painel.
+
+## Sobre o repositório de referência
+
+O projeto [WellingtonDev25/leitor_libras](https://github.com/WellingtonDev25/leitor_libras) foi
+avaliado como base e **descartado**. É um script Python de 56 linhas com um modelo Teachable
+Machine que classifica **pixels 224×224** — o MediaPipe ali serve apenas para recortar a
+*bounding box* da mão, e os landmarks nunca chegam ao classificador. Reconhece **5 classes**
+(`['A','B','C','D','E']`), não inclui dataset nem script de treino, não tem mecanismo de
+estabilização e **não declara licença**, o que reservaria todos os direitos ao autor.
+
+A abordagem adotada aqui — classificar sobre landmarks em vez de pixels — é também
+tecnicamente superior: modelo de KB em vez de MB, e robustez a fundo, iluminação e tom de pele.
