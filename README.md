@@ -47,17 +47,27 @@ Câmera → MediaPipe HandLandmarker → 21 pontos (x,y,z)
 ```
 
 O botão **Pesquisar** abre um seletor com seis destinos — buscador padrão do navegador,
-Google, YouTube, Google Maps, Amazon e Wikipédia — e o termo reconhecido já vai embutido na URL
-de cada um. Nada é enviado antes da escolha: fechar o seletor não dispara pesquisa nenhuma.
+Google, YouTube, Google Maps, Amazon e Wikipédia. Nas cinco marcas o termo vai embutido na URL
+de busca; no buscador padrão ele é entregue a `chrome.search.query`, porque só o navegador sabe
+qual é esse buscador. Nada é enviado antes da escolha: fechar o seletor não dispara pesquisa nenhuma.
 O catálogo fica em [src/search-targets.js](src/search-targets.js), com as URLs fixadas por
-teste.
+teste. O termo passa sempre por `encodeURIComponent`, e o rodapé do seletor lembra, em toda
+pesquisa, que o texto vai apenas para a plataforma escolhida.
 
-As logos ficam empacotadas na extensão, preparadas por `node tools/preparar-logos.mjs` a partir
-de `logos/`. Nenhuma imagem é carregada da rede: a CSP do Manifest V3 a bloquearia, e a
-interface não pode depender de conexão para se desenhar.
+A navegação é executada pelo **service worker**, não pelo painel. Para o buscador padrão, a aba
+é criada antes e passada por `tabId` a `chrome.search.query`: com `disposition`, o navegador
+teria de inferir o destino a partir de quem chamou — e o painel lateral não é uma aba. Se
+`chrome.search` falhar, a mesma aba cai para o Google, para o usuário não ficar com uma aba em
+branco.
+
+As logos ficam empacotadas em `icons/plataformas/` (~20 KB). Nenhuma imagem é carregada da
+rede: a CSP do Manifest V3 a bloquearia, e a interface não pode depender de conexão para se
+desenhar. Elas foram preparadas por `tools/preparar-logos.mjs`; o diretório `logos/` com as
+imagens de origem não está mais no repositório, então a ferramenta fica como registro de
+proveniência do que já está empacotado.
 
 Três dos cinco arquivos de origem eram capturas de um preview de transparência — o quadriculado
-estava **gravado nos pixels**, não era canal alfa (Maps, Amazon e Wikipédia tinham 0% de
+estava **gravado nos pixels**, não era canal alfa (medido nas logos do Maps e da Amazon: 0% de
 transparência). A ferramenta reconhece esse fundo pelo que ele é: um padrão que **alterna** em
 células regulares. Um limiar de cor não serviria — a logo da Wikipédia é um globo branco sobre
 xadrez branco-e-cinza-claro, e "todo pixel claro é fundo" a apagaria inteira.
@@ -67,13 +77,13 @@ O período e a fase saem das trocas de tom na primeira linha e na primeira colun
 20,08 px em y. Arredondar para 20 fazia o padrão previsto inverter na metade oposta da imagem
 (86% de acerto no topo, 14% na base), e usar a média dos eixos derrubava o encaixe de 94,8% para
 65,8%. Depois a ferramenta apara ao conteúdo, centraliza num quadrado e reduz para 96×96 com
-alfa pré-multiplicado — de 167 KB de entrada para 18 KB empacotados.
+alfa pré-multiplicado — de 167 KB de entrada para ~20 KB empacotados.
 
 | Etapa | Onde | Decisão |
 |---|---|---|
-| Detecção dos pontos | `@mediapipe/tasks-vision` 1.0.1, delegate **CPU** | Medido: CPU p50 22,9 ms contra 58,4 ms no GPU, que ainda paga readback de textura e exige um contexto WebGL num painel que o usuário recolhe |
+| Detecção dos pontos | `@mediapipe/tasks-vision` 1.0.1, delegate **CPU** | Medido no spike (Edge 153): CPU p50 22,9 ms contra 58,4 ms no GPU, que ainda paga readback de textura e exige um contexto WebGL num painel que o usuário recolhe |
 | Normalização | [src/sign-features.js](src/sign-features.js) | Invariante a posição, escala e resolução; **preserva** rotação, que é parâmetro fonológico da língua |
-| Classificação | [src/sign-classifier.js](src/sign-classifier.js) | KNN k=5 ponderado por 1/d, com limiar de distância constante — possível porque a normalização dá escala física fixa ao espaço de 63 dimensões |
+| Classificação | [src/sign-classifier.js](src/sign-classifier.js) | KNN k=5 ponderado por 1/d, com limiar de distância constante (1,3) — possível porque a normalização dá escala física fixa ao espaço de 63 dimensões — e teste de razão frouxo (0,97) só para descartar empates |
 | Confirmação | [src/sign-stabilizer.js](src/sign-stabilizer.js) | O sinal precisa persistir ~700 ms; a mesma letra não repete enquanto a mão não sai dela |
 
 ### Cobertura
@@ -97,12 +107,21 @@ Trocar de letra não exige pausa: a troca é inequívoca e confirma direto.
 
 ### Treino
 
-Em "Treinar sinais", escolha a mão dominante, clique numa classe e mantenha o sinal variando
-levemente o ângulo — a extensão grava ~20 amostras espaçadas no tempo. Ao fim, o limiar de
-rejeição é recalibrado automaticamente.
+Em "Treinar sinais", escolha a mão dominante, clique numa classe e mantenha o sinal com a mão
+parada — a extensão grava uma amostra a cada 150 ms até completar 20 (teto de 60 por classe).
+Ao fim, o limiar de rejeição é recalibrado automaticamente: parte da constante de 1,3 raio de
+palma e só sobe se as amostras do usuário forem mais dispersas que o previsto.
 
-O modelo pode ser **exportado e importado** em JSON (~400 KB): treine uma vez e distribua o
-arquivo junto com a extensão. Isso também atende os direitos de portabilidade e eliminação
+Cada classe treinada tem um **×** para apagar só as amostras dela, com recalibração do limiar
+em seguida — uma letra que saiu ruim não custa o modelo inteiro. **Apagar tudo** fica separado dos demais botões, e toda ação destrutiva
+passa por um modal de confirmação com o foco inicial no "Não". "Ajustar sensibilidade" expõe o
+rigor do classificador (multiplicador do limiar).
+
+O modelo pode ser **exportado e importado** em JSON — ~430 KB com as 21 letras e ~640 KB com
+letras e números, a 20 amostras por classe: treine uma vez e distribua o
+arquivo junto com a extensão. A importação aceita também os arquivos exportados quando o
+produto se chamava RVL Libras (formato `rvl-libras-modelo`), e as chaves antigas do storage são
+migradas na primeira abertura. Isso também atende os direitos de portabilidade e eliminação
 previstos na LGPD — ver [PRIVACY.md](PRIVACY.md).
 
 ## MediaPipe vendorizado e a CSP do Manifest V3
@@ -164,6 +183,9 @@ Cenários que merecem destaque por travarem bugs silenciosos:
 - **URL de busca com caractere reservado** — a text-box aceita edição manual, então um `&` ou
   `#` digitado ali é entrada de usuário: precisa ficar contido no parâmetro, sem injetar nada
   na URL do terceiro.
+- **Migração de storage** — renomear as chaves `rvl.*` sem migrá-las não daria erro: o modelo
+  continuaria no disco sob nomes que ninguém lê. A migração é idempotente e nunca sobrescreve
+  dado novo com resíduo antigo.
 
 ## Por que painel lateral e não popup
 
@@ -207,13 +229,14 @@ a desconexão física do dispositivo em uso durante a transmissão.
 
 ```
 manifest.json                 MV3, permissões sidePanel + storage + search, CSP com wasm-unsafe-eval
-background/service-worker.js  abre o painel lateral no clique do ícone (fallback: aba)
+background/service-worker.js  abre o painel lateral no clique do ícone (fallback: aba) e executa a pesquisa
 permission/request.html|js    aba de topo para o prompt nativo de câmera
 
 sidepanel/panel.html|css|js   interface principal
 sidepanel/recognition-view.js UI do reconhecimento (anel de progresso, text-box, busca)
 sidepanel/training-view.js    UI do treino (grade de classes, exportar/importar/apagar)
 sidepanel/dialogo.js          modal de confirmação (window.confirm não é confiável no painel)
+icons/plataformas/            logos das plataformas de busca, empacotadas
 sidepanel/seletor-plataforma.js  modal de escolha do destino da pesquisa
 
 src/camera-controller.js      ciclo de vida do MediaStream — inalterado desde a v0.1.0
@@ -233,7 +256,7 @@ vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGR
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
 tools/make-icons.mjs          gera os ícones da extensão a partir de icons/soletra-logo.png
-tools/preparar-logos.mjs      limpa, apara e reduz as logos de logos/ para icons/plataformas/
+tools/preparar-logos.mjs      limpa, apara e reduz as logos para icons/plataformas/ (origem fora do repo)
 icons/soletra-logo.png        arte da marca; origem dos ícones da extensão
 spike/spike.html|js           diagnóstico de CSP e latência (não faz parte do fluxo)
 tests/todos.mjs               roda a suíte inteira

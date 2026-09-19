@@ -243,8 +243,8 @@ const ARQUIVOS = [
   { id: 'youtube', arquivo: 'youtube_logo.png' },
   { id: 'maps', arquivo: 'googlemaps-logo.png' },
   { id: 'amazon', arquivo: 'amazon-logo.png' },
-  // Basta trocar por um PNG com transparência real e rodar de novo: o
-  // seletor passa a usar a imagem sozinho. Enquanto for JPEG, fica o SVG.
+  // Opcional: se o arquivo de origem faltar, a ferramenta segue sem ele e
+  // mantém o icons/plataformas/wikipedia.png já empacotado.
   { id: 'wikipedia', arquivo: 'wikipedia-logo.png', opcional: true }
 ];
 

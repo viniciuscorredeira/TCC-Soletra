@@ -13,8 +13,8 @@ servidores, à Integrativa ou a serviços externos de IA. O modelo de reconhecim
 localmente, por WebAssembly empacotado dentro da extensão — não há download de código em tempo
 de execução nem chamada a CDN.
 
-**A única informação que sai do dispositivo é o texto que o usuário escolhe pesquisar**, ao
-clicar no botão "Pesquisar" — e apenas nesse momento. Veja "Compartilhamento com terceiros".
+**A única informação que sai do dispositivo é o texto que o usuário escolhe pesquisar**, depois
+de clicar em "Pesquisar" e escolher a plataforma — e apenas nesse momento. Veja "Compartilhamento com terceiros".
 
 ## Dados tratados
 
@@ -88,8 +88,8 @@ Medidas adotadas, correspondentes aos direitos do titular:
 | Medida | Onde está | Base |
 |---|---|---|
 | Consentimento específico e destacado antes da primeira ativação do reconhecimento, com data do aceite registrada | Diálogo no painel lateral | art. 7º, I e art. 11, I |
-| Botão **"Apagar modelo"**, que remove todas as amostras do dispositivo | "Treinar sinais" | art. 18, VI (eliminação) |
-| Botão **"Exportar modelo"**, que entrega as amostras em JSON legível | "Treinar sinais" | art. 18, V (portabilidade) |
+| Botão **"Apagar tudo"**, que remove todas as amostras do dispositivo, e **×** em cada classe, que remove só as amostras dela | "Treinar sinais" | art. 18, VI (eliminação) |
+| Botão **"Exportar"**, que entrega as amostras em JSON legível | "Treinar sinais" | art. 18, V (portabilidade) |
 | Escolha explícita do destino a cada pesquisa, com o termo à vista e aviso permanente de saída do dispositivo | Seletor de plataforma no painel lateral | transparência (art. 6º, VI) |
 | Processamento local como padrão arquitetural, sem alternativa remota | Toda a extensão | necessidade (art. 6º, III) |
 | Revogação a qualquer momento | Permissão de câmera nas configurações do navegador; desinstalação | art. 8º, § 5º |
