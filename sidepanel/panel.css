@@ -32,6 +32,14 @@
 
 * { box-sizing: border-box; }
 
+/* O atributo `hidden` só vale display:none na folha do navegador, e QUALQUER
+   regra de autor com `display` o anula em silêncio — o elemento continua na
+   tela enquanto o JS acredita tê-lo escondido. Já aconteceu três vezes aqui
+   (painel de captura, corpo do reconhecimento, botão de permissão), sempre
+   como efeito colateral de mexer numa classe sem lembrar de quem a usa. Esta
+   regra global encerra a categoria; por isso o !important. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   min-width: 300px;
