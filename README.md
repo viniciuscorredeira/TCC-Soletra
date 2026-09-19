@@ -73,7 +73,7 @@ alfa pré-multiplicado — de 167 KB de entrada para 18 KB empacotados.
 |---|---|---|
 | Detecção dos pontos | `@mediapipe/tasks-vision` 1.0.1, delegate **CPU** | Medido: CPU p50 22,9 ms contra 58,4 ms no GPU, que ainda paga readback de textura e exige um contexto WebGL num painel que o usuário recolhe |
 | Normalização | [src/sign-features.js](src/sign-features.js) | Invariante a posição, escala e resolução; **preserva** rotação, que é parâmetro fonológico da língua |
-| Classificação | [src/sign-classifier.js](src/sign-classifier.js) | KNN k=5 ponderado por 1/d, com limiar de rejeição calibrado da dispersão interna das classes |
+| Classificação | [src/sign-classifier.js](src/sign-classifier.js) | KNN k=5 ponderado por 1/d, com limiar de distância constante — possível porque a normalização dá escala física fixa ao espaço de 63 dimensões |
 | Confirmação | [src/sign-stabilizer.js](src/sign-stabilizer.js) | O sinal precisa persistir ~700 ms; a mesma letra não repete enquanto a mão não sai dela |
 
 ### Cobertura
