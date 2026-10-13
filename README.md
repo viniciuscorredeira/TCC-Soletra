@@ -108,7 +108,7 @@ Trocar de letra não exige pausa: a troca é inequívoca e confirma direto.
 ### Treino
 
 Em "Treinar sinais", escolha a mão dominante, clique numa classe e mantenha o sinal com a mão
-parada — a extensão grava uma amostra a cada 150 ms até completar 20 (teto de 60 por classe).
+parada — a extensão grava uma amostra a cada 150 ms até completar 20 (teto de 100 por classe; ao chegar nele o painel avisa e marca a classe como cheia).
 Ao fim, o limiar de rejeição é recalibrado automaticamente: parte da constante de 1,3 raio de
 palma e só sobe se as amostras do usuário forem mais dispersas que o previsto.
 
@@ -123,6 +123,31 @@ arquivo junto com a extensão. A importação aceita também os arquivos exporta
 produto se chamava RVL Libras (formato `rvl-libras-modelo`), e as chaves antigas do storage são
 migradas na primeira abertura. Isso também atende os direitos de portabilidade e eliminação
 previstos na LGPD — ver [PRIVACY.md](PRIVACY.md).
+
+### Modelo pronto
+
+Quando a extensão traz `modelos/padrao.json`, a primeira abertura oferece **Usar modelo pronto**
+ou **Treinar do zero**. Sem o arquivo, nada muda: o painel funciona só com treino próprio.
+
+As amostras do padrão ficam em chaves separadas das pessoais (`soletra.modelo.v1.padrao.*`), e
+o classificador usa as duas juntas. Clicar numa classe que veio do padrão **reforça** a letra
+com a mão do usuário, e o selo mostra `padrão+suas` (ex.: `50+8`). O padrão entra com até 50 amostras por classe, deixando 50 lugares livres para o reforço. No teto de 100, sai primeiro a
+amostra padrão mais antiga, então o modelo vai convergindo para a mão de quem usa. O **×** numa
+classe reforçada descarta só o treino pessoal e volta ao padrão. **Restaurar modelo pronto**
+repõe o padrão sem apagar o treino pessoal. Um modelo gravado antes disto é lido sem migração,
+com todas as amostras contadas como pessoais.
+
+O padrão é montado a partir dos exports de várias pessoas, com amostragem balanceada para que
+ninguém domine uma classe:
+
+```
+node tools/montar-modelo-padrao.mjs pessoa1.json pessoa2.json pessoa3.json
+node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
+```
+
+Com menos de 3 pessoas, ou com uma classe gravada por uma pessoa só, a ferramenta avisa: um
+padrão de uma mão só reconhece bem apenas essa mão. Como as features espelham a mão esquerda,
+exports das duas mãos podem ser misturados.
 
 ## MediaPipe vendorizado e a CSP do Manifest V3
 
@@ -165,7 +190,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 node tests/todos.mjs
 ```
 
-85 cenários, em Node puro, sem framework e sem dependências. Os módulos de lógica são todos
+97 cenários, em Node puro, sem framework e sem dependências. Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
 (`src/hand-landmarker.js`) é fino de propósito e validado pelo diagnóstico acima.
 
@@ -193,6 +218,16 @@ O popup de extensão fecha ao perder o foco, o que destrói o documento e encerr
 Para manter a câmera visível enquanto o usuário navega, a interface usa `chrome.sidePanel`
 (Chrome/Edge 114+). O clique no ícone abre o painel; se a API não estiver disponível, o
 service worker cai para abrir `sidepanel/panel.html` em uma aba dedicada.
+
+### Tela cheia, painel e fechar
+
+No topo ficam os três botões no estilo do macOS. O **verde** abre a mesma página numa aba da
+janela atual, ocupando o navegador inteiro (`panel.html?modo=aba`), sem criar janela nova; se já
+houver uma aba do Soletra, ela é reaproveitada. Na aba, o verde alterna a tela cheia de verdade
+(Fullscreen API; Esc também sai). O **amarelo** minimiza de volta ao painel lateral, que é o estado
+normal; no painel ele só avisa que já está minimizado. O **vermelho** fecha. Na troca, a página que sai solta a câmera antes de abrir a outra, porque
+muitas webcams só aceitam um acesso por vez, e a câmera e o reconhecimento são religados do
+outro lado (`storage.session`). Voltar ao painel usa `chrome.sidePanel.open`, do Chrome 116+.
 
 ## Instalação em modo desenvolvedor
 
@@ -234,8 +269,9 @@ permission/request.html|js    aba de topo para o prompt nativo de câmera
 
 sidepanel/panel.html|css|js   interface principal
 sidepanel/recognition-view.js UI do reconhecimento (anel de progresso, text-box, busca)
-sidepanel/training-view.js    UI do treino (grade de classes, exportar/importar/apagar)
+sidepanel/training-view.js    UI do treino (grade de classes, modelo pronto, exportar/importar/apagar)
 sidepanel/dialogo.js          modal de confirmação (window.confirm não é confiável no painel)
+sidepanel/janela.js           botões de janela (fechar, voltar ao painel, tela cheia)
 icons/plataformas/            logos das plataformas de busca, empacotadas
 sidepanel/seletor-plataforma.js  modal de escolha do destino da pesquisa
 
@@ -253,6 +289,8 @@ src/migracao-storage.js       migra as chaves de storage do nome antigo (RVL Lib
 src/search-targets.js         catálogo de plataformas de busca e montagem das URLs
 
 vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
+modelos/padrao.json           modelo pronto (opcional), gerado por tools/montar-modelo-padrao.mjs
+tools/montar-modelo-padrao.mjs  junta exports de várias pessoas no modelo pronto, balanceado por pessoa
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
 tools/make-icons.mjs          gera os ícones da extensão a partir de icons/soletra-logo.png

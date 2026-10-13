@@ -25,12 +25,18 @@ de clicar em "Pesquisar" e escolher a plataforma — e apenas nesse momento. Vej
 | **Quadros de vídeo lidos pelo WebAssembly** | Detectar os 21 pontos de referência da mão | Memória do módulo WASM, no dispositivo | Por quadro; sobrescrito na inferência seguinte, nunca gravado |
 | **Vetor de 63 números (21 pontos normalizados)** | Classificar a configuração de mão | Memória; janela de votação de ~400 ms | Descartado a cada quadro |
 | **Amostras de treino gravadas pelo usuário** | Modelo KNN pessoal de reconhecimento | `chrome.storage.local`, no perfil do navegador | Até o usuário apagar o modelo ou desinstalar a extensão |
+| **Amostras do modelo pronto** (quando o usuário escolhe usá-lo) | Reconhecer sem treino próprio | Empacotadas na extensão (`modelos/padrao.json`); copiadas para `chrome.storage.local` ao escolher | Até o usuário apagar o modelo ou desinstalar a extensão |
 | **Texto composto** | Montar a palavra ou frase | `chrome.storage.session` | Até fechar o navegador |
 | **Termo enviado à plataforma escolhida** | Abrir a pesquisa solicitada | **Sai do dispositivo** — vai à plataforma que o usuário selecionou | Fora do controle da extensão |
 | Preferências (`deviceId`, mão dominante, tempo de confirmação, rigor) | Restaurar a configuração do usuário | `chrome.storage.local` | Até a desinstalação |
 
 As amostras de treino são **vetores numéricos, não imagens**: o que fica gravado é a geometria
 normalizada da mão, não a fotografia dela. Ainda assim, veja o enquadramento legal abaixo.
+
+O modelo pronto contém amostras de **voluntários**, não do usuário. Elas vêm dentro do pacote da
+extensão e não são baixadas de lugar nenhum. Escolher usá-lo não envia nada do dispositivo. Os
+voluntários consentiram com a distribuição das suas amostras, que não trazem nome nem qualquer
+identificador: cada arquivo de origem só é identificado pela ordem em que foi juntado.
 
 Não há coleta de dados de navegação, histórico, credenciais, localização ou áudio. A extensão
 não declara `host_permissions` e não executa content scripts em páginas visitadas.
@@ -88,7 +94,7 @@ Medidas adotadas, correspondentes aos direitos do titular:
 | Medida | Onde está | Base |
 |---|---|---|
 | Consentimento específico e destacado antes da primeira ativação do reconhecimento, com data do aceite registrada | Diálogo no painel lateral | art. 7º, I e art. 11, I |
-| Botão **"Apagar tudo"**, que remove todas as amostras do dispositivo, e **×** em cada classe, que remove só as amostras dela | "Treinar sinais" | art. 18, VI (eliminação) |
+| Botão **"Apagar tudo"**, que remove todas as amostras do dispositivo (inclusive as do modelo pronto), e **×** em cada classe, que remove só as amostras dela | "Treinar sinais" | art. 18, VI (eliminação) |
 | Botão **"Exportar"**, que entrega as amostras em JSON legível | "Treinar sinais" | art. 18, V (portabilidade) |
 | Escolha explícita do destino a cada pesquisa, com o termo à vista e aviso permanente de saída do dispositivo | Seletor de plataforma no painel lateral | transparência (art. 6º, VI) |
 | Processamento local como padrão arquitetural, sem alternativa remota | Toda a extensão | necessidade (art. 6º, III) |
