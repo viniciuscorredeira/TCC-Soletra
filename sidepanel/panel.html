@@ -8,7 +8,23 @@
   </head>
   <body>
     <header class="topbar">
-      <h1 class="title">Soletra</h1>
+      <div class="topbar__esq">
+        <div class="semaforo" role="group" aria-label="Janela">
+          <button id="btnJanelaFechar" type="button" class="semaforo__btn semaforo__btn--fechar"
+            title="Fechar" aria-label="Fechar">
+            <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 3l4 4M7 3l-4 4" /></svg>
+          </button>
+          <button id="btnJanelaMinimizar" type="button" class="semaforo__btn semaforo__btn--minimizar"
+            title="Voltar ao painel lateral" aria-label="Voltar ao painel lateral">
+            <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 5h5" /></svg>
+          </button>
+          <button id="btnJanelaMaximizar" type="button" class="semaforo__btn semaforo__btn--maximizar"
+            title="Tela cheia" aria-label="Tela cheia">
+            <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 7V3.6L6.4 7Z M7 3v3.4L3.6 3Z" /></svg>
+          </button>
+        </div>
+        <h1 class="title">Soletra</h1>
+      </div>
       <span id="statusBadge" class="badge badge--idle">
         <span class="dot" aria-hidden="true"></span>
         <span id="statusText">Parada</span>
@@ -126,6 +142,20 @@
           <p id="avisoMao" class="message message--warn" hidden></p>
         </div>
 
+        <!-- Primeira abertura: sem modelo, o reconhecimento não tem o que
+             reconhecer. Só aparece se a extensão traz o modelo padrão. -->
+        <div id="boasVindas" class="boas-vindas" hidden>
+          <p class="boas-vindas__titulo">Como você quer começar?</p>
+          <p class="reco__dica">
+            O modelo pronto reconhece as letras sem treino. Se alguma letra falhar
+            com a sua mão, você pode reforçá-la depois em "Treinar sinais".
+          </p>
+          <div class="buttons">
+            <button id="btnUsarPadrao" type="button" class="btn btn--primary">Usar modelo pronto</button>
+            <button id="btnTreinarZero" type="button" class="btn">Treinar do zero</button>
+          </div>
+        </div>
+
         <details id="treinoBox" class="secao">
           <summary class="secao__titulo">
             Treinar sinais
@@ -149,8 +179,14 @@
               <button id="btnCancelarCaptura" type="button" class="btn">Cancelar</button>
             </div>
             <p class="dica-grade">
-              Clique numa classe para treinar. O <strong>×</strong> apaga só as amostras dela.
+              Clique numa classe para treinar — ou reforçar, se ela já veio do modelo pronto.
+              O <strong>×</strong> apaga só as amostras dela; numa classe reforçada, volta ao padrão.
+              Cada classe guarda até 100 amostras; a borda tracejada marca a que chegou lá.
             </p>
+            <button id="btnInstalarPadrao" type="button" class="btn" hidden
+              title="Repõe as amostras do modelo pronto sem apagar o que você treinou">
+              Restaurar modelo pronto
+            </button>
             <div class="acoes-modelo">
               <button id="btnExportar" type="button" class="btn">Exportar</button>
               <button id="btnImportar" type="button" class="btn">Importar</button>

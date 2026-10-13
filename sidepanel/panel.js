@@ -5,6 +5,8 @@ import { montarTrainingView } from './training-view.js';
 import { confirmar } from './dialogo.js';
 import { escolherPlataforma } from './seletor-plataforma.js';
 import { migrarChaves } from '../src/migracao-storage.js';
+import { montarJanela, lerRetomada } from './janela.js';
+import { AMOSTRAS_RECOMENDADAS, AMOSTRAS_MAXIMAS } from '../src/sign-model-store.js';
 
 const PREF_KEY = 'soletra.preferredDeviceId';
 const CHAVE_CONSENTIMENTO = 'soletra.consentimento.reconhecimento';
@@ -297,8 +299,64 @@ const recognitionView = montarRecognitionView({
   pesquisar
 });
 
+/**
+ * Instala o modelo pronto por baixo do treino pessoal. Não pede confirmação
+ * aqui: na primeira abertura não há nada a perder, e a restauração posterior
+ * confirma antes de chamar.
+ */
+async function carregarModeloPronto() {
+  try {
+    const r = await reconhecedor.instalarModeloPadrao();
+    showMessage(
+      `Modelo pronto carregado: ${r.amostras} amostras em ${r.classes} classes. ` +
+        'Ligue o Reconhecimento para começar.',
+      'info'
+    );
+  } catch (err) {
+    showMessage(err?.message || 'Falha ao carregar o modelo pronto.', 'error');
+  }
+}
+
+/**
+ * Antes de gravar numa classe que vai passar do teto, diz o que será perdido.
+ * O store descarta em silêncio — primeiro o padrão, depois a pessoal mais
+ * antiga —, e sem este aviso uma letra que já funcionava podia piorar sem o
+ * usuário entender por quê. Ceder só amostras do padrão é o reforço esperado,
+ * então isso só informa; perder amostras do próprio usuário pede confirmação.
+ * @returns {Promise<boolean>} se a captura deve começar
+ */
+async function avisarTeto(classe) {
+  const total = reconhecedor.amostrasPorClasse[classe] || 0;
+  const { padrao = 0 } = reconhecedor.origemPorClasse[classe] || {};
+  const excesso = total + AMOSTRAS_RECOMENDADAS - AMOSTRAS_MAXIMAS;
+  if (excesso <= 0) return true;
+
+  const cedePadrao = Math.min(padrao, excesso);
+  const cedePessoal = excesso - cedePadrao;
+  if (cedePessoal === 0) {
+    showMessage(
+      `"${classe}" chegou ao limite de ${AMOSTRAS_MAXIMAS} amostras: ${cedePadrao} do modelo pronto ` +
+        'vão dar lugar às que você gravar agora.',
+      'info'
+    );
+    return true;
+  }
+
+  const partes = [`as ${cedePessoal} mais antigas que você gravou`];
+  if (cedePadrao > 0) partes.push(`${cedePadrao} do modelo pronto`);
+  return confirmar({
+    titulo: total >= AMOSTRAS_MAXIMAS ? `"${classe}" já está cheia` : `"${classe}" vai passar do limite`,
+    texto:
+      `Cada classe guarda no máximo ${AMOSTRAS_MAXIMAS} amostras, e "${classe}" já tem ${total}. ` +
+      `Gravar mais ${AMOSTRAS_RECOMENDADAS} vai descartar ${partes.join(' e ')}. ` +
+      'Se a letra já é reconhecida bem, não precisa gravar mais; se piorou, apague a classe no × e grave de novo.',
+    confirmar: 'Gravar mesmo assim',
+    cancelar: 'Cancelar'
+  });
+}
+
 const trainingView = montarTrainingView({
-  treinar(classe) {
+  async treinar(classe) {
     if (controller.state !== 'active') {
       showMessage('Inicie a câmera antes de treinar um sinal.', 'warn');
       return;
@@ -307,6 +365,7 @@ const trainingView = montarTrainingView({
       showMessage('Ligue o Reconhecimento antes de treinar.', 'warn');
       return;
     }
+    if (!(await avisarTeto(classe))) return;
     reconhecedor.iniciarCaptura(classe);
   },
   cancelarCaptura: () => reconhecedor.pararCaptura(),
@@ -360,7 +419,45 @@ const trainingView = montarTrainingView({
     }
   },
 
+  // Primeira abertura: o próprio clique em "Usar modelo pronto" é a escolha.
+  usarPadrao: carregarModeloPronto,
+
+  async instalarPadrao() {
+    // Com o modelo vazio não há treino a preservar nem nada a perder: o clique
+    // já é a escolha, como no cartão de boas-vindas.
+    if (reconhecedor.classificador.vazio) {
+      await carregarModeloPronto();
+      return;
+    }
+    const ok = await confirmar({
+      titulo: 'Restaurar o modelo pronto?',
+      texto:
+        'As amostras do modelo pronto serão repostas em todas as classes. ' +
+        'O que você treinou continua salvo e soma a elas.',
+      confirmar: 'Restaurar',
+      cancelar: 'Cancelar'
+    });
+    if (!ok) return;
+    await carregarModeloPronto();
+  },
+
   async apagarClasse(classe) {
+    const { padrao = 0, pessoal = 0 } = reconhecedor.origemPorClasse[classe] || {};
+    if (padrao > 0 && pessoal > 0) {
+      const voltar = await confirmar({
+        titulo: `Voltar "${classe}" ao modelo pronto?`,
+        texto:
+          `As ${pessoal} amostra(s) que você gravou para "${classe}" serão descartadas, ` +
+          'e a classe volta a usar só as do modelo pronto. As outras classes continuam intactas.',
+        confirmar: 'Voltar ao padrão',
+        perigo: true
+      });
+      if (!voltar) return;
+      await reconhecedor.restaurarClasse(classe);
+      showMessage(`"${classe}" voltou ao modelo pronto.`, 'info');
+      return;
+    }
+
     const ok = await confirmar({
       titulo: `Apagar as amostras de "${classe}"?`,
       texto:
@@ -383,8 +480,25 @@ const trainingView = montarTrainingView({
     });
     if (!ok) return;
     await reconhecedor.apagarModelo();
-    showMessage('Modelo apagado.', 'info');
+    showMessage(
+      reconhecedor.padraoDisponivel
+        ? 'Modelo apagado. Para voltar a usar o modelo pronto, clique em "Restaurar modelo pronto".'
+        : 'Modelo apagado.',
+      'info'
+    );
   }
+});
+
+montarJanela({
+  estado: () => ({
+    camera: controller.state === 'active',
+    reco: reconhecedor.estado !== 'desligado'
+  }),
+  soltarCamera() {
+    reconhecedor.desligar();
+    controller.stop();
+  },
+  avisar: showMessage
 });
 
 window.addEventListener('pagehide', () => {
@@ -427,6 +541,16 @@ window.addEventListener('pagehide', () => {
   // Carrega preferências e modelo do storage. Não toca no WASM: o detector só
   // nasce quando o usuário liga o Reconhecimento.
   await reconhecedor.iniciar();
+
+  // Vindo da troca painel ↔ tela cheia: religa o que estava ligado do outro
+  // lado. O consentimento é conferido de novo, mas já foi dado lá.
+  const retomar = await lerRetomada();
+  if (retomar?.camera) {
+    await startSelected();
+    if (retomar.reco && controller.state === 'active' && (await consentimentoConcedido())) {
+      await reconhecedor.ligar();
+    }
+  }
 
   if (reconhecedor.modeloIncompativel) {
     showMessage(
