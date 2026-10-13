@@ -23,6 +23,9 @@ import { CONJUNTO_PADRAO, classesDoConjunto } from './sign-classes.js';
 const CHAVE_TEXTO = 'soletra.texto';
 const CHAVE_PREFS = 'soletra.reconhecimento.prefs';
 
+/** Modelo padrão empacotado na extensão — gerado por tools/montar-modelo-padrao.mjs. */
+const CAMINHO_MODELO_PADRAO = 'modelos/padrao.json';
+
 /** Intervalo entre amostras na captura de treino: amostras coladas no tempo
  *  são quase idênticas e inflam o modelo sem acrescentar variabilidade. */
 const INTERVALO_CAPTURA = 150;
@@ -60,6 +63,9 @@ export class SignRecognizer {
     this.adaptador = null;
     this.ultimaConfirmacao = null;
     this.amostrasPorClasse = {};
+    /** @type {Record<string, {padrao: number, pessoal: number}>} */
+    this.origemPorClasse = {};
+    this.padraoDisponivel = false;
     this.modeloIncompativel = null;
     this.captura = null;
     this._ultimoSnapshotSinal = null;
@@ -87,6 +93,7 @@ export class SignRecognizer {
       if (sessao?.[CHAVE_TEXTO]) this.composer.definir(sessao[CHAVE_TEXTO]);
     } catch { /* idem */ }
 
+    this.padraoDisponivel = Boolean(await this._lerModeloPadrao());
     await this.recarregarModelo();
     this._emitir();
   }
@@ -162,12 +169,13 @@ export class SignRecognizer {
   // --- modelo --------------------------------------------------------------
 
   async recarregarModelo() {
-    const { indice, classes, incompativel } = await this.store.carregar();
+    const { indice, classes, origem, incompativel } = await this.store.carregar();
     this.modeloIncompativel = incompativel;
 
     this.amostrasPorClasse = Object.fromEntries(
       Object.entries(classes).map(([c, a]) => [c, a.length])
     );
+    this.origemPorClasse = origem;
 
     // Modelos gravados antes da correção do limiar trazem um τ_abs calculado
     // pela fórmula antiga, que rejeitava sinais legítimos. As amostras seguem
@@ -298,6 +306,44 @@ export class SignRecognizer {
     await this._recalibrar();
   }
 
+  /**
+   * Volta uma classe ao padrão, descartando só as amostras pessoais. Recalibra
+   * pelo mesmo motivo de apagarClasse.
+   */
+  async restaurarClasse(classe) {
+    await this.store.restaurarClasse(classe);
+    await this._recalibrar();
+  }
+
+  /**
+   * Lê o modelo padrão empacotado. Ausência não é erro: o arquivo só existe
+   * depois que alguém o gera com amostras de várias pessoas, e até lá a
+   * extensão funciona só com treino próprio, como antes.
+   * @returns {Promise<object|null>}
+   */
+  async _lerModeloPadrao() {
+    try {
+      const resposta = await fetch(chrome.runtime.getURL(CAMINHO_MODELO_PADRAO));
+      if (!resposta.ok) return null;
+      return await resposta.json();
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Instala o modelo padrão por baixo das amostras pessoais. τ_abs é sempre
+   * recalibrado sobre o conjunto final, e não lido do arquivo: o limiar
+   * depende da dispersão interna, que muda quando o treino pessoal se soma.
+   */
+  async instalarModeloPadrao() {
+    const objeto = await this._lerModeloPadrao();
+    if (!objeto) throw new Error('O modelo padrão não está disponível nesta versão da extensão.');
+    const r = await this.store.instalarPadrao(objeto);
+    await this._recalibrar();
+    return r;
+  }
+
   async importarModelo(objeto, modo = 'substituir') {
     const r = await this.store.importar(objeto, modo);
     await this.recarregarModelo();
@@ -366,6 +412,11 @@ export class SignRecognizer {
       .adicionarAmostra(c.classe, features, { mao: this.mao })
       .then((total) => {
         this.amostrasPorClasse[c.classe] = total;
+        // No teto o store descarta padrão antes de pessoal, então a conta fecha
+        // sem reler o storage: pessoais crescem até o total, o resto é padrão.
+        const o = this.origemPorClasse[c.classe] || { padrao: 0, pessoal: 0 };
+        const pessoal = Math.min(o.pessoal + 1, total);
+        this.origemPorClasse[c.classe] = { pessoal, padrao: total - pessoal };
       })
       .catch((err) => {
         c.erro = err?.message || String(err);
@@ -404,6 +455,8 @@ export class SignRecognizer {
       texto: this.composer.texto,
       captura: this.captura ? { ...this.captura } : null,
       amostrasPorClasse: this.amostrasPorClasse,
+      origemPorClasse: this.origemPorClasse,
+      padraoDisponivel: this.padraoDisponivel,
       modeloVazio: this.classificador.vazio,
       modeloIncompativel: this.modeloIncompativel,
 

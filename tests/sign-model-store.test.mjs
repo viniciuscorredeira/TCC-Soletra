@@ -3,7 +3,10 @@
  * Uso: node tests/sign-model-store.test.mjs
  */
 import assert from 'node:assert/strict';
-import { SignModelStore, CHAVE_INDICE, PREFIXO_CLASSE, AMOSTRAS_MAXIMAS } from '../src/sign-model-store.js';
+import {
+  SignModelStore, CHAVE_INDICE, PREFIXO_CLASSE, PREFIXO_PADRAO, AMOSTRAS_MAXIMAS,
+  AMOSTRAS_PADRAO
+} from '../src/sign-model-store.js';
 import { VERSAO_FEATURES, DIMENSOES } from '../src/sign-features.js';
 
 /** storage.local em memória, com contador de escritas. */
@@ -243,6 +246,127 @@ const vetor = (base) => Array.from({ length: DIMENSOES }, (_, i) => base + i * 0
   await assert.rejects(() => store.adicionarAmostra('Ω', vetor(0)), /Classe desconhecida/);
   await assert.rejects(() => store.adicionarAmostra('A', [1, 2, 3]), /dimensão inesperada/);
   console.log('OK  cenário 10 — grava só classe do catálogo e vetor com 63 dimensões');
+}
+
+// --- Modelo padrão ---------------------------------------------------------
+
+const arquivoPadrao = (classes) => ({
+  formato: 'soletra-modelo',
+  esquema: 1,
+  versaoFeatures: VERSAO_FEATURES,
+  mao: 'esquerda',
+  classes
+});
+
+// --- Cenário 11: instalar o padrão alimenta o classificador ---------------
+{
+  const area = areaFalsa();
+  const store = new SignModelStore(area);
+  await store.atualizarParametros({ mao: 'direita' });
+
+  const r = await store.instalarPadrao(arquivoPadrao({ A: [vetor(0), vetor(0.1)], B: [vetor(1)] }));
+  assert.deepEqual(r, { classes: 2, amostras: 3 });
+
+  const { indice, classes, origem } = await store.carregar();
+  assert.equal(classes.A.length, 2);
+  assert.deepEqual(origem.A, { padrao: 2, pessoal: 0 });
+  assert.equal(indice.mao, 'direita', 'a mão do arquivo padrão não sobrescreve a do usuário');
+  assert.ok(area.mapa.has(`${PREFIXO_PADRAO}A`), 'padrão fica em chave própria');
+  assert.ok(!area.mapa.has(`${PREFIXO_CLASSE}A`));
+  console.log('OK  cenário 11 — instalar o padrão grava em chave própria e preserva a mão');
+}
+
+// --- Cenário 12: reforço pessoal soma ao padrão --------------------------
+{
+  const store = new SignModelStore(areaFalsa());
+  await store.instalarPadrao(arquivoPadrao({ A: [vetor(0), vetor(0.1)] }));
+
+  assert.equal(await store.adicionarAmostra('A', vetor(5)), 3, 'retorna o total da classe');
+  const { classes, origem } = await store.carregar();
+  assert.equal(classes.A.length, 3);
+  assert.deepEqual(origem.A, { padrao: 2, pessoal: 1 });
+  console.log('OK  cenário 12 — amostras pessoais somam às do padrão');
+}
+
+// --- Cenário 13: no teto, sai primeiro a amostra padrão -------------------
+{
+  const store = new SignModelStore(areaFalsa());
+  const base = Array.from({ length: AMOSTRAS_MAXIMAS }, (_, i) => vetor(i));
+  await store.instalarPadrao(arquivoPadrao({ A: base }));
+  let { origem } = await store.carregar();
+  assert.deepEqual(origem.A, { padrao: AMOSTRAS_PADRAO, pessoal: 0 }, 'o padrão entra limitado por classe');
+
+  // Até o teto, reforçar não custa nenhuma amostra do padrão.
+  const livres = AMOSTRAS_MAXIMAS - AMOSTRAS_PADRAO;
+  for (let i = 0; i < livres; i++) await store.adicionarAmostra('A', vetor(1000 + i));
+  ({ origem } = await store.carregar());
+  assert.deepEqual(origem.A, { padrao: AMOSTRAS_PADRAO, pessoal: livres });
+
+  for (let i = 0; i < 5; i++) await store.adicionarAmostra('A', vetor(2000 + i));
+  ({ origem } = await store.carregar());
+  assert.deepEqual(origem.A, { padrao: AMOSTRAS_PADRAO - 5, pessoal: livres + 5 });
+
+  for (let i = 0; i < AMOSTRAS_MAXIMAS; i++) await store.adicionarAmostra('A', vetor(3000 + i));
+  ({ origem } = await store.carregar());
+  assert.deepEqual(origem.A, { padrao: 0, pessoal: AMOSTRAS_MAXIMAS }, 'o padrão cede por inteiro');
+  console.log('OK  cenário 13 — no teto, o padrão cede lugar às amostras do usuário');
+}
+
+// --- Cenário 14: restaurar uma classe descarta só as pessoais -------------
+{
+  const store = new SignModelStore(areaFalsa());
+  await store.instalarPadrao(arquivoPadrao({ A: [vetor(0)], B: [vetor(1)] }));
+  await store.adicionarAmostra('A', vetor(5));
+  await store.adicionarAmostra('B', vetor(6));
+
+  await store.restaurarClasse('A');
+  const { origem } = await store.carregar();
+  assert.deepEqual(origem.A, { padrao: 1, pessoal: 0 }, 'A volta ao padrão');
+  assert.deepEqual(origem.B, { padrao: 1, pessoal: 1 }, 'B não é afetada');
+  console.log('OK  cenário 14 — voltar ao padrão numa classe não mexe nas outras');
+}
+
+// --- Cenário 15: reinstalar o padrão preserva as pessoais -----------------
+{
+  const store = new SignModelStore(areaFalsa());
+  await store.adicionarAmostra('A', vetor(5));
+  await store.instalarPadrao(arquivoPadrao({ A: [vetor(0)], C: [vetor(2)] }));
+  await store.instalarPadrao(arquivoPadrao({ A: [vetor(0), vetor(0.2)] }));
+
+  const { origem } = await store.carregar();
+  assert.deepEqual(origem.A, { padrao: 2, pessoal: 1 });
+  assert.equal(origem.C, undefined, 'classe que saiu do padrão novo não fica de resíduo');
+  console.log('OK  cenário 15 — reinstalar o padrão troca o padrão e mantém o treino pessoal');
+}
+
+// --- Cenário 16: apagar tudo e apagar classe incluem o padrão -------------
+{
+  const area = areaFalsa();
+  const store = new SignModelStore(area);
+  await store.instalarPadrao(arquivoPadrao({ A: [vetor(0)], B: [vetor(1)] }));
+  await store.adicionarAmostra('A', vetor(5));
+
+  await store.removerClasse('A');
+  assert.ok(!area.mapa.has(`${PREFIXO_PADRAO}A`) && !area.mapa.has(`${PREFIXO_CLASSE}A`));
+
+  await store.limpar();
+  assert.equal(area.mapa.size, 0, 'o padrão também é apagado pelo "Apagar tudo"');
+  console.log('OK  cenário 16 — eliminação alcança também as amostras do padrão');
+}
+
+// --- Cenário 17: modelo antigo, sem chave de padrão, continua válido -----
+{
+  const area = areaFalsa();
+  area.mapa.set(CHAVE_INDICE, {
+    esquema: 1, versaoFeatures: VERSAO_FEATURES, mao: 'direita', contagem: { A: 1 }
+  });
+  area.mapa.set(`${PREFIXO_CLASSE}A`, { classe: 'A', amostras: [vetor(0)] });
+
+  const store = new SignModelStore(area);
+  const { origem } = await store.carregar();
+  assert.deepEqual(origem.A, { padrao: 0, pessoal: 1 });
+  assert.equal(await store.adicionarAmostra('A', vetor(1)), 2);
+  console.log('OK  cenário 17 — índice gravado antes do modelo padrão é lido sem migração');
 }
 
 console.log('\ntodos os cenários passaram');
