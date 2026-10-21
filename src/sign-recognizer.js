@@ -66,6 +66,8 @@ export class SignRecognizer {
     /** @type {Record<string, {padrao: number, pessoal: number}>} */
     this.origemPorClasse = {};
     this.padraoDisponivel = false;
+    /** @type {{usados: number, quota: number, alerta: boolean}|null} */
+    this.usoArmazenamento = null;
     this.modeloIncompativel = null;
     this.captura = null;
     this._ultimoSnapshotSinal = null;
@@ -193,6 +195,16 @@ export class SignRecognizer {
     this.classificador.carregar(classes, { tauAbs });
     if (indice?.mao) this.mao = indice.mao;
     this._aplicarConjunto();
+
+    // Medido aqui, e não a cada amostra: todo caminho que muda o modelo
+    // (fim de captura, apagar, importar, instalar o padrão) passa por esta
+    // função, e durante a captura as contagens por classe já mostram o avanço.
+    try {
+      this.usoArmazenamento = await this.store.bytesEmUso();
+    } catch {
+      this.usoArmazenamento = null;
+    }
+
     this._emitir();
     return this.classificador;
   }
@@ -457,6 +469,7 @@ export class SignRecognizer {
       amostrasPorClasse: this.amostrasPorClasse,
       origemPorClasse: this.origemPorClasse,
       padraoDisponivel: this.padraoDisponivel,
+      armazenamento: this.usoArmazenamento,
       modeloVazio: this.classificador.vazio,
       modeloIncompativel: this.modeloIncompativel,
 

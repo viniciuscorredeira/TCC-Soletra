@@ -486,12 +486,27 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
   font: inherit;
   position: relative;
   flex: 1;
-  padding: 7px 0 10px;
+  padding: 6px 0 22px;
   border: 1px solid var(--border);
   border-radius: 7px;
   background: var(--surface-2);
   color: var(--text-dim);
   cursor: pointer;
+  /* Recorta a barra de uso nos cantos arredondados. O × é irmão, não filho,
+     então não é cortado. */
+  overflow: hidden;
+}
+
+/* Barra de uso da classe: a largura é a % do teto de amostras ocupada. */
+.classe::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: calc(var(--uso, 0) * 1%);
+  background: var(--ok);
+  opacity: 0.75;
 }
 
 .classe:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
@@ -503,10 +518,26 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 2px;
+  bottom: 13px;
   font-size: 9px;
   opacity: 0.75;
 }
+
+.classe__pct {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  font-size: 8.5px;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.classe--parcial::after { background: var(--warn); }
+.classe--ativa::after { background: #fff; }
+
+.uso-armazenamento { margin: 0; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.uso-armazenamento--alerta { color: var(--warn); }
 
 .captura {
   display: flex;

@@ -24,6 +24,7 @@ export function montarTrainingView(acoes) {
     btnApagar: document.getElementById('btnApagarModelo'),
     btnInstalarPadrao: document.getElementById('btnInstalarPadrao'),
     arquivo: document.getElementById('arquivoModelo'),
+    uso: document.getElementById('usoArmazenamento'),
     boasVindas: document.getElementById('boasVindas'),
     btnUsarPadrao: document.getElementById('btnUsarPadrao'),
     btnTreinarZero: document.getElementById('btnTreinarZero')
@@ -84,7 +85,11 @@ export function montarTrainingView(acoes) {
 
       const badge = document.createElement('span');
       badge.className = 'classe__n';
-      btn.append(badge);
+      // Quanto do teto de amostras da classe já está ocupado, em texto e na
+      // barra da base do botão (largura via --uso).
+      const pct = document.createElement('span');
+      pct.className = 'classe__pct';
+      btn.append(badge, pct);
       btn.addEventListener('click', () => acoes.treinar(classe));
 
       // Excluir uma classe isolada evita refazer o modelo inteiro por causa de
@@ -100,7 +105,7 @@ export function montarTrainingView(acoes) {
 
       wrap.append(btn, x);
       el.grade.append(wrap);
-      botoes.set(classe, { wrap, btn, badge, x, n: -1, chaveOrigem: '', ativa: null });
+      botoes.set(classe, { wrap, btn, badge, pct, x, n: -1, chaveOrigem: '', ativa: null });
     }
   }
 
@@ -139,13 +144,16 @@ export function montarTrainingView(acoes) {
           refs.badge.textContent = n > 0 ? String(n) : '·';
         }
         const cheia = n >= AMOSTRAS_MAXIMAS;
+        const uso = porcentagem(n, AMOSTRAS_MAXIMAS);
+        refs.pct.textContent = `${uso}%`;
+        refs.btn.style.setProperty('--uso', uso);
         const detalhe =
           padrao > 0
             ? `${classe} — ${padrao} do modelo pronto, ${pessoal} sua(s)`
             : `${classe} — ${n} amostra(s)`;
         refs.btn.title = cheia
-          ? `${detalhe}. Classe cheia (${AMOSTRAS_MAXIMAS}/${AMOSTRAS_MAXIMAS}): gravar mais substitui as mais antigas.`
-          : `${detalhe} de ${AMOSTRAS_MAXIMAS}.${padrao > 0 ? ' Clique para reforçar.' : ''}`;
+          ? `${detalhe}. Classe cheia (${AMOSTRAS_MAXIMAS}/${AMOSTRAS_MAXIMAS}, 100%): gravar mais substitui as mais antigas.`
+          : `${detalhe} de ${AMOSTRAS_MAXIMAS} (${uso}% do espaço da classe).${padrao > 0 ? ' Clique para reforçar.' : ''}`;
         refs.btn.classList.toggle('classe--treinada', n >= AMOSTRAS_RECOMENDADAS && !cheia);
         refs.btn.classList.toggle('classe--parcial', n > 0 && n < AMOSTRAS_RECOMENDADAS);
         refs.btn.classList.toggle('classe--cheia', cheia);
@@ -180,6 +188,8 @@ export function montarTrainingView(acoes) {
       el.status.classList.toggle('captura--teto', noTeto);
     }
 
+    renderizarUso(s.armazenamento);
+
     el.btnExportar.disabled = s.modeloVazio || capturando;
     el.btnApagar.disabled = s.modeloVazio || capturando;
     el.btnImportar.disabled = capturando;
@@ -202,5 +212,35 @@ export function montarTrainingView(acoes) {
     if (el.boasVindas.hidden === mostrarBoasVindas) el.boasVindas.hidden = !mostrarBoasVindas;
   }
 
+  /**
+   * Uso total do chrome.storage.local, que o store já media mas a interface não
+   * mostrava. Perto da quota, gravar amostras passaria a falhar; o aviso chega
+   * antes disso, com o que fazer.
+   */
+  let usoDesenhado = '';
+  function renderizarUso(uso) {
+    const texto = uso
+      ? `Armazenamento: ${formatarMB(uso.usados)} de ${formatarMB(uso.quota)} ` +
+        `(${porcentagem(uso.usados, uso.quota)}%)` +
+        (uso.alerta ? ' — perto do limite. Exporte o modelo e apague classes que não usa.' : '')
+      : '';
+    if (texto === usoDesenhado) return;
+    usoDesenhado = texto;
+    el.uso.textContent = texto;
+    el.uso.hidden = !texto;
+    el.uso.classList.toggle('uso-armazenamento--alerta', Boolean(uso?.alerta));
+  }
+
   return { renderizar, abrir: () => (el.box.open = true) };
+}
+
+/** Porcentagem inteira; qualquer uso acima de zero aparece como pelo menos 1%. */
+function porcentagem(parte, total) {
+  if (!total || parte <= 0) return 0;
+  return Math.min(100, Math.max(1, Math.round((parte / total) * 100)));
+}
+
+function formatarMB(bytes) {
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toLocaleString('pt-BR', { maximumFractionDigits: mb < 10 ? 2 : 1 })} MB`;
 }
