@@ -11,7 +11,7 @@
 const DEFAULT_CONSTRAINTS = {
   width: { ideal: 1280 },
   height: { ideal: 720 },
-  frameRate: { ideal: 30 }
+  frameRate: { ideal: 60 }
 };
 
 /** Traduz a exceção do getUserMedia para uma mensagem acionável em pt-BR. */
