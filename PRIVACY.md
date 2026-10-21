@@ -1,6 +1,6 @@
 # Política de Privacidade — Soletra
 
-**Versão 0.2.0 — última atualização: 15/09/2026**
+**Versão 0.2.0 — última atualização: 21/10/2026**
 
 ## Resumo
 
@@ -28,10 +28,15 @@ de clicar em "Pesquisar" e escolher a plataforma — e apenas nesse momento. Vej
 | **Amostras do modelo pronto** (quando o usuário escolhe usá-lo) | Reconhecer sem treino próprio | Empacotadas na extensão (`modelos/padrao.json`); copiadas para `chrome.storage.local` ao escolher | Até o usuário apagar o modelo ou desinstalar a extensão |
 | **Texto composto** | Montar a palavra ou frase | `chrome.storage.session` | Até fechar o navegador |
 | **Termo enviado à plataforma escolhida** | Abrir a pesquisa solicitada | **Sai do dispositivo** — vai à plataforma que o usuário selecionou | Fora do controle da extensão |
-| Preferências (`deviceId`, mão dominante, tempo de confirmação, rigor) | Restaurar a configuração do usuário | `chrome.storage.local` | Até a desinstalação |
+| Preferências (`deviceId`, mão dominante, conjunto Letras/Números, tempo de confirmação, rigor) | Restaurar a configuração do usuário | `chrome.storage.local` | Até a desinstalação |
+| Registro do consentimento (data e versão do aceite) | Comprovar o consentimento antes de ativar o reconhecimento | `chrome.storage.local` | Até a desinstalação |
 
 As amostras de treino são **vetores numéricos, não imagens**: o que fica gravado é a geometria
 normalizada da mão, não a fotografia dela. Ainda assim, veja o enquadramento legal abaixo.
+
+O reconhecimento e o treino só ficam disponíveis com a câmera **ligada**: a área some quando a
+câmera é parada. Em "Treinar sinais", o painel mostra quanto espaço cada letra ou número ocupa
+e o uso total do armazenamento local, para o usuário saber o que está guardado no dispositivo.
 
 O modelo pronto contém amostras de **voluntários**, não do usuário. Elas vêm dentro do pacote da
 extensão e não são baixadas de lugar nenhum. Escolher usá-lo não envia nada do dispositivo. Os
@@ -46,16 +51,17 @@ não declara `host_permissions` e não executa content scripts em páginas visit
 **Até a versão 0.1.0 não havia nenhum.** A partir da 0.2.0 há exatamente um ponto de saída:
 
 Ao clicar em **"Pesquisar"**, a extensão abre um seletor e **não envia nada até que o usuário
-escolha o destino**. Os destinos possíveis são:
+escolha o destino**. Os destinos possíveis, na ordem em que aparecem (marcas em ordem
+alfabética e, separado delas, o buscador padrão), são:
 
 | Plataforma | Endereço |
 |---|---|
-| Buscador padrão do navegador | definido pelo usuário nas configurações do navegador (`chrome.search`) |
-| Google | `google.com/search` |
-| YouTube | `youtube.com/results` |
-| Google Maps | `google.com/maps/search` |
 | Amazon | `amazon.com.br/s` |
+| Google | `google.com/search` |
+| Google Maps | `google.com/maps/search` |
 | Wikipédia | `pt.wikipedia.org` |
+| YouTube | `youtube.com/results` |
+| Buscador padrão do navegador | definido pelo usuário nas configurações do navegador (`chrome.search`) |
 
 Cada uma é um serviço de terceiro, com política de privacidade própria, fora do controle da
 Integrativa.
