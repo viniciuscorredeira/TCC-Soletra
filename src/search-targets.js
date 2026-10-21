@@ -72,8 +72,13 @@ export const PLATAFORMAS = [
 /** Plataforma cujo destino só o navegador sabe resolver. */
 export const ID_BUSCADOR_PADRAO = 'padrao';
 
-/** As marcas, na ordem em que aparecem na grade. */
-export const MARCAS = PLATAFORMAS.filter((p) => !p.generico);
+/**
+ * As marcas, em ordem alfabética — é a ordem da grade. Ordenadas aqui, e não
+ * no catálogo acima, para que uma plataforma nova já entre no lugar certo.
+ */
+export const MARCAS = PLATAFORMAS.filter((p) => !p.generico).sort((a, b) =>
+  a.nome.localeCompare(b.nome, 'pt-BR')
+);
 
 export function ehPlataformaValida(id) {
   return PLATAFORMAS.some((p) => p.id === id);

@@ -112,6 +112,10 @@ import { fileURLToPath } from 'node:url';
   assert.equal(genericos[0].id, ID_BUSCADOR_PADRAO);
   assert.equal(MARCAS.length, PLATAFORMAS.length - 1, 'MARCAS exclui o destino genérico');
 
+  // A grade mostra as marcas em ordem alfabética.
+  const nomes = MARCAS.map((p) => p.nome);
+  assert.deepEqual(nomes, [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR')), 'marcas em ordem alfabética');
+
   console.log(`OK  cenário 6 — catálogo íntegro: ${MARCAS.length} marcas + 1 destino genérico`);
 }
 
