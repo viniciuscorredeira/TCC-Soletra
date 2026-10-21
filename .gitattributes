@@ -1,0 +1,9 @@
+# Binários do MediaPipe conferidos por SHA-256 (tools/verificar-vendor.mjs).
+# Sem esta regra, o Git do Windows (core.autocrlf=true) converte as quebras de
+# linha dos dois arquivos .js/.mjs ao clonar, e o hash deixa de bater mesmo com
+# o conteúdo intacto. "-text" faz o Git gravá-los byte a byte, como vieram.
+vendor/** -text
+
+# Modelo pronto: o mesmo cuidado, para o arquivo empacotado ser idêntico em
+# qualquer sistema.
+modelos/*.json -text

@@ -32,9 +32,23 @@ const ARQUIVOS = [
   { caminho: 'hand_landmarker.task', origem: `${BASE_MODELO}/hand_landmarker.task` }
 ];
 
+const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
 function digerir(caminhoRelativo) {
   const bytes = readFileSync(join(VENDOR, caminhoRelativo));
-  return { bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+  return { bytes: bytes.length, sha256: sha256(bytes), conteudo: bytes };
+}
+
+/**
+ * Hash do arquivo com CRLF desfeito. Se ele bate com o esperado, o conteúdo
+ * está intacto e só as quebras de linha foram convertidas — o caso típico de
+ * um clone no Windows sem o .gitattributes —, o que pede outra correção que
+ * um arquivo adulterado.
+ */
+function soQuebrasDeLinha(conteudo, esperado) {
+  if (!conteudo.includes('\r\n')) return false;
+  const lf = Buffer.from(conteudo.toString('latin1').replace(/\r\n/g, '\n'), 'latin1');
+  return sha256(lf) === esperado;
 }
 
 function gerar() {
@@ -42,7 +56,10 @@ function gerar() {
     pacote: '@mediapipe/tasks-vision',
     versao: VERSAO_TASKS_VISION,
     geradoEm: new Date().toISOString(),
-    arquivos: ARQUIVOS.map((a) => ({ ...a, ...digerir(a.caminho) }))
+    arquivos: ARQUIVOS.map((a) => {
+      const { bytes, sha256 } = digerir(a.caminho);
+      return { ...a, bytes, sha256 };
+    })
   };
   writeFileSync(MANIFESTO, `${JSON.stringify(manifesto, null, 2)}\n`);
   console.log('gerado', MANIFESTO);
@@ -54,6 +71,7 @@ function gerar() {
 function verificar() {
   const manifesto = JSON.parse(readFileSync(MANIFESTO, 'utf8'));
   let falhas = 0;
+  let quebrasDeLinha = 0;
 
   for (const esperado of manifesto.arquivos) {
     let obtido;
@@ -61,6 +79,12 @@ function verificar() {
       obtido = digerir(esperado.caminho);
     } catch {
       console.error(`FALTA    ${esperado.caminho}`);
+      falhas++;
+      continue;
+    }
+    if (obtido.sha256 !== esperado.sha256 && soQuebrasDeLinha(obtido.conteudo, esperado.sha256)) {
+      console.error(`CRLF     ${esperado.caminho} — conteúdo intacto, quebras de linha convertidas`);
+      quebrasDeLinha++;
       falhas++;
       continue;
     }
@@ -72,6 +96,16 @@ function verificar() {
       continue;
     }
     console.log(`OK       ${esperado.caminho} (${obtido.bytes} bytes)`);
+  }
+
+  if (quebrasDeLinha > 0 && quebrasDeLinha === falhas) {
+    console.error(
+      `\n${quebrasDeLinha} arquivo(s) com quebras de linha convertidas pelo Git, conteúdo intacto.` +
+        '\nO .gitattributes do repositório evita isso em clones novos. Para corrigir este clone:' +
+        '\n  git rm --cached -r -q vendor && git checkout HEAD -- vendor'
+    );
+    process.exitCode = 1;
+    return;
   }
 
   if (falhas > 0) {
