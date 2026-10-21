@@ -11,16 +11,20 @@ Todo o processamento é **local**: os pontos da mão são extraídos por WebAsse
 dentro da extensão. Nenhum quadro de vídeo é gravado ou transmitido. A única informação que
 sai do dispositivo é o texto que o usuário escolhe pesquisar, na plataforma que ele selecionar.
 
+> Documentação completa do projeto — jornada do usuário, as 74 funcionalidades, algoritmos,
+> decisões, testes, LGPD e limitações — em [DOCUMENTACAO-COMPLETA.md](DOCUMENTACAO-COMPLETA.md).
+
 ## Funcionalidades
 
 | Recurso | Comportamento |
 |---|---|
 | Seleção de dispositivo | Dropdown alimentado por `enumerateDevices()`; trocar a câmera reabre o stream sem recarregar a extensão |
-| Iniciar câmera | `getUserMedia()` com o `deviceId` selecionado (1280×720 / 30 fps ideais, sem áudio) |
+| Iniciar câmera | `getUserMedia()` com o `deviceId` selecionado (1280×720 / 60 fps ideais, sem áudio) |
 | Parar transmissão | `track.stop()` em todas as tracks e `srcObject = null` — o LED da câmera apaga |
 | Recarregar | Reenumera dispositivos preservando o estado: só reabre o stream se a câmera estava ativa; se estava desligada, continua desligada (apenas limpa erro anterior) |
 | Estado visual | Badge (Parada / Iniciando / Ativa / Erro), tag AO VIVO e resolução/fps no rodapé |
 | Preferência | A última câmera escolhida é salva em `chrome.storage.local` |
+| Área de reconhecimento | Só aparece com a câmera **ativa** — e, portanto, com a permissão já concedida. Some ao parar a câmera (ou em erro) e volta ao religar; uma captura de treino em andamento é cancelada, já que o botão de cancelar dela ficaria oculto. O texto reconhecido é preservado |
 
 O vídeo é exibido espelhado (`scaleX(-1)`), como convém a quem sinaliza olhando para a própria imagem.
 
@@ -46,8 +50,10 @@ Câmera → MediaPipe HandLandmarker → 21 pontos (x,y,z)
        → text-box → Pesquisar → escolha da plataforma
 ```
 
-O botão **Pesquisar** abre um seletor com seis destinos — buscador padrão do navegador,
-Google, YouTube, Google Maps, Amazon e Wikipédia. Nas cinco marcas o termo vai embutido na URL
+O botão **Pesquisar** abre um seletor com seis destinos: uma grade com as cinco marcas, em
+**ordem alfabética** (Amazon, Google, Maps, Wikipédia e YouTube), e, separado abaixo dela, o
+buscador padrão do navegador. A ordem é aplicada em `MARCAS`, não no catálogo, para que uma
+plataforma nova já entre no lugar certo. Nas cinco marcas o termo vai embutido na URL
 de busca; no buscador padrão ele é entregue a `chrome.search.query`, porque só o navegador sabe
 qual é esse buscador. Nada é enviado antes da escolha: fechar o seletor não dispara pesquisa nenhuma.
 O catálogo fica em [src/search-targets.js](src/search-targets.js), com as URLs fixadas por
@@ -84,7 +90,7 @@ alfa pré-multiplicado — de 167 KB de entrada para ~20 KB empacotados.
 | Detecção dos pontos | `@mediapipe/tasks-vision` 1.0.1, delegate **CPU** | Medido no spike (Edge 153): CPU p50 22,9 ms contra 58,4 ms no GPU, que ainda paga readback de textura e exige um contexto WebGL num painel que o usuário recolhe |
 | Normalização | [src/sign-features.js](src/sign-features.js) | Invariante a posição, escala e resolução; **preserva** rotação, que é parâmetro fonológico da língua |
 | Classificação | [src/sign-classifier.js](src/sign-classifier.js) | KNN k=5 ponderado por 1/d, com limiar de distância constante (1,3) — possível porque a normalização dá escala física fixa ao espaço de 63 dimensões — e teste de razão frouxo (0,97) só para descartar empates |
-| Confirmação | [src/sign-stabilizer.js](src/sign-stabilizer.js) | O sinal precisa persistir ~700 ms; a mesma letra não repete enquanto a mão não sai dela |
+| Confirmação | [src/sign-stabilizer.js](src/sign-stabilizer.js) | O sinal precisa persistir ~700 ms (ajustável entre 450 e 1000 ms); a mesma letra não repete enquanto a mão não sai dela |
 
 ### Cobertura
 
@@ -109,13 +115,19 @@ Trocar de letra não exige pausa: a troca é inequívoca e confirma direto.
 
 Em "Treinar sinais", escolha a mão dominante, clique numa classe e mantenha o sinal com a mão
 parada — a extensão grava uma amostra a cada 150 ms até completar 20 (teto de 100 por classe; ao chegar nele o painel avisa e marca a classe como cheia).
+
+Cada letra e número da grade mostra a **porcentagem do seu espaço já ocupada** (amostras ÷ 100),
+em texto e numa barra na base do botão. Abaixo da grade fica o **uso total do armazenamento
+local** — "Armazenamento: 0,85 MB de 10 MB (9%)" —, medido por `getBytesInUse` sempre que o
+modelo muda; a partir de 80% da quota a linha fica laranja e sugere exportar e apagar classes.
 Ao fim, o limiar de rejeição é recalibrado automaticamente: parte da constante de 1,3 raio de
 palma e só sobe se as amostras do usuário forem mais dispersas que o previsto.
 
 Cada classe treinada tem um **×** para apagar só as amostras dela, com recalibração do limiar
 em seguida — uma letra que saiu ruim não custa o modelo inteiro. **Apagar tudo** fica separado dos demais botões, e toda ação destrutiva
 passa por um modal de confirmação com o foco inicial no "Não". "Ajustar sensibilidade" expõe o
-rigor do classificador (multiplicador do limiar).
+rigor do classificador (multiplicador do limiar: Tolerante, Normal, Exigente) e o tempo para
+confirmar uma letra (Rápido 450 ms, Normal 700 ms, Calmo 1000 ms).
 
 O modelo pode ser **exportado e importado** em JSON — ~430 KB com as 21 letras e ~640 KB com
 letras e números, a 20 amostras por classe: treine uma vez e distribua o
@@ -173,6 +185,16 @@ proibido pela CSP e conta como "código remoto" na revisão das lojas. A versão
 ```
 node tools/verificar-vendor.mjs          confere os SHA-256
 node tools/verificar-vendor.mjs --gerar  regrava INTEGRIDADE.json
+```
+
+O `.gitattributes` marca `vendor/**` (e `modelos/*.json`) como `-text`. Sem isso, o Git do
+Windows (`core.autocrlf=true`) converte as quebras de linha de `vision_bundle.mjs` e
+`vision_wasm_internal.js` ao clonar, e o hash deixa de bater com o conteúdo intacto. O
+verificador reconhece esse caso: quando o arquivo só difere em CRLF, ele o marca como `CRLF` em
+vez de `DIVERGE` e indica a correção para um clone antigo:
+
+```
+git rm --cached -r -q vendor && git checkout HEAD -- vendor
 ```
 
 O `FilesetResolver` não é usado: o `WasmFileset` é montado à mão, o que evita a sonda SIMD em
@@ -236,6 +258,17 @@ outro lado (`storage.session`). Voltar ao painel usa `chrome.sidePanel.open`, do
 3. **Carregar sem compactação** e selecione a raiz deste repositório
 4. Clique no ícone do Soletra na barra de ferramentas para abrir o painel
 
+Depois de alterar o código, clique em ↻ no cartão da extensão em `chrome://extensions` e reabra
+o painel.
+
+### Vídeo com atraso ou travando
+
+Se a imagem da câmera chega atrasada ou o painel não responde com fluidez, a primeira coisa a
+testar é **desativar a aceleração de hardware** do navegador (`chrome://settings/system` →
+"Usar aceleração gráfica quando disponível" → reiniciar). Na prática foi o que resolveu o
+atraso com webcam virtual. Com câmeras de celular como o **Iriun Webcam**, a conexão por cabo
+USB também tem menos latência que o Wi-Fi.
+
 ## Fluxo de permissão de câmera
 
 Extensões não têm uma permissão `"camera"` no manifesto: o acesso passa pelo `getUserMedia()`
@@ -269,13 +302,13 @@ permission/request.html|js    aba de topo para o prompt nativo de câmera
 
 sidepanel/panel.html|css|js   interface principal
 sidepanel/recognition-view.js UI do reconhecimento (anel de progresso, text-box, busca)
-sidepanel/training-view.js    UI do treino (grade de classes, modelo pronto, exportar/importar/apagar)
+sidepanel/training-view.js    UI do treino (grade com % de uso por classe, uso do armazenamento, modelo pronto, exportar/importar/apagar)
 sidepanel/dialogo.js          modal de confirmação (window.confirm não é confiável no painel)
 sidepanel/janela.js           botões de janela (fechar, voltar ao painel, tela cheia)
 icons/plataformas/            logos das plataformas de busca, empacotadas
 sidepanel/seletor-plataforma.js  modal de escolha do destino da pesquisa
 
-src/camera-controller.js      ciclo de vida do MediaStream — inalterado desde a v0.1.0
+src/camera-controller.js      ciclo de vida do MediaStream e restrições de captura (1280×720 / 60 fps)
 src/sign-recognizer.js        orquestrador; expõe um onStateChange, como o CameraController
 src/hand-landmarker.js        adaptador do MediaPipe (único módulo dependente de WASM)
 src/inference-loop.js         agendador rVFC, throttle adaptativo, timestamp monotônico
@@ -291,7 +324,8 @@ src/search-targets.js         catálogo de plataformas de busca e montagem das U
 vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
 modelos/padrao.json           modelo pronto (opcional), gerado por tools/montar-modelo-padrao.mjs
 tools/montar-modelo-padrao.mjs  junta exports de várias pessoas no modelo pronto, balanceado por pessoa
-tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados
+tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados e diagnostica CRLF
+.gitattributes                impede o Git de converter as quebras de linha dos binários
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
 tools/make-icons.mjs          gera os ícones da extensão a partir de icons/soletra-logo.png
 tools/preparar-logos.mjs      limpa, apara e reduz as logos para icons/plataformas/ (origem fora do repo)
