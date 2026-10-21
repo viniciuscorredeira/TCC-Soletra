@@ -24,7 +24,8 @@ const el = {
   message: document.getElementById('message'),
   placeholderText: document.getElementById('placeholderText'),
   liveTag: document.getElementById('liveTag'),
-  streamInfo: document.getElementById('streamInfo')
+  streamInfo: document.getElementById('streamInfo'),
+  secReco: document.getElementById('secReco')
 };
 
 const STATUS = {
@@ -113,6 +114,12 @@ function render(snapshot) {
   el.placeholderText.textContent = status.placeholder;
   el.liveTag.hidden = state !== 'active';
   el.streamInfo.textContent = state === 'active' ? describeTrack(track) : '—';
+
+  // A câmera ligada é a validação para o reconhecimento existir: some ao parar
+  // e volta ao religar. Uma captura de treino em curso é cancelada, já que o
+  // botão de cancelar dela ficaria escondido.
+  el.secReco.hidden = state !== 'active';
+  if (state !== 'active' && reconhecedor.captura) reconhecedor.pararCaptura();
 
   const labelsMissing = fillDeviceOptions(devices, activeDeviceId);
 

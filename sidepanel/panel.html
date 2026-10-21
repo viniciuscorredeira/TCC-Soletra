@@ -65,7 +65,9 @@
         </button>
       </section>
 
-      <section class="reco" aria-label="Reconhecimento de Libras">
+      <!-- Só existe com a câmera ligada: sem vídeo não há o que reconhecer
+           nem treinar. panel.js mostra/esconde conforme o estado da câmera. -->
+      <section id="secReco" class="reco" aria-label="Reconhecimento de Libras" hidden>
         <div class="reco__head">
           <label class="switch">
             <input id="chkReco" type="checkbox" />
