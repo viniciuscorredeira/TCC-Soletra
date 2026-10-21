@@ -1,58 +1,851 @@
-# Resumo do Projeto — Soletra
+# Soletra — Documentação do Projeto
 
-**Documento atualizado em:** 13/10/2026
-**Versão do projeto:** 0.2.0 (`manifest.json`). As funcionalidades da seção 5 ainda não
-mudaram o número de versão.
-**Repositório:** `C:\Github\TCC-Soletra` — Git, remoto `github.com/viniciuscorredeira/TCC-Soletra`
-
----
-
-## 1. Objetivo
-
-Extensão de navegador (Chrome/Edge, Manifest V3) que acessa a câmera do usuário, exibe o vídeo
-em um **painel lateral** e reconhece sinais **estáticos** do alfabeto manual de Libras,
-compondo um texto que pode ser pesquisado na plataforma que o usuário escolher — buscador
-padrão do navegador, Google, YouTube, Google Maps, Amazon ou Wikipédia.
-
-A premissa central do projeto é **processamento 100% local**: os pontos da mão são extraídos
-por WebAssembly empacotado dentro da extensão. Nenhum quadro de vídeo é gravado ou transmitido.
-O único dado que sai do dispositivo é o texto que o usuário escolhe pesquisar, e apenas para a
-plataforma selecionada.
-
-**Diferencial técnico:** classificação sobre **landmarks** (geometria da mão) em vez de
-**pixels**. Resultado: modelo de centenas de KB em vez de dezenas de MB, robustez a fundo,
-iluminação e tom de pele, e treino feito pelo próprio usuário no navegador — sem dataset externo,
-sem etapa em Python, sem TensorFlow.js.
-
-**Desde a 0.2.0, o usuário não precisa mais treinar para começar.** A extensão traz um
-**modelo pronto** empacotado. Na primeira abertura o usuário escolhe entre usá-lo, treinar o
-próprio modelo do zero, ou partir do pronto e reforçar as letras que falharem com a sua mão
-(seção 5.1).
+**Documento atualizado em:** 21/10/2026
+**Versão do projeto:** 0.2.0 (`manifest.json`)
+**Repositório:** `github.com/viniciuscorredeira/TCC-Soletra`
+**Natureza:** Trabalho de Conclusão de Curso — extensão de navegador para reconhecimento do
+alfabeto manual de Libras
+**Versão integral:** [DOCUMENTACAO-COMPLETA.md](DOCUMENTACAO-COMPLETA.md) traz, além deste
+resumo, a jornada do usuário, o mapa da interface, os algoritmos em detalhe, o registro de
+decisões, a solução de problemas e um glossário.
 
 ---
 
-## 2. Stack e tecnologias
+## Sumário
 
-### 2.1 Runtime e plataforma
+1. Visão geral
+2. Escopo
+3. Requisitos funcionais atendidos
+4. Requisitos não funcionais atendidos
+5. Pontos não atendidos e limitações conhecidas
+6. Arquitetura
+7. Tecnologias e decisões técnicas
+8. Qualidade e testes
+9. Privacidade e LGPD
+10. Como executar e verificar
+11. Trabalhos futuros
+12. Histórico de alterações
+13. Repositório de referência avaliado
 
-| Camada | Tecnologia | Versão / detalhe |
+---
+
+## 1. Visão geral
+
+### 1.1 Problema
+
+Pessoas que se comunicam em Libras dependem de digitação em teclado para pesquisar na web. O
+alfabeto manual (datilologia) é a forma de soletrar em Libras palavras sem sinal próprio, como
+nomes, marcas e termos técnicos. O Soletra transforma essa soletração, feita diante da câmera,
+em texto pesquisável.
+
+### 1.2 Objetivo
+
+Desenvolver uma extensão de navegador (Chrome e Edge, Manifest V3) que:
+
+1. acessa a câmera do usuário e exibe o vídeo num **painel lateral**;
+2. reconhece as **configurações de mão estáticas** do alfabeto manual de Libras e os dígitos;
+3. compõe, letra por letra, um texto editável;
+4. pesquisa esse texto na plataforma que o usuário escolher.
+
+### 1.3 Premissas
+
+- **Processamento 100% local.** Os pontos da mão são extraídos por WebAssembly empacotado na
+  extensão. Nenhum quadro de vídeo é gravado ou transmitido.
+- **Único dado que sai do dispositivo:** o texto que o usuário escolhe pesquisar, e só para a
+  plataforma selecionada.
+- **Sem dependências externas:** nenhum servidor, CDN, API de IA ou pacote npm.
+
+### 1.4 Diferencial técnico
+
+A classificação é feita sobre **landmarks** (a geometria da mão: 21 pontos 3D) e não sobre
+**pixels**. Isso traz:
+
+- modelo de centenas de KB em vez de dezenas de MB;
+- robustez a fundo, iluminação e tom de pele, porque a cor não chega ao classificador;
+- treino feito pelo próprio usuário no navegador, em segundos, sem dataset externo, sem etapa
+  em Python e sem TensorFlow.js;
+- um **modelo pronto** empacotado, para quem não quer treinar antes de usar.
+
+---
+
+## 2. Escopo
+
+| Dentro do escopo | Fora do escopo desta versão |
+|---|---|
+| 21 letras estáticas: A B C D E F G I L M N O P Q R S T U V W Y | Letras com movimento: H, J, K, X, Z e Ç |
+| 10 dígitos: 0–9 | Sinais de palavras e frases da Libras (a língua em si, além da datilologia) |
+| Uma mão por vez, direita ou esquerda | Sinais com as duas mãos |
+| Chrome e Edge 114+ no computador | Firefox, Safari e navegadores móveis |
+| Pesquisa em 5 plataformas + buscador padrão | Envio do texto para outros aplicativos ou campos de páginas |
+| Interface em português do Brasil | Outros idiomas |
+
+As limitações estão detalhadas, com justificativa, na seção 5.
+
+---
+
+## 3. Requisitos funcionais atendidos
+
+Cada funcionalidade é descrita como um cenário: **o que o usuário faz**, **como o sistema
+responde** e **quais alertas ou exceções** podem ocorrer. Os textos entre aspas são as mensagens
+exibidas na interface.
+
+Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
+
+### 3.1 Câmera
+
+#### RF01 — Lista de câmeras ✅
+
+- **Usuário:** abre o painel do Soletra.
+- **Sistema:** procura as câmeras conectadas ao computador e as lista no campo **Dispositivo**.
+- **Exceções:** sem nenhuma câmera, o campo mostra "Nenhuma câmera detectada" e fica bloqueado,
+  o botão **Iniciar câmera** é desabilitado e aparece o aviso "Nenhuma câmera encontrada. Conecte
+  um dispositivo e clique em Recarregar."
+
+#### RF02 — Nome real de cada câmera ✅
+
+- **Usuário:** abre a lista **Dispositivo**.
+- **Sistema:** mostra o nome de cada câmera (ex.: "Iriun Webcam", "Integrated Camera"). Como o
+  navegador só revela os nomes depois que a extensão obteve acesso à câmera, o sistema, quando a
+  permissão já existe, abre a câmera por um instante e a fecha em seguida, apenas para ler os
+  nomes.
+- **Exceções:** sem permissão, as câmeras aparecem como "Câmera 1 (nome indisponível)", com o
+  aviso "Autorize o acesso à câmera para ver os nomes dos dispositivos." e o botão **Conceder
+  acesso à câmera**.
+
+#### RF03 — Iniciar a câmera ✅
+
+- **Usuário:** escolhe a câmera e clica em **Iniciar câmera**.
+- **Sistema:** mostra "Iniciando…" e "Solicitando acesso à câmera…", pede à câmera escolhida
+  imagem de 1280×720 a 60 quadros por segundo (o navegador usa o máximo que ela oferecer) e,
+  quando o vídeo chega, exibe a imagem, o selo **Ativa**, a etiqueta **AO VIVO** e, no rodapé, a
+  resolução e a taxa reais (ex.: "1280×720 · 30 fps"). A área de reconhecimento aparece (RF16).
+- **Exceções:** se a permissão ainda não foi decidida, o sistema encaminha para a aba de
+  autorização (RF12); se a câmera falhar, mostra a mensagem do erro (RF11).
+
+#### RF04 — Parar a câmera ✅
+
+- **Usuário:** clica em **Parar**.
+- **Sistema:** encerra a captura de fato (a luz da câmera apaga), mostra "Transmissão encerrada"
+  e "Transmissão encerrada. A câmera foi liberada.", pausa o reconhecimento e esconde a área de
+  reconhecimento (RF16).
+
+#### RF05 — Trocar de câmera ✅
+
+- **Usuário:** escolhe outra câmera na lista.
+- **Sistema:** se a câmera estiver ligada, passa a transmitir da nova sem recarregar a extensão;
+  se estiver desligada, apenas memoriza a escolha para o próximo **Iniciar câmera**.
+
+#### RF06 — Recarregar a lista ✅
+
+- **Usuário:** clica em **Recarregar** (por exemplo, depois de conectar uma câmera).
+- **Sistema:** atualiza a lista de câmeras. Se a câmera estava ligada, reabre a transmissão; se
+  estava desligada, **não liga**, limpa um erro anterior e avisa "Lista de dispositivos
+  atualizada. A câmera continua desligada."
+
+#### RF07 — Câmera conectada ou removida durante o uso ✅
+
+- **Usuário:** conecta ou desconecta uma câmera com o painel aberto.
+- **Sistema:** uma câmera nova aparece na lista sozinha, sem recarregar.
+- **Alertas:** se a câmera **em uso** for desconectada ou bloqueada pelo sistema operacional, a
+  transmissão é encerrada, o selo vira **Erro** e aparece "A câmera em uso foi desconectada." ou
+  "A transmissão foi encerrada pelo sistema (dispositivo removido ou bloqueado)."
+
+#### RF08 — Lembrar a câmera escolhida ✅
+
+- **Usuário:** escolhe uma câmera e fecha o painel.
+- **Sistema:** na próxima abertura, a mesma câmera já vem selecionada, desde que continue
+  conectada.
+
+#### RF09 — Estado da câmera sempre visível ✅
+
+- **Sistema:** o selo no topo indica **Parada** (cinza), **Iniciando…** (amarelo, pulsando),
+  **Ativa** (verde, pulsando) ou **Erro** (vermelho). Com a câmera ativa, o vídeo mostra a
+  etiqueta **AO VIVO** e o rodapé mostra resolução e taxa; parada, o rodapé mostra "—".
+
+#### RF10 — Vídeo espelhado ✅
+
+- **Sistema:** exibe a imagem espelhada, como um espelho, para que quem sinaliza veja a própria
+  mão do lado em que ela está. O espelhamento é só visual: a análise usa a imagem original.
+
+#### RF11 — Mensagens de erro da câmera ✅
+
+- **Sistema:** traduz cada falha da câmera numa mensagem que diz o que fazer:
+
+| Situação | Mensagem |
+|---|---|
+| Permissão negada | "Permissão de câmera negada. Autorize o acesso para continuar." + botão de autorização |
+| Nenhuma câmera | "Nenhuma câmera encontrada. Conecte um dispositivo e clique em Recarregar." |
+| Câmera ocupada por outro programa | "A câmera está em uso por outro aplicativo ou aba. Feche-o e tente novamente." |
+| Câmera escolhida sumiu | "A câmera selecionada não está mais disponível. Escolha outro dispositivo." |
+| Captura interrompida | "A captura foi interrompida pelo sistema operacional." |
+| Contexto inseguro | "Contexto inseguro: a captura só é permitida em páginas da extensão." |
+
+### 3.2 Permissão e consentimento
+
+#### RF12 — Aba de autorização da câmera ✅
+
+- **Usuário:** clica em **Iniciar câmera** pela primeira vez.
+- **Sistema:** como o navegador não exibe o pedido de câmera dentro do painel lateral, mostra
+  "Abrindo a aba de autorização da câmera…" e abre uma aba própria. Lá o usuário clica no botão e
+  responde ao pedido do navegador. A permissão concedida vale para toda a extensão, inclusive para
+  a tela cheia.
+- **Exceções:** se a câmera já estiver autorizada, a aba avisa "A câmera já está autorizada. Pode
+  voltar ao painel lateral." sem pedir nada.
+
+#### RF13 — Retorno da autorização ao painel ✅
+
+- **Usuário:** responde ao pedido na aba de autorização.
+- **Sistema:** se concedeu, a aba mostra "Permissão concedida. Você já pode fechar esta aba e
+  voltar ao painel lateral."; o painel carrega os nomes reais das câmeras, esconde o botão de
+  permissão e avisa "Permissão concedida. Clique em Iniciar câmera."
+- **Alertas:** se negou, o painel mostra "Permissão de câmera negada nas configurações do
+  navegador."
+
+#### RF14 — Orientação quando a câmera está bloqueada ✅
+
+- **Usuário:** abre o painel.
+- **Sistema:** se a câmera nunca foi autorizada, orienta "Clique em Iniciar câmera para autorizar
+  o acesso."
+- **Alertas:** se foi bloqueada nas configurações, mostra "O acesso à câmera está bloqueado para
+  esta extensão. Libere em Configurações do navegador → Privacidade e segurança → Câmera." e o
+  botão de autorização.
+
+#### RF15 — Consentimento para o reconhecimento ✅
+
+- **Usuário:** liga a chave **Reconhecimento** pela primeira vez.
+- **Sistema:** antes de processar qualquer quadro, abre o aviso "Ativar o reconhecimento de
+  Libras", que explica: a extensão calculará, no próprio dispositivo, 21 pontos da mão; nenhuma
+  imagem é gravada nem enviada; os sinais treinados ficam salvos como números e podem ser
+  exportados ou apagados. Ao clicar em **Entendi, ativar**, a data do aceite é registrada e o
+  reconhecimento liga. O aviso não volta a aparecer depois de aceito.
+- **Exceções:** em **Agora não**, a chave volta a desligada e nada é processado.
+
+#### RF16 — Área de reconhecimento só com a câmera ligada ✅
+
+- **Usuário:** abre o painel, inicia ou para a câmera.
+- **Sistema:** ao abrir, mostra apenas a câmera e seus controles. A área de reconhecimento (chave
+  Reconhecimento, Letras/Números, texto, pesquisa e Treinar sinais) só aparece quando a câmera
+  fica **ativa**, o que implica a permissão concedida. Ao parar a câmera, ou se ela der erro, a
+  área some; ao religar, volta com o texto preservado.
+- **Exceções:** se uma gravação de treino estiver em andamento quando a câmera parar, ela é
+  cancelada, porque o botão para cancelá-la ficaria escondido.
+
+### 3.3 Reconhecimento
+
+#### RF17 — Ligar e desligar o reconhecimento ✅
+
+- **Usuário:** liga ou desliga a chave **Reconhecimento**.
+- **Sistema:** na primeira vez, carrega o detector de mãos (MediaPipe) e mostra "Carregando o
+  reconhecedor…"; o detector não é carregado ao abrir o painel, só quando é pedido. Ligado, exibe
+  o anel, o texto e os botões; desligado, para a análise e esconde esse bloco, mas mantém o
+  detector carregado para religar rápido.
+- **Exceções:** se o detector não carregar, mostra "Não foi possível carregar o reconhecedor: …"
+  e a chave volta a desligada.
+
+#### RF18 — Alternar entre Letras e Números ✅
+
+- **Usuário:** clica em **Letras** ou **Números**.
+- **Sistema:** passa a reconhecer só as classes do conjunto escolhido, descarta a confirmação que
+  estava em andamento, troca a grade de treino para esse conjunto e lembra a escolha. Os dois
+  conjuntos nunca são analisados juntos porque letras e números compartilham formas de mão
+  (O e 0, V e 2, W e 3).
+
+#### RF19 — Anel com a letra candidata ✅
+
+- **Usuário:** faz um sinal diante da câmera.
+- **Sistema:** mostra no centro do anel a letra que está sendo reconhecida e enche o anel à medida
+  que o sinal se mantém, até confirmar. Sem mão no quadro, mostra "–"; com um gesto que não se
+  parece com nenhuma classe, mostra "?".
+
+#### RF20 — Barra de nitidez do sinal ✅
+
+- **Sistema:** abaixo da dica, uma barra mostra o quanto a letra mais provável **se destaca da
+  segunda mais provável**. Barra cheia: sinal inequívoco. Barra quase vazia: o gesto está entre
+  duas letras, e convém ajustar a mão.
+
+#### RF21 — Confirmação da letra ✅
+
+- **Usuário:** mantém o sinal parado.
+- **Sistema:** a letra só é escrita quando vence a maioria dos quadros dos últimos 400 ms (pelo
+  menos 55% deles e no mínimo 3) e se mantém por 700 ms. Ao confirmar, a letra entra no texto e o
+  anel pisca em verde.
+- **Exceções:** se a análise ficar parada por mais de meio segundo (painel escondido, câmera
+  pausada), a votação recomeça do zero, para não confirmar um sinal feito antes da pausa.
+
+#### RF22 — Sem repetição acidental ✅
+
+- **Usuário:** continua segurando o mesmo sinal depois da confirmação.
+- **Sistema:** mostra um cadeado no anel e não escreve a letra de novo: segurar o M por três
+  segundos escreve "M", não "MMMM". A dica muda para "Relaxe a mão para repetir a mesma letra."
+  Passar direto para **outra** letra confirma normalmente, sem pausa.
+
+#### RF23 — Letra dupla ✅
+
+- **Usuário:** quer escrever "SS" (como em "PASSO").
+- **Sistema:** destrava a letra quando a mão sai dela por pelo menos 200 ms (basta relaxar a mão
+  por meio segundo e refazer o sinal). Como alternativa, o botão **Repetir letra**, habilitado
+  só enquanto há uma letra travada, libera a repetição com um clique.
+
+#### RF24 — Rejeição de gestos desconhecidos ✅
+
+- **Usuário:** faz um gesto que não corresponde a nenhuma classe treinada, ou fica entre duas
+  letras.
+- **Sistema:** não inventa uma letra: mostra "?" e a dica "Sinal não reconhecido — ajuste a mão
+  ou treine essa letra." Nada é escrito.
+
+#### RF25 — Dicas conforme o momento ✅
+
+- **Sistema:** a linha de dica muda conforme o estado: "Mostre a mão para a câmera." (sem mão),
+  "Segure o sinal…" (letra se formando), "Relaxe a mão para repetir a mesma letra." (letra
+  travada), "Sinal não reconhecido…" (gesto desconhecido) e "Nenhum sinal treinado ainda — abra
+  "Treinar sinais"." (modelo vazio).
+
+#### RF26 — Ajustar sensibilidade ✅
+
+- **Usuário:** abre **Ajustar sensibilidade** e escolhe:
+  - **Rigor do reconhecimento:** **Tolerante** aceita gestos mais distantes do treino (útil se a
+    letra não é reconhecida); **Exigente** rejeita mais (útil se aparecem letras erradas);
+    **Normal** é o padrão.
+  - **Tempo para confirmar:** **Rápido** (450 ms), **Normal** (700 ms) ou **Calmo** (1000 ms).
+- **Sistema:** aplica na hora, mostra o ajuste atual no título da seção (ex.: "Normal · Rápido")
+  e lembra a escolha nas próximas aberturas.
+
+#### RF27 — Aviso de poucas classes treinadas ✅
+
+- **Usuário:** treina só uma letra do conjunto.
+- **Sistema:** avisa "Só um sinal de letras está treinado, então qualquer gesto será reconhecido
+  como ele. Treine pelo menos mais um para o reconhecimento conseguir distinguir." O aviso some a
+  partir da segunda classe treinada.
+
+#### RF28 — Alerta de mão diferente da configurada ⚠️
+
+- **Usuário:** escolhe em **Treinar sinais** com qual mão vai sinalizar (RF46), por exemplo
+  **Direita**, e passa a sinalizar com a esquerda.
+- **Sistema:** o detector identifica que a mão na imagem é a esquerda e o painel alerta: "A câmera
+  sugere que você está usando a mão esquerda, mas o modelo está configurado para direita. Se os
+  sinais não forem reconhecidos, troque em "Treinar sinais"." O alerta some quando a mão
+  detectada volta a ser a configurada ou quando o usuário troca a configuração.
+- **Ressalva:** é só um alerta; o sistema nunca troca a mão sozinho. Câmeras virtuais (Iriun,
+  OBS, DroidCam) às vezes espelham a imagem na origem, e então a mão detectada sai invertida e o
+  alerta pode aparecer sem motivo.
+
+#### RF29 — Aviso das letras não reconhecidas ✅
+
+- **Sistema:** mantém visível o aviso "H, J, K, X e Z envolvem movimento e não são reconhecidas
+  nesta versão." Essas letras podem ser digitadas na caixa de texto (RF34).
+
+#### RF30 — Indicadores de desempenho ✅
+
+- **Sistema:** ao lado do anel, mostra a taxa de análise e o tempo de cada análise, por exemplo
+  "15 Hz · p50 23 ms · p95 30 ms" (p50 é o tempo típico; p95, o tempo nos 5% piores casos).
+
+#### RF31 — Ajuste automático ao desempenho do computador ✅
+
+- **Sistema:** analisa 15 quadros por segundo. Se, nas últimas 30 análises, os 5% mais lentos
+  passarem de 50 ms, reduz para 8 por segundo para não travar o painel e acrescenta "· desempenho
+  reduzido" aos indicadores. Quando o computador alivia (abaixo de 25 ms), volta a 15.
+
+### 3.4 Composição do texto
+
+#### RF32 — Texto montado letra a letra ✅
+
+- **Sistema:** cada letra confirmada é acrescentada ao final da caixa **Texto reconhecido**.
+
+#### RF33 — Espaço, Apagar e Limpar ✅
+
+- **Usuário:** clica em **Espaço**, **Apagar** ou **Limpar**.
+- **Sistema:** **Espaço** separa palavras, mas não insere espaço no início nem dois seguidos (uma
+  pausa mal interpretada não vira "YOU  TUBE"); **Apagar** remove o último caractere; **Limpar**
+  esvazia a caixa. Com o texto vazio, os três ficam desabilitados.
+
+#### RF34 — Edição manual ✅
+
+- **Usuário:** digita ou corrige diretamente na caixa (por exemplo, para incluir H, J, K, X ou Z).
+- **Sistema:** aceita a edição; o reconhecimento continua acrescentando letras ao final, e o
+  cursor não é movido enquanto o usuário edita.
+
+#### RF35 — Limite de tamanho ✅
+
+- **Sistema:** o texto tem no máximo 200 caracteres; letras confirmadas além disso são
+  ignoradas.
+
+#### RF36 — Texto mantido durante a sessão ✅
+
+- **Usuário:** fecha e reabre o painel, ou troca entre painel e tela cheia.
+- **Sistema:** o texto continua lá. Ele é salvo meio segundo depois de cada mudança e só é
+  apagado quando o navegador é fechado.
+
+### 3.5 Pesquisa
+
+#### RF37 — Botão Pesquisar ✅
+
+- **Usuário:** clica em **Pesquisar**.
+- **Sistema:** o botão só fica habilitado com texto na caixa. Antes de pesquisar, remove espaços
+  nas pontas e espaços repetidos no meio.
+
+#### RF38 — Seletor "Onde pesquisar?" ✅
+
+- **Sistema:** abre uma janela com o **Termo reconhecido** em destaque, para conferência, e a nota
+  "O texto sai do seu dispositivo apenas para a plataforma que você escolher."
+
+#### RF39 — Plataformas em ordem alfabética ✅
+
+- **Sistema:** a grade mostra as marcas em ordem alfabética: **Amazon, Google, Maps, Wikipédia e
+  YouTube**. Uma plataforma acrescentada no futuro entra automaticamente na posição certa.
+
+#### RF40 — Buscador padrão do navegador ✅
+
+- **Usuário:** escolhe **Buscador padrão**, abaixo da grade.
+- **Sistema:** pesquisa no buscador configurado no navegador (Google, Bing, DuckDuckGo etc.),
+  que só o próprio navegador conhece.
+
+#### RF41 — Pesquisa em nova aba ✅
+
+- **Usuário:** escolhe uma plataforma.
+- **Sistema:** abre uma nova aba com a pesquisa, para o usuário ver para onde o texto foi.
+  Caracteres especiais como "&" e "#" são codificados e não alteram o endereço da busca.
+
+#### RF42 — Plano B do buscador padrão ✅
+
+- **Alertas:** se o buscador padrão não puder ser acionado, a mesma aba abre a pesquisa no Google
+  e o painel avisa "Buscador padrão indisponível — a pesquisa foi aberta no Google." Qualquer
+  outra falha mostra "Não foi possível abrir a pesquisa: …".
+
+#### RF43 — Desistir sem enviar nada ✅
+
+- **Usuário:** fecha o seletor pelo ×, por **Cancelar**, pela tecla Esc ou clicando fora.
+- **Sistema:** nada é enviado. Arrastar o mouse de dentro da janela para fora não conta como
+  desistência.
+
+#### RF44 — Seletor operável pelo teclado ✅
+
+- **Sistema:** ao abrir, o foco vai para a primeira plataforma; Tab e Shift+Tab circulam só dentro
+  da janela; ao fechar, o foco volta para onde estava.
+
+#### RF45 — Logos sem internet ✅
+
+- **Sistema:** as logos das plataformas vêm dentro da extensão; nenhuma imagem é baixada para
+  desenhar o seletor.
+
+### 3.6 Treino e gestão do modelo
+
+#### RF46 — Escolha da mão dominante ✅
+
+- **Usuário:** em **Treinar sinais**, escolhe **Direita** (padrão) ou **Esquerda**.
+- **Sistema:** passa a tratar os sinais como feitos com essa mão. A mão esquerda é espelhada antes
+  da análise, então as mesmas amostras (inclusive as do modelo pronto) servem para as duas mãos,
+  sem treinar de novo. A escolha fica salva e não pode ser trocada durante uma gravação.
+- **Alertas:** se a mão vista pela câmera não for a configurada, aparece o alerta do RF28.
+
+#### RF47 — Treinar uma letra ou número ✅
+
+- **Usuário:** com a câmera e o Reconhecimento ligados, clica numa letra da grade e mantém o sinal.
+- **Sistema:** grava 20 amostras, uma a cada 150 ms, apenas nos quadros em que a mão aparece, e
+  mostra o progresso ("Gravando "A" — 7/20"). Durante a gravação, os demais botões ficam
+  bloqueados. Ao terminar, recalibra o reconhecimento (RF58).
+- **Exceções:** com o Reconhecimento desligado, avisa "Ligue o Reconhecimento antes de treinar."
+
+#### RF48 — Cancelar a gravação ✅
+
+- **Usuário:** clica em **Cancelar** na barra de gravação.
+- **Sistema:** interrompe na hora; as amostras já gravadas são mantidas. Parar a câmera também
+  cancela a gravação (RF16).
+
+#### RF49 — Grade de classes ✅
+
+- **Sistema:** cada letra ou número da grade mostra:
+  - um selo com as amostras: "·" (nenhuma), "20" (só de um tipo) ou "50+8" (50 do modelo pronto +
+    8 do usuário, com as do usuário em destaque);
+  - a cor: laranja com menos de 20 amostras, verde a partir de 20, borda tracejada ao chegar a
+    100;
+  - a porcentagem de espaço ocupado (RF61);
+  - ao passar o mouse, o detalhe (ex.: "A — 50 do modelo pronto, 8 sua(s) de 100 (58% do espaço
+    da classe). Clique para reforçar.").
+
+  O título da seção mostra quantas classes têm amostras (ex.: "12/21").
+
+#### RF50 — Limite de 100 amostras por classe ✅
+
+- **Sistema:** cada classe guarda no máximo 100 amostras. Ao chegar lá, a borda fica tracejada e a
+  dica diz "Classe cheia (100/100, 100%): gravar mais substitui as mais antigas."
+
+#### RF51 — Aviso antes de passar do limite ✅
+
+- **Usuário:** clica para treinar uma classe que vai ultrapassar 100 amostras.
+- **Sistema:**
+  - se só amostras do modelo pronto vão sair, apenas informa: ""A" chegou ao limite de 100
+    amostras: 20 do modelo pronto vão dar lugar às que você gravar agora." e grava;
+  - se amostras **do próprio usuário** vão sair, pede confirmação (""A" já está cheia"), dizendo
+    quantas suas e quantas do modelo pronto serão descartadas, com **Gravar mesmo assim** ou
+    **Cancelar**, e sugere apagar a letra no × e gravar de novo se ela tiver piorado.
+  - durante a gravação no limite, a barra fica laranja e mostra "limite de 100: substituindo as
+    mais antigas".
+
+#### RF52 — Apagar uma classe ✅
+
+- **Usuário:** clica no × de uma classe (o × só aparece em classes com amostras).
+- **Sistema:** pergunta "Apagar as amostras de "A"?", avisando que não há como desfazer e que as
+  outras classes continuam intactas. Confirmado, apaga, recalibra e avisa "Amostras de "A"
+  apagadas."
+
+#### RF53 — Voltar uma classe ao modelo pronto ✅
+
+- **Usuário:** clica no × de uma classe que tem amostras do modelo pronto **e** suas.
+- **Sistema:** pergunta "Voltar "A" ao modelo pronto?"; confirmado, descarta só as amostras do
+  usuário nessa classe e avisa ""A" voltou ao modelo pronto."
+
+#### RF54 — Apagar tudo ✅
+
+- **Usuário:** clica em **Apagar tudo**.
+- **Sistema:** pede confirmação com o botão **Sim** em vermelho e o foco já em **Não**, para que
+  um Enter por reflexo não apague nada, e sugere exportar antes. Confirmado, remove todas as amostras (do usuário e do modelo pronto)
+  e avisa "Modelo apagado. Para voltar a usar o modelo pronto, clique em "Restaurar modelo
+  pronto"." O botão fica desabilitado com o modelo vazio.
+
+#### RF55 — Exportar o modelo ✅
+
+- **Usuário:** clica em **Exportar**.
+- **Sistema:** baixa o arquivo `soletra-modelo-AAAA-MM-DD.json` com todas as amostras e avisa
+  "Modelo exportado." Desabilitado com o modelo vazio ou durante uma gravação.
+
+#### RF56 — Importar um modelo ⚠️
+
+- **Usuário:** clica em **Importar** e escolhe um arquivo `.json`.
+- **Sistema:** valida o arquivo **antes** de perguntar qualquer coisa. Se for válido, pergunta
+  "O arquivo traz 1550 amostras de 31 classes (mão direita). Isso vai substituir o modelo atual."
+  e, confirmado, substitui e avisa "Modelo importado: …".
+- **Exceções:** um arquivo inválido é recusado sem tocar no modelo atual, com o motivo: não é
+  JSON, formato desconhecido, esquema ou versão de normalização incompatível, classe
+  desconhecida, amostra com tamanho errado, valor não numérico ou arquivo sem amostras.
+- **Ressalva:** só é possível **substituir**; somar o arquivo ao modelo atual ainda não está na
+  interface.
+
+#### RF57 — Arquivos do nome antigo ✅
+
+- **Sistema:** aceita também modelos exportados quando o produto se chamava RVL Libras.
+
+#### RF58 — Recalibração automática ✅
+
+- **Sistema:** sempre que o modelo muda (fim de gravação, apagar, restaurar, importar), recalcula
+  sozinho o limite que separa "letra reconhecida" de "gesto desconhecido". O usuário não precisa
+  ajustar nada.
+
+#### RF59 — Modelo incompatível ✅
+
+- **Alertas:** se o modelo salvo foi gravado com outra versão da normalização, ele não é usado e
+  o painel avisa "O modelo salvo foi gravado com outra versão da normalização e não pode ser
+  usado. Treine os sinais novamente." Usá-lo não daria erro, mas reconheceria errado sem motivo
+  aparente.
+
+#### RF60 — Migração do nome antigo ✅
+
+- **Sistema:** na primeira abertura após a troca de nome, move os dados salvos sob o nome antigo
+  (RVL Libras) para o nome novo, sem perder o modelo treinado e sem sobrescrever dados novos.
+
+#### RF61 — Porcentagem de espaço por letra e número ✅
+
+- **Usuário:** abre **Treinar sinais**.
+- **Sistema:** cada letra e número mostra quanto do seu espaço de 100 amostras já está ocupado
+  (ex.: "58%"), em texto e numa barra na base do botão (verde, laranja enquanto incompleta,
+  branca durante a gravação). O número acompanha a gravação em tempo real.
+
+#### RF62 — Uso total do armazenamento ✅
+
+- **Sistema:** abaixo da grade, mostra o espaço ocupado pela extensão no navegador, por exemplo
+  "Armazenamento: 0,85 MB de 10 MB (9%)", atualizado sempre que o modelo muda.
+- **Alertas:** a partir de 80%, a linha fica laranja e orienta: "— perto do limite. Exporte o
+  modelo e apague classes que não usa."
+
+### 3.7 Modelo pronto
+
+#### RF63 — Escolha inicial: modelo pronto ou treino do zero ✅
+
+- **Usuário:** liga a câmera pela primeira vez, com o modelo ainda vazio.
+- **Sistema:** mostra o cartão "Como você quer começar?":
+  - **Usar modelo pronto** instala o modelo e avisa "Modelo pronto carregado: 1550 amostras em 31
+    classes. Ligue o Reconhecimento para começar." O reconhecimento funciona sem nenhum treino;
+  - **Treinar do zero** fecha o cartão (que não volta nessa abertura) e abre **Treinar sinais**.
+- **Exceções:** o cartão só aparece se a extensão trouxer o modelo pronto.
+
+#### RF64 — Modelo pronto empacotado ⚠️
+
+- **Sistema:** a extensão traz um modelo com 31 classes (21 letras e 10 números) e 50 amostras
+  por classe, que funciona sem treino e sem baixar nada.
+- **Ressalva:** o modelo atual foi gravado por **uma pessoa só**, então pode reconhecer pior a
+  mão de outras pessoas (seção 5.1).
+
+#### RF65 — Reforçar uma letra do modelo pronto ✅
+
+- **Usuário:** usa o modelo pronto e percebe que uma letra não funciona bem com a sua mão; clica
+  nela na grade.
+- **Sistema:** grava 20 amostras da mão do usuário, que se **somam** às do modelo pronto; o selo
+  passa de "50" para "50+20".
+
+#### RF66 — O modelo se adapta a quem usa ✅
+
+- **Sistema:** quando uma classe chega a 100 amostras, as primeiras a sair são as do modelo
+  pronto; só depois saem as mais antigas do usuário. Com o uso, o modelo passa a refletir a mão de
+  quem usa.
+
+#### RF67 — Adicionar ou restaurar o modelo pronto ✅
+
+- **Usuário:** clica em **Adicionar modelo pronto** (se treinou do zero) ou **Restaurar modelo
+  pronto** (se já usa o padrão ou apagou tudo).
+- **Sistema:** repõe as amostras do modelo pronto sem apagar o treino do usuário. Pede
+  confirmação ("Restaurar o modelo pronto? … O que você treinou continua salvo e soma a elas.");
+  com o modelo vazio, instala direto, porque não há nada a perder.
+- **Exceções:** o botão não aparece se a extensão não trouxer o modelo pronto.
+
+#### RF68 — Montagem do modelo pronto a partir de várias pessoas ✅
+
+- **Usuário (desenvolvedor):** reúne os arquivos exportados por várias pessoas e roda
+  `node tools/montar-modelo-padrao.mjs`.
+- **Sistema:** junta as amostras dando a mesma cota a cada pessoa (quem gravou mais não domina o
+  modelo) e escolhe amostras espalhadas pela sessão de cada uma.
+- **Alertas:** avisa quando há menos de 3 pessoas ou quando uma classe tem um único contribuinte,
+  e recusa arquivos inválidos indicando qual.
+
+### 3.8 Janela e interface
+
+#### RF69 — Abrir como painel lateral ✅
+
+- **Usuário:** clica no ícone do Soletra na barra do navegador.
+- **Sistema:** abre o painel lateral, que continua visível enquanto o usuário navega. Em
+  navegadores sem painel lateral, abre o Soletra numa aba.
+
+#### RF70 — Botões fechar, minimizar e tela cheia ⚠️
+
+- **Usuário:** usa os três botões redondos do topo, no estilo do macOS.
+- **Sistema:**
+
+| Botão | No painel lateral | Na aba de tela cheia |
 |---|---|---|
-| Plataforma | Extensão Chrome/Edge **Manifest V3** | `minimum_chrome_version: 114` |
-| Linguagem | **JavaScript ES Modules** puro | sem TypeScript, sem bundler, sem build step |
-| UI | **HTML + CSS** nativos | sem React/Vue; render por snapshot de estado |
-| Painel | `chrome.sidePanel` API | fallback para aba dedicada no service worker; também abre como aba ocupando o navegador (seção 5.4) |
-| Persistência | `chrome.storage.local` / `.session` | quota de 10 MB |
-| Visão computacional | **MediaPipe `@mediapipe/tasks-vision`** | **1.0.1**, vendorizado, delegate **CPU** |
-| Modelo de detecção | `hand_landmarker.task` | 21 pontos (x, y, z) por mão |
-| Classificação | **KNN k=5** ponderado por 1/d | implementação própria, 273 linhas |
-| Modelo pronto | `modelos/padrao.json` | 31 classes × 50 amostras, ~725 KB, empacotado |
-| Testes | **Node puro** | v24.20.0, sem framework e sem dependências |
+| 🔴 Fechar | Fecha o painel | Fecha a aba |
+| 🟡 Minimizar | Avisa "O Soletra já está minimizado no painel lateral. Use o verde para abrir em tela cheia." | Volta ao painel lateral e fecha a aba |
+| 🟢 Maximizar | Abre o Soletra numa aba ocupando o navegador inteiro | Liga ou desliga a tela cheia (Esc também sai) |
 
-### 2.2 Dependências
+- **Ressalva:** voltar ao painel exige Chrome 116 ou mais recente; antes disso aparece "Não foi
+  possível voltar ao painel lateral. Feche esta aba e clique no ícone do Soletra."
 
-**Zero dependências de runtime e zero de desenvolvimento.** Não existe `package.json` no
-projeto. Todo o código de terceiros está vendorizado em `vendor/mediapipe/` (~20 MB,
-commitado propositalmente).
+#### RF71 — Troca sem perder o que estava ligado ✅
+
+- **Usuário:** passa do painel para a tela cheia, ou o contrário.
+- **Sistema:** a página que sai desliga a câmera **antes** de abrir a outra (muitas webcams só
+  aceitam um uso por vez), anota o que estava ligado e a página que entra religa a câmera e o
+  reconhecimento. A anotação é apagada ao ser lida: reabrir o painel no dia seguinte não liga a
+  câmera sozinho.
+
+#### RF72 — Uma única aba de tela cheia ✅
+
+- **Usuário:** clica no 🟢 com uma aba do Soletra já aberta.
+- **Sistema:** reaproveita a aba existente, traz para a frente e a recarrega, em vez de abrir
+  outra.
+
+#### RF73 — Janelas de confirmação próprias ✅
+
+- **Sistema:** todas as confirmações (consentimento, apagar, importar, limite) usam janelas da
+  própria extensão, porque o diálogo padrão do navegador não é confiável no painel lateral. Esc
+  cancela; nas ações destrutivas, o botão de confirmar fica vermelho e o foco começa no botão de
+  recusa (**Não**); ao fechar, o foco volta para onde estava.
+
+#### RF74 — Visual adaptado ✅
+
+- **Sistema:** segue o tema claro ou escuro do sistema operacional, cabe na largura estreita do
+  painel lateral e, em tela cheia, usa uma coluna centralizada com vídeo e letra maiores.
+
+**Total: 74 funcionalidades — 70 plenamente atendidas e 4 com ressalva (RF28, RF56, RF64, RF70).**
+
+---
+
+## 4. Requisitos não funcionais atendidos
+
+| ID | Requisito | Como é atendido | Status |
+|---|---|---|---|
+| RNF01 | **Privacidade:** nenhum quadro de vídeo sai do dispositivo | Inferência por WebAssembly local; sem `host_permissions`, sem content scripts, sem chamada de rede | ✅ |
+| RNF02 | **Sem código remoto** | MediaPipe vendorizado (~20 MB) e versão fixada em 1.0.1; a CSP do Manifest V3 bloquearia CDN | ✅ |
+| RNF03 | **Integridade dos binários** | SHA-256 de cada arquivo em `INTEGRIDADE.json`, conferidos por `tools/verificar-vendor.mjs`. O `.gitattributes` impede o Git de converter as quebras de linha dos binários, e o verificador distingue "quebras de linha convertidas" de "arquivo adulterado", indicando a correção | ✅ |
+| RNF04 | **Permissões mínimas** | Só `sidePanel`, `storage` e `search` | ✅ |
+| RNF05 | **Desempenho** | Detecção a 15 Hz com recuo para 8 Hz; detector criado sob demanda; render da grade só no que mudou. Medido no spike (Edge 153, CPU): p50 22,9 ms por quadro | ✅ |
+| RNF06 | **Robustez a câmera e resolução** | Normalização invariante a posição, escala e proporção da imagem; timestamp monotônico na troca de câmera | ✅ |
+| RNF07 | **Armazenamento dentro da quota** | 31 classes × 100 amostras ficam bem abaixo dos 10 MB do `storage.local`; o teto por classe impede o crescimento sem limite, e o uso é exibido por classe e no total, com aviso a partir de 80% (RF61, RF62) | ✅ |
+| RNF08 | **Testabilidade** | Lógica isolada em funções puras e classes com relógio injetado; só um módulo depende de WASM | ✅ |
+| RNF09 | **Zero dependências** | Não há `package.json`; testes em Node puro | ✅ |
+| RNF10 | **Acessibilidade básica** | Rótulos ARIA, região `aria-live` para mensagens, foco gerenciado nos modais, navegação por teclado no seletor | ⚠️ |
+| RNF11 | **Conformidade com a LGPD** | Consentimento, eliminação, portabilidade e política de privacidade (seção 9) | ⚠️ |
+| RNF12 | **Compatibilidade** | Chrome e Edge 114+ (Manifest V3) | ⚠️ |
+
+---
+
+## 5. Pontos não atendidos e limitações conhecidas
+
+### 5.1 Reconhecimento
+
+| Ponto | Situação | Motivo | Impacto | Caminho possível |
+|---|---|---|---|---|
+| **Letras dinâmicas H, J, K, X, Z** | Não atendido | Envolvem movimento. Um classificador quadro a quadro não representa trajetória, e fingir que representa produz confusão sistemática em vez de erro honesto | Cobertura de 21 das 26 letras; palavras com essas letras exigem edição manual | Segundo pipeline com componente temporal: buffer de landmarks e classificador de sequência, com dataset próprio |
+| **Ç** | Não atendido | Também é dinâmico (movimento a partir do C) | Idem | Idem |
+| **Acentos e pontuação** | Não atendido | Não fazem parte do alfabeto manual estático | Texto acentuado só por digitação | Edição manual (já disponível) |
+| **Sinais de palavras e frases da Libras** | Fora do escopo | O projeto trata da datilologia, não da língua completa, que tem sinais com movimento, expressão facial e duas mãos | O Soletra soletra; não traduz Libras | Trabalho de outra ordem de grandeza |
+| **Sinais com as duas mãos** | Não atendido | O detector é configurado para uma mão (`numHands: 1`) | Nenhum para o alfabeto manual, que usa uma mão | — |
+| **Detecção da mão dominante** | Atendido parcialmente (RF28) | A indicação de mão do MediaPipe pressupõe imagem espelhada, e webcams virtuais (Iriun, OBS, DroidCam) às vezes espelham na origem, sem como detectar | Vira só um aviso; a decisão é a escolha manual do usuário | — |
+| **Avaliação formal de acurácia** | Não atendido | Não há matriz de confusão nem avaliação leave-one-out | O TCC **não tem números de acurácia** medidos; os pares que colidem (O≡0, V≡2, W≡3) são supostos, não medidos | `src/sign-eval.js` (previsto, não implementado) |
+| **Generalização do modelo pronto** | Não validado (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`) | Pode falhar com mãos diferentes da do autor, sem erro aparente | Coletar exports de colegas e voluntários e regenerar com a ferramenta de montagem |
+| **Velocidade de soletração** | Limitação de projeto | Cada letra exige ~700 ms de permanência mais a votação, para evitar letras falsas a cada tremor | Soletração mais lenta que a natural | Ajuste "Rápido" (450 ms) já disponível |
+
+### 5.2 Plataforma e interface
+
+| Ponto | Situação | Motivo | Impacto |
+|---|---|---|---|
+| **Firefox, Safari e navegadores móveis** | Não atendido | Usa `chrome.sidePanel` e `chrome.search`, exclusivas do Chromium | Só Chrome e Edge no computador |
+| **Voltar ao painel no Chrome 114–115** | Parcial (RF70) | `chrome.sidePanel.open` só existe a partir do 116 | Nessas versões, o 🟡 só exibe um aviso |
+| **Painel e aba de tela cheia abertos ao mesmo tempo** | Não tratado | A troca pelos botões solta a câmera antes; abrir pelo ícone com a aba já aberta não | As duas páginas disputam a câmera |
+| **Importar com mesclagem** | Parcial (RF56) | O armazenamento suporta `mesclar`, mas a interface só oferece **substituir** | Para somar modelos é preciso usar a ferramenta de montagem |
+| **Vários perfis de modelo** | Não atendido | Um único modelo por perfil do navegador | Duas pessoas no mesmo computador compartilham o modelo |
+| **Atalhos de teclado e comandos por gesto** (espaço, apagar, pesquisar) | Não atendido | — | Essas ações exigem clique ou Tab |
+| **Idiomas além do português** | Não atendido | Textos da interface escritos direto no código | — |
+| **Acessibilidade auditada** | Parcial (RNF10) | Há boas práticas de ARIA e foco, mas não houve auditoria WCAG nem teste com leitor de tela | Conformidade não comprovada |
+
+### 5.3 Desempenho e ambiente
+
+| Ponto | Situação | Detalhe |
+|---|---|---|
+| **Aceleração de hardware do navegador** | Problema conhecido | Com a aceleração gráfica ligada, o vídeo de webcam virtual chegou com atraso e o painel perdeu fluidez. **Desativá-la** (`chrome://settings/system`) resolveu. A extensão não consegue detectar nem contornar isso |
+| **Webcam pelo celular (Iriun) via Wi-Fi** | Limitação externa | A transmissão sem fio acrescenta latência à imagem; por cabo USB ela é menor |
+| **Detecção na thread do painel** | Limitação de projeto | O `detectForVideo` é síncrono; por isso a taxa é limitada a 15 Hz. Rodar a detecção num Web Worker foi experimentado e revertido, porque o atraso percebido vinha da aceleração de hardware, não daqui |
+| **Modelo "frio" a cada abertura** | Não atendido | O detector é recriado sempre que o painel abre (~84 ms medidos no spike). Um documento `offscreen` o manteria carregado |
+
+### 5.4 Qualidade, publicação e documentação
+
+| Ponto | Situação | Detalhe |
+|---|---|---|
+| **Testes de interface** | Não atendido | Os 97 cenários cobrem a lógica. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
+| **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
+| **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
+| **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
+| **Nomenclatura mista** | Menor | O código de câmera herdado da v0.1.0 usa nomes em inglês (`CameraController`, `showMessage`); o resto, português |
+
+---
+
+## 6. Arquitetura
+
+### 6.1 Pipeline de reconhecimento
+
+```
+Câmera → MediaPipe HandLandmarker → 21 pontos (x, y, z)
+       → normalização → vetor de 63 números
+       → KNN sobre as amostras (modelo pronto + treino do usuário)
+       → estabilização temporal → caractere confirmado
+       → caixa de texto → Pesquisar → escolha da plataforma → nova aba
+```
+
+| Etapa | Módulo | Como funciona |
+|---|---|---|
+| Detecção | `src/hand-landmarker.js` | MediaPipe `tasks-vision` 1.0.1, delegate CPU, uma mão, modo VIDEO |
+| Agendamento | `src/inference-loop.js` | `requestVideoFrameCallback` (um disparo por quadro novo), 15 Hz com recuo para 8 Hz, timestamp estritamente crescente |
+| Normalização | `src/sign-features.js` | Translada para o punho, escala pelo tamanho da palma, corrige a proporção da imagem, espelha a mão esquerda, **preserva a rotação** (parâmetro fonológico da Libras); eixo z com peso 0,3 |
+| Classificação | `src/sign-classifier.js` | KNN k=5 ponderado por 1/d; rejeita acima de 1,3 raio de palma; teste de razão 0,97 só para empates |
+| Confirmação | `src/sign-stabilizer.js` | Votação em janela de 400 ms; permanência de 700 ms; trava anti-repetição liberada após 200 ms fora da classe |
+| Texto | `src/text-composer.js` | Composição, espaço sem duplicar, limite de 200 caracteres |
+| Pesquisa | `src/search-targets.js` + `background/service-worker.js` | URLs fixadas por teste; o service worker abre a aba |
+
+### 6.2 Camadas
+
+O projeto isola o que é testável do que não é: **um único módulo depende de WASM**
+(`src/hand-landmarker.js`) e **um único módulo de `src/` acessa o ambiente sem permitir
+substituição** (`src/sign-recognizer.js`, com o relógio real, o storage e a inicialização do
+WASM). O restante é função pura ou classe com dependências injetadas.
+
+A interface segue um padrão único: cada controlador expõe **um** callback de estado, e a view
+é uma função `renderizar(snapshot)`.
+
+### 6.3 Módulos
+
+| Lógica (`src/`) | Linhas | Responsabilidade |
+|---|---:|---|
+| `camera-controller.js` | 279 | Ciclo de vida do `MediaStream` e restrições de captura (1280×720 / 60 fps) |
+| `sign-recognizer.js` | 482 | Orquestrador: amarra detector, loop, classificador, estabilizador e texto; lê e instala o modelo pronto; mede o uso do armazenamento |
+| `hand-landmarker.js` | 101 | Adaptador do MediaPipe (único módulo dependente de WASM) |
+| `inference-loop.js` | 138 | Agendador rVFC, taxa adaptativa, timestamp monotônico |
+| `sign-features.js` | 134 | Landmarks → 63 números; carrega `VERSAO_FEATURES` |
+| `sign-classifier.js` | 273 | KNN ponderado, rejeição, teste de razão, calibração do limiar |
+| `sign-stabilizer.js` | 234 | Máquina de confirmação e trava anti-repetição |
+| `sign-classes.js` | 51 | Catálogo de letras estáticas, dinâmicas e números |
+| `sign-model-store.js` | 411 | Persistência com origem (padrão × pessoal), teto, quota, export/import validado |
+| `text-composer.js` | 75 | Composição do texto e preparo para a busca |
+| `search-targets.js` | 107 | Catálogo de plataformas (marcas em ordem alfabética) e montagem das URLs |
+| `migracao-storage.js` | 64 | Migra as chaves `rvl.*` para `soletra.*` |
+
+| Interface | Linhas | Responsabilidade |
+|---|---:|---|
+| `sidepanel/panel.html` / `.css` / `.js` | 265 / 866 / 569 | Interface principal: câmera, permissão, consentimento, visibilidade da área de reconhecimento |
+| `sidepanel/recognition-view.js` | 164 | Anel, barra de proximidade, caixa de texto, ajustes, avisos |
+| `sidepanel/training-view.js` | 246 | Grade de classes com % de uso por classe, uso total do armazenamento, captura, boas-vindas, exportar/importar/apagar, modelo pronto |
+| `sidepanel/seletor-plataforma.js` | 169 | Modal "Onde pesquisar?" |
+| `sidepanel/dialogo.js` | 104 | Modal de confirmação |
+| `sidepanel/janela.js` | 169 | Botões fechar / painel / tela cheia |
+| `background/service-worker.js` | 97 | Abre o painel e executa a pesquisa |
+| `permission/request.html` / `.js` / `.css` | 34 / 56 / 85 | Aba de autorização da câmera |
+
+| Apoio | Linhas | Responsabilidade |
+|---|---:|---|
+| `tools/montar-modelo-padrao.mjs` | 148 | Monta o modelo pronto a partir de exports de várias pessoas |
+| `tools/verificar-vendor.mjs` | 123 | Confere os SHA-256 dos binários e diagnostica quebras de linha convertidas pelo Git |
+| `.gitattributes` | — | Marca `vendor/**` e `modelos/*.json` como `-text`, para o Git não alterar seus bytes |
+| `tools/png.mjs` | 217 | Ler, escrever e redimensionar PNG sem dependências |
+| `tools/make-icons.mjs` | 66 | Gera os ícones da extensão |
+| `tools/preparar-logos.mjs` | 302 | Limpa e reduz as logos das plataformas |
+| `spike/spike.html` / `.js` | 69 / 274 | Diagnóstico de CSP e latência (fora do fluxo) |
+
+**Total de código próprio: ~8.330 linhas**, incluindo testes e ferramentas.
+
+### 6.4 Parâmetros
+
+| Módulo | Parâmetro | Valor |
+|---|---|---|
+| `camera-controller` | Resolução / taxa ideais | 1280×720 / 60 fps |
+| `inference-loop` | Taxa alvo / recuo / p95 que dispara o recuo | 15 Hz / 8 Hz / 50 ms |
+| `sign-features` | Dimensões / peso do eixo z | 63 / 0,3 |
+| `sign-classifier` | k / limiar de distância / teste de razão | 5 / 1,3 raio de palma / 0,97 |
+| `sign-classifier` | Rigor (multiplicador do limiar) | Tolerante 1,25 · Normal 1,0 · Exigente 0,8 |
+| `sign-stabilizer` | Janela de votação / fração mínima / quadros mínimos | 400 ms / 0,55 / 3 |
+| `sign-stabilizer` | Permanência para confirmar | 700 ms (450 / 1000 ajustáveis) |
+| `sign-stabilizer` | Confiança mínima / tempo que libera repetição | 0,5 / 200 ms |
+| `sign-recognizer` | Intervalo entre amostras na captura | 150 ms |
+| `sign-model-store` | Amostras por captura / teto por classe / modelo pronto por classe | 20 / 100 / 50 |
+| `sign-model-store` | Quota / limiar do aviso na interface | 10 MB / 80% |
+| `text-composer` | Limite do texto | 200 caracteres |
+
+### 6.5 Armazenamento
+
+| Chave (`chrome.storage.local`) | Conteúdo |
+|---|---|
+| `soletra.modelo.v1.indice` | Esquema, versão das features, mão, limiar, k, versão da calibração, contagens pessoais e do padrão |
+| `soletra.modelo.v1.classe.<X>` | Amostras **pessoais** da classe X |
+| `soletra.modelo.v1.padrao.<X>` | Amostras do **modelo pronto** na classe X |
+| `soletra.reconhecimento.prefs` | Mão, conjunto, rigor e tempo para confirmar |
+| `soletra.preferredDeviceId` | Última câmera escolhida |
+| `soletra.consentimento.reconhecimento` | Data e versão do aceite |
+
+Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto composto) e
+`soletra.janela.retomar` (o que religar na troca painel ↔ aba; apagado na leitura).
+
+---
+
+## 7. Tecnologias e decisões técnicas
+
+### 7.1 Stack
+
+| Camada | Tecnologia |
+|---|---|
+| Plataforma | Extensão Chrome/Edge, **Manifest V3**, `minimum_chrome_version: 114` |
+| Linguagem | **JavaScript (ES Modules)** puro, sem TypeScript, bundler ou build |
+| Interface | **HTML + CSS** nativos, sem framework |
+| Painel | `chrome.sidePanel` |
+| Persistência | `chrome.storage.local` e `chrome.storage.session` |
+| Visão computacional | **MediaPipe `@mediapipe/tasks-vision` 1.0.1**, vendorizado, delegate CPU |
+| Modelo de detecção | `hand_landmarker.task`: 21 pontos 3D por mão |
+| Classificação | **KNN** de implementação própria |
+| Testes | **Node.js puro**, sem framework |
 
 | Arquivo vendorizado | Tamanho |
 |---|---|
@@ -61,173 +854,56 @@ commitado propositalmente).
 | `vendor/mediapipe/wasm/vision_wasm_internal.wasm` | 11,8 MB |
 | `vendor/mediapipe/hand_landmarker.task` | 7,8 MB |
 
-**Integridade verificada:** `node tools/verificar-vendor.mjs` → *4 arquivos íntegros —
-tasks-vision 1.0.1* (SHA-256 conferidos contra `INTEGRIDADE.json`).
-
-### 2.3 Decisões técnicas que valem registro
+### 7.2 Decisões
 
 | Decisão | Justificativa |
 |---|---|
-| **CDN proibida, binários commitados** | A CSP do MV3 bloqueia origem externa, e as lojas tratam CDN como "código remoto" na revisão |
-| **Versão fixada em `@1.0.1`** | `@latest` publica builds `rc.<data>` diários — irreprodutível |
-| **Delegate CPU, não GPU** | Medido no spike (Edge 153): CPU p50 **22,9 ms** contra **58,4 ms** no GPU. O readback de textura domina o custo de um modelo pequeno, e o GPU exigiria manter contexto WebGL vivo num painel recolhível |
-| **`FilesetResolver` não utilizado** | O `WasmFileset` é montado à mão, evitando a sonda SIMD em runtime (que apontaria para um par `_nosimd_` não vendorizado) |
-| **KNN em vez de rede neural** | Poucas amostras por classe, treinadas pelo usuário: não há dados nem tempo para otimizar pesos. O custo é inferência O(amostras) — frações de ms a 15 Hz sobre ~1.550 vetores (31 classes × 50 do modelo pronto) |
-| **`requestVideoFrameCallback`, não `setInterval`** | Um timer dispara mesmo sem quadro novo e o MediaPipe reprocessaria a mesma imagem. O rVFC dispara uma vez por quadro e pausa junto com o vídeo |
-| **Painel lateral, não popup** | O popup fecha ao perder foco, destrói o documento e encerra o `MediaStream` |
-| **Limiar de rejeição constante (1,3)** | A normalização dá escala física fixa ao espaço de 63 dimensões. Duas calibrações anteriores (dispersão interna × 2; separação entre classes × 1,2) rejeitavam sinais legítimos — a segunda encolhia justamente quando o alfabeto ficava completo |
-| **Pesquisa executada pelo service worker** | `chrome.search.query` com `disposition` precisa inferir a aba a partir de quem chamou, e o painel lateral não é aba. O worker cria a aba antes e passa `tabId` |
-| **Logos empacotadas, não remotas** | A CSP do MV3 bloqueia imagem remota, e a interface não pode depender de rede para se desenhar |
-| **Migração de storage do nome antigo** | O produto se chamava RVL Libras (`rvl.*`). Renomear as chaves sem migrar faria o usuário "perder" o modelo sem erro nenhum |
-| **Modelo pronto em chaves separadas das pessoais** | Permite "voltar ao padrão" numa letra apagando só o treino do usuário, e garante que no teto quem sai primeiro é a amostra genérica, não a da mão do usuário (seção 5.1.3) |
-| **Modelo pronto empacotado, não baixado** | Mesmo motivo da CDN proibida: nada de código ou dado remoto. Escolher o modelo pronto não envia nem recebe nada |
-| **Teto de 100 por classe, padrão com até 50** | Metade do teto fica livre para o reforço pessoal antes que qualquer amostra precise ceder (seção 5.2) |
-| **Tela cheia como aba, não janela nova** | O Chrome não deixa uma extensão alargar o painel lateral. Uma aba da própria janela é o mais perto de "o painel ocupando o navegador" (seção 5.4) |
+| **Landmarks em vez de pixels** | Modelo pequeno, robusto a fundo, luz e tom de pele, treinável no navegador |
+| **KNN em vez de rede neural** | Poucas amostras por classe, treinadas pelo usuário: não há dados nem tempo para otimizar pesos. Inferência em frações de ms sobre ~1.550 vetores |
+| **Limiar de rejeição constante (1,3)** | A normalização dá escala física fixa ao espaço. Duas calibrações anteriores rejeitavam sinais legítimos |
+| **Delegate CPU, não GPU** | No spike (Edge 153): CPU p50 22,9 ms contra 58,4 ms no GPU, que paga a leitura de textura e exigiria um contexto WebGL vivo |
+| **Binários commitados, versão fixa** | A CSP do MV3 bloqueia CDN, e as lojas tratam CDN como código remoto; `@latest` publica builds diários |
+| **Binários marcados como `-text` no Git** | Sem isso, clones no Windows convertem as quebras de linha dos `.js` vendorizados e o SHA-256 deixa de bater, mesmo com o conteúdo intacto |
+| **`WasmFileset` montado à mão** | Evita a sonda SIMD do `FilesetResolver`, que apontaria para arquivos não vendorizados |
+| **`requestVideoFrameCallback`** | Dispara uma vez por quadro novo, ao contrário de um timer, e pausa junto com o vídeo |
+| **Painel lateral, não popup** | O popup fecha ao perder o foco e encerra a câmera |
+| **Pesquisa no service worker** | O painel lateral não é uma aba; o worker cria a aba e passa `tabId` a `chrome.search.query` |
+| **Logos e modelo pronto empacotados** | Nada de recurso remoto; a interface não depende de rede |
+| **Modelo pronto em chaves separadas** | Permite voltar uma letra ao padrão e faz o padrão ceder primeiro no teto |
+| **Área de reconhecimento condicionada à câmera** | Sem vídeo não há o que reconhecer nem treinar; esconder evita ações sem efeito |
+| **Tela cheia como aba, não janela** | O Chrome não deixa a extensão alargar o painel lateral |
+| **Modais próprios** | `window.confirm` não é confiável no painel lateral, e confirmações de consentimento ou destrutivas não podem falhar em silêncio |
 
-### 2.4 CSP do Manifest V3 e o mito do MediaPipe
+### 7.3 CSP do Manifest V3 e o MediaPipe
 
 É comum ler que o MV3 impede usar MediaPipe. A limitação vale para o pacote **legado**
-(`@mediapipe/hands`, `holistic`), cujo glue Emscripten usava `new Function()`. O pacote atual
-`tasks-vision` não tem ocorrência de `new Function` nem `eval(` — o `createNamedFunction` foi
-reescrito com `Object.defineProperty`. Basta declarar `script-src 'self' 'wasm-unsafe-eval';
-object-src 'self';` em `content_security_policy.extension_pages`.
+(`@mediapipe/hands`), cujo código gerado usava `new Function()`. O pacote `tasks-vision` não usa
+`new Function` nem `eval`. Basta declarar:
 
-Sem declarar, o WebAssembly é bloqueado; declarando qualquer coisa além disso, o Chrome recusa
-a instalação.
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+}
+```
 
 ---
 
-## 3. Arquitetura
+## 8. Qualidade e testes
 
-### 3.1 Pipeline de reconhecimento
+### 8.1 Situação
 
-```
-Câmera → MediaPipe HandLandmarker → 21 pontos (x,y,z)
-       → normalização → vetor de 63 números
-       → KNN sobre as amostras (modelo pronto + treino do usuário)
-       → estabilização temporal → caractere confirmado
-       → text-box → Pesquisar → escolha da plataforma
-```
-
-O classificador não distingue a origem das amostras: o store entrega as do modelo pronto e as
-pessoais concatenadas por classe, e o limiar τ_abs é recalibrado sobre o conjunto final.
-
-Nada é enviado antes da escolha: fechar o seletor (×, Cancelar, Esc ou clique fora) não dispara
-pesquisa nenhuma. O catálogo de destinos fica em `src/search-targets.js`, com as URLs fixadas por
-teste e o termo sempre passado por `encodeURIComponent`.
-
-### 3.2 Camadas
-
-O projeto é organizado para isolar o que é testável do que não é: **um único módulo depende de
-WASM** (`src/hand-landmarker.js`, 101 linhas, fino de propósito), e **um único módulo de `src/`
-acessa o ambiente sem permitir substituição** (`src/sign-recognizer.js`, onde moram o relógio
-real, o storage, a leitura do modelo pronto e a inicialização do WASM). `sign-model-store` e
-`inference-loop` usam `chrome.storage.local` e `performance.now()` como padrão, mas os recebem por
-injeção nos testes; `migracao-storage` recebe a área de storage como argumento. O resto é função
-pura ou classe com relógio injetado.
-
-| Módulo | Linhas | Responsabilidade |
-|---|---:|---|
-| `src/camera-controller.js` | 279 | Ciclo de vida do `MediaStream` — inalterado desde a v0.1.0 |
-| `src/sign-recognizer.js` | 469 | Orquestrador; expõe um `onStateChange`, como o CameraController. Lê e instala o modelo pronto, restaura classes |
-| `src/hand-landmarker.js` | 101 | Adaptador do MediaPipe (único módulo dependente de WASM) |
-| `src/inference-loop.js` | 138 | Agendador rVFC, throttle adaptativo, timestamp monotônico |
-| `src/sign-features.js` | 134 | Landmarks → 63 números; carrega `VERSAO_FEATURES` |
-| `src/sign-classifier.js` | 273 | KNN ponderado, rejeição, teste de razão, calibração de limiar (τ_abs) |
-| `src/sign-stabilizer.js` | 234 | Máquina de confirmação e trava anti-repetição |
-| `src/sign-classes.js` | 51 | Catálogo de classes estáticas, dinâmicas e números |
-| `src/sign-model-store.js` | 411 | Persistência com origem (padrão × pessoal), teto por classe, quota, export/import com validação de esquema |
-| `src/text-composer.js` | 75 | Composição do texto e normalização para a busca |
-| `src/search-targets.js` | 102 | Catálogo de plataformas de busca e montagem das URLs |
-| `src/migracao-storage.js` | 64 | Migra as chaves `rvl.*` (RVL Libras) para `soletra.*` |
-
-| Interface | Linhas | Responsabilidade |
-|---|---:|---|
-| `sidepanel/panel.html` / `.css` / `.js` | 261 / 835 / 562 | Interface principal; boas-vindas, aviso de teto, troca painel ↔ tela cheia |
-| `sidepanel/recognition-view.js` | 164 | Anel de progresso, text-box, busca |
-| `sidepanel/training-view.js` | 206 | Grade de classes (atualizada no lugar) com selo `padrão+suas`, estado "cheia", apagar ou voltar ao padrão por classe, exportar/importar/apagar tudo, restaurar o modelo pronto |
-| `sidepanel/dialogo.js` | 104 | Modal de confirmação (`window.confirm` não é confiável no painel) |
-| `sidepanel/janela.js` | 169 | Botões de janela no estilo do macOS: fechar, minimizar para o painel lateral, tela cheia |
-| `sidepanel/seletor-plataforma.js` | 169 | Modal de escolha do destino da pesquisa |
-| `background/service-worker.js` | 97 | Abre o painel no clique do ícone (fallback: aba) e executa a pesquisa |
-| `permission/request.html` / `.js` / `.css` | 34 / 56 / 85 | Aba de topo para o prompt nativo de câmera |
-
-| Apoio | Linhas | Responsabilidade |
-|---|---:|---|
-| `tools/verificar-vendor.mjs` | 89 | Confere os SHA-256 dos binários vendorizados |
-| `tools/montar-modelo-padrao.mjs` | 148 | Junta exports de várias pessoas no `modelos/padrao.json`, com amostragem balanceada |
-| `tools/png.mjs` | 217 | Ler, escrever e redimensionar PNG, sem dependências |
-| `tools/make-icons.mjs` | 66 | Gera `icons/icon*.png` a partir de `icons/soletra-logo.png` |
-| `tools/preparar-logos.mjs` | 302 | Limpa, apara e reduz as logos das plataformas (origem fora do repositório) |
-| `spike/spike.html` / `.js` | 69 / 274 | Diagnóstico de CSP e latência (fora do fluxo de produção) |
-
-| Dados | Tamanho | Conteúdo |
-|---|---:|---|
-| `modelos/padrao.json` | ~725 KB | Modelo pronto: 31 classes (21 letras + 10 números) × 50 amostras de 63 números |
-
-**Total de código-fonte próprio: ~8.190 linhas** (incluindo testes e ferramentas; sem contar o
-`padrao.json`).
-
-### 3.3 Parâmetros do pipeline
-
-| Módulo | Parâmetro | Valor |
-|---|---|---|
-| `inference-loop` | Taxa alvo / recuo | 15 Hz / 8 Hz |
-| `inference-loop` | p95 de latência que dispara recuo | 50 ms |
-| `sign-features` | Dimensões do vetor | 63 (21 pontos × 3) |
-| `sign-classifier` | k / rigor | 5 / 1.0 (multiplicador de τ_abs exposto na UI) |
-| `sign-classifier` | Limiar de distância padrão | 1,3 raio de palma (piso: p90 da dispersão interna × 5) |
-| `sign-classifier` | Teste de razão (máx.) | 0,97 — só descarta empates |
-| `sign-stabilizer` | Janela de votação | 400 ms (~6 quadros a 15 Hz) |
-| `sign-stabilizer` | Fração mínima da janela / quadros mínimos | 0,55 / 3 |
-| `sign-stabilizer` | Permanência para confirmar | 700 ms |
-| `sign-stabilizer` | Confiança mínima do KNN | 0,5 |
-| `sign-stabilizer` | Tempo fora da classe que libera repetição | 200 ms |
-| `sign-recognizer` | Intervalo entre amostras na captura | 150 ms |
-| `sign-model-store` | Amostras por captura (`AMOSTRAS_RECOMENDADAS`) | 20 |
-| `sign-model-store` | Teto por classe (`AMOSTRAS_MAXIMAS`) | **100** (era 60) |
-| `sign-model-store` | Amostras do modelo pronto por classe (`AMOSTRAS_PADRAO`) | **50** |
-| `montar-modelo-padrao` | Amostras por classe no arquivo gerado (`POR_CLASSE_PADRAO`) | 50 (= `AMOSTRAS_PADRAO`) |
-| `montar-modelo-padrao` | Mínimo de pessoas antes de avisar | 3 |
-
-### 3.4 Armazenamento (`chrome.storage.local`)
-
-| Chave | Conteúdo |
+| Indicador | Resultado (21/10/2026) |
 |---|---|
-| `soletra.modelo.v1.indice` | Índice do modelo: `esquema`, `versaoFeatures`, `mao`, `tauAbs`, `k`, `versaoCalibracao`, `contagem` (pessoais por classe) e `contagemPadrao` (do modelo pronto por classe) |
-| `soletra.modelo.v1.classe.<X>` | Amostras **pessoais** da classe X |
-| `soletra.modelo.v1.padrao.<X>` | Amostras do **modelo pronto** na classe X |
-| `soletra.reconhecimento.prefs` | Preferências do reconhecimento (rigor, permanência, conjunto) |
-| `soletra.preferredDeviceId` | Última câmera escolhida |
-| `soletra.consentimento.reconhecimento` | Data do aceite do consentimento |
+| Suíte de testes | **97 cenários em 11 arquivos, todos passando** (`node tests/todos.mjs`) |
+| `TODO` / `FIXME` no código | Nenhum |
+| Dependências vulneráveis | Não se aplica: zero dependências |
+| Integridade do vendor | **4/4 arquivos íntegros** (`node tools/verificar-vendor.mjs`), inclusive em clone no Windows |
 
-Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto composto) e
-`soletra.janela.retomar` (o que religar ao trocar entre painel e tela cheia; apagado na leitura).
+### 8.2 Cenários por arquivo
 
-A chave `padrao.*` não mudou o `ESQUEMA` (continua 1): um modelo gravado antes dela não tem
-`contagemPadrao` e é lido sem migração, com todas as amostras contadas como pessoais (cenário 17
-do store).
-
----
-
-## 4. Estado atual do código
-
-### 4.1 Situação geral
-
-| Indicador | Resultado |
-|---|---|
-| Suíte de testes | **97 cenários** em 11 arquivos (`node tests/todos.mjs`). Os 85 da versão de 19/09 passavam; os 12 novos foram escritos sem Node disponível na máquina e **ainda precisam ser executados** |
-| Integridade do vendor | **4/4 arquivos íntegros** |
-| `TODO` / `FIXME` / stubs no código | **nenhum** encontrado em `src/`, `sidepanel/`, `background/`, `permission/`, `tools/` |
-| Dependências vulneráveis | não aplicável — zero dependências |
-| Documentação | `README.md`, `PRIVACY.md` e este resumo atualizados com o modelo pronto, o teto de 100 e os botões de janela |
-| Controle de versão | Git, histórico na seção 9 |
-
-### 4.2 Cobertura de testes por módulo
-
-| Arquivo de teste | Cenários |
+| Arquivo | Cenários |
 |---|---:|
-| `tests/sign-model-store.test.mjs` | 18 (eram 11) |
+| `tests/sign-model-store.test.mjs` | 18 |
 | `tests/sign-stabilizer.test.mjs` | 15 |
 | `tests/sign-classifier.test.mjs` | 10 |
 | `tests/inference-loop.test.mjs` | 8 |
@@ -237,421 +913,151 @@ do store).
 | `tests/migracao-storage.test.mjs` | 7 |
 | `tests/camera-controller.test.mjs` | 6 |
 | `tests/integracao.test.mjs` | 6 |
-| `tests/montar-modelo-padrao.test.mjs` | 5 (novo) |
+| `tests/montar-modelo-padrao.test.mjs` | 5 |
 | **Total** | **97** |
 
-Cenários que travam bugs silenciosos (os de maior valor):
+### 8.3 Cenários que travam erros silenciosos
 
-- **Invariância a resolução** — a mesma mão em 640×480 e 1280×720 precisa gerar vetores
-  idênticos. Sem a correção de *aspect ratio*, o sintoma seria um modelo que para de funcionar
-  ao trocar de webcam, sem erro nenhum.
-- **Letra dupla** — S por 800 ms, pausa de 250 ms, S por 800 ms deve produzir `['S','S']`; com
-  pausa de 100 ms, apenas `['S']`.
-- **Timestamp monotônico** — trocar de câmera reinicia o `mediaTime`; um timestamp que regride
-  faz o MediaPipe devolver resultado vazio em silêncio.
-- **Versão de normalização** — um modelo gravado com outra `VERSAO_FEATURES` é **recusado**, não
-  reinterpretado. Reinterpretar não daria erro: daria queda de acurácia sem causa aparente.
-- **URL de busca com caractere reservado** — um `&` ou `#` digitado na text-box precisa ficar
-  contido no parâmetro, sem injetar nada na URL do terceiro.
-- **Migração de storage** — idempotente, e nunca sobrescreve dado novo com resíduo antigo.
-- **Integração** — o pipeline completo digita "ABC", produz "AA" ao relaxar a mão entre dois
-  sinais iguais e não inventa caractere sem mão no quadro nem com gesto fora do treino.
-- **No teto, o padrão cede primeiro** — o modelo pronto entra com 50 amostras; até 50 pessoais
-  nada é descartado; a partir daí cada amostra pessoal nova tira uma do padrão, até ele sumir
-  por inteiro (cenário 13 do store).
-- **Voltar ao padrão é por classe** — restaurar uma letra descarta só as pessoais dela, sem tocar
-  nas outras (cenário 14).
-- **Reinstalar o padrão não custa o treino pessoal** — e não deixa resíduo de classe que saiu do
-  arquivo novo (cenário 15).
-- **Eliminação alcança o padrão** — "Apagar tudo" e o × removem também as chaves `padrao.*`
-  (cenário 16), o que sustenta o direito de eliminação.
-- **Montagem balanceada** — quem gravou 60 amostras não leva mais lugar no padrão do que quem
-  gravou 20, e a cota de quem gravou pouco é redistribuída (cenários 1 e 2 da montagem).
+- **Invariância à resolução:** a mesma mão em 640×480 e 1280×720 gera vetores idênticos. Sem
+  isso, o modelo pararia de funcionar ao trocar de webcam, sem erro nenhum.
+- **Letra dupla:** S, pausa de 250 ms, S produz `SS`; com pausa de 100 ms, só `S`.
+- **Timestamp monotônico:** trocar de câmera reinicia o relógio do vídeo, e um timestamp que
+  regride faz o MediaPipe devolver resultado vazio em silêncio.
+- **Versão da normalização:** modelo gravado com outra versão é recusado, não reinterpretado.
+- **URL com caractere reservado:** um `&` ou `#` no texto fica contido no parâmetro de busca.
+- **Catálogo de plataformas:** IDs únicos, HTTPS, logos presentes no pacote e marcas em ordem
+  alfabética.
+- **Migração de storage:** idempotente e nunca sobrescreve dado novo com resíduo antigo.
+- **Integração:** o pipeline completo digita "ABC", produz "AA" ao relaxar a mão e não inventa
+  caractere sem mão nem com gesto fora do treino.
+- **No teto, o padrão cede primeiro**, **voltar ao padrão é por classe**, **reinstalar o padrão
+  não custa o treino pessoal** e **"Apagar tudo" alcança o padrão** (cenários 13 a 16 do store).
+- **Montagem balanceada:** quem gravou mais amostras não domina o modelo pronto.
 
-Novos cenários do store (11 a 17): instalar o padrão em chave própria preservando a mão do
-usuário; pessoais somando às do padrão; teto com o padrão cedendo; restaurar uma classe;
-reinstalar o padrão; eliminação incluindo o padrão; índice antigo lido sem migração.
+### 8.4 Boas práticas observadas
 
-Cenários da montagem (1 a 5): amostragem balanceada entre pessoas; redistribuição da cota não
-usada; amostras espalhadas pela sessão de captura em vez das primeiras; saída válida para
-`validarArquivo` com avisos de pouca diversidade; entrada inválida recusada com o número do
-arquivo.
-
-### 4.3 Cobertura funcional do reconhecimento
-
-| Conjunto | Classes | Status |
-|---|---|---|
-| Letras estáticas | A B C D E F G I L M N O P Q R S T U V W Y (**21**) | Implementado; incluídas no modelo pronto |
-| Números | 0–9 (**10**) | Implementado; incluídos no modelo pronto |
-| Letras dinâmicas | **H J K X Z** (+ Ç) | **Fora desta versão** — exigem componente temporal |
-
-A limitação das dinâmicas é **declarada na interface** (`AVISO_DINAMICAS` em
-`src/sign-classes.js`) e a text-box aceita edição manual para completá-las. A decisão registrada
-no código: *"um classificador quadro-a-quadro não tem como representar trajetória, e fingir que
-tem produz confusão sistemática em vez de erro honesto."*
-
-Letras e números compartilham configurações de mão (O≡0, V≡2, W≡3), por isso **nunca são
-classificados juntos** — um seletor no painel alterna entre os conjuntos.
-
-### 4.4 Qualidade do código
-
-Pontos observados na leitura dos módulos:
-
-- **Documentação em cabeçalho de módulo** explicando *por que* a decisão foi tomada, não apenas
-  o que o código faz — presente em todos os 12 módulos de `src/` e nos módulos novos de
-  `sidepanel/` e `tools/`.
-- **Injeção de dependência para testabilidade**: relógio injetado no `SignStabilizer` (`t` é
-  argumento de `processar()`, nunca `performance.now()` lido internamente), `area` injetável no
-  `SignModelStore`, `agora`/`agendarQuadro`/`cancelarQuadro` no `InferenceLoop`. A ferramenta de
-  montagem exporta `montarModeloPadrao()` como função pura, separada da leitura de arquivos, para
-  poder ser testada.
-- **Versionamento de esquema**: `VERSAO_FEATURES` e `ESQUEMA` com recusa explícita de dados
-  incompatíveis — o `padrao.json` passa pela mesma validação que um arquivo importado.
-- **Render barato a 15 Hz**: a grade de treino é construída uma vez e só atualizada no lugar;
-  cada botão guarda a última contagem e origem desenhadas e só escreve no DOM quando elas mudam.
-- **Nomenclatura em português** no código do reconhecimento. A exceção é o código herdado da
-  v0.1.0 — `src/camera-controller.js` e a parte de câmera de `sidepanel/panel.js`
-  (`CameraController`, `ensureDeviceLabels`, `showMessage`), que seguem em inglês.
+- Cabeçalho em cada módulo explicando **por que** a decisão foi tomada.
+- Injeção de dependências para testes: relógio no estabilizador, área de storage no store,
+  relógio e agendador no loop.
+- Versionamento de esquema (`VERSAO_FEATURES`, `ESQUEMA`) com recusa explícita de dados
+  incompatíveis; o modelo pronto passa pela mesma validação de um arquivo importado.
 
 ---
 
-## 5. Funcionalidades adicionadas depois de 19/09/2026
-
-Esta seção descreve, em detalhe, o que foi feito depois do último commit documentado
-(`b4e1e61`). Cada subseção traz o problema, a solução e as decisões tomadas.
-
-### 5.1 Modelo pronto (modelo pré-definido)
-
-#### 5.1.1 Problema
-
-Até aqui, cada usuário precisava treinar o próprio modelo do zero antes de reconhecer qualquer
-letra: 20 amostras × 21 letras, mais 10 números. Era a maior barreira de entrada do projeto —
-quem abria a extensão pela primeira vez não via nada funcionando.
-
-#### 5.1.2 Solução: três caminhos
-
-1. **Usar o modelo pronto** — reconhece sem treino nenhum.
-2. **Treinar do zero** — o fluxo de antes, com o modelo só do usuário.
-3. **Partir do pronto e reforçar** — usar o modelo pronto e gravar amostras próprias nas letras
-   que falharem com a mão do usuário. As amostras pessoais se somam às do modelo pronto.
-
-Na primeira abertura, com o modelo vazio, aparece o cartão **"Como você quer começar?"** com os
-botões **Usar modelo pronto** e **Treinar do zero**. "Treinar do zero" fecha o cartão e abre o
-painel de treino; o cartão não volta naquela abertura. O cartão só aparece se o
-`modelos/padrao.json` existir na extensão: sem o arquivo, nada muda e o painel funciona só com
-treino próprio, como antes.
-
-#### 5.1.3 Origem das amostras: padrão × pessoal
-
-As amostras do modelo pronto ficam em **chaves próprias** (`soletra.modelo.v1.padrao.<X>`),
-separadas das pessoais (`soletra.modelo.v1.classe.<X>`). O índice guarda as duas contagens
-(`contagemPadrao` e `contagem`). O `carregar()` do store concatena as duas listas para o
-classificador e devolve também `origem[classe] = { padrao, pessoal }` para a interface.
-
-Isso permite três coisas que uma lista única não permitiria:
-
-- **Voltar ao padrão numa letra** apagando só o que o usuário gravou nela.
-- **No teto, sair primeiro a amostra genérica**: o `adicionarAmostra` descarta primeiro do
-  padrão e só depois a pessoal mais antiga. Com o uso, o modelo vai convergindo para a mão de
-  quem usa.
-- **Reinstalar o padrão sem perder o treino pessoal**: `instalarPadrao()` troca só as chaves
-  `padrao.*`, e as pessoais têm preferência dentro do teto.
-
-A mão gravada no arquivo do modelo pronto é **ignorada** de propósito: as features já espelham a
-mão esquerda (`sign-features`), então o mesmo padrão serve às duas mãos, e a mão que precisa
-sobreviver no índice é a do usuário.
-
-O limiar τ_abs também **não é lido do arquivo**: é sempre recalibrado sobre o conjunto final,
-porque depende da dispersão interna, que muda quando o treino pessoal se soma.
-
-#### 5.1.4 Interface
-
-| Elemento | Comportamento |
-|---|---|
-| Selo da classe | `50+8` quando há padrão e pessoais (o número pessoal em destaque, porque é o que o usuário controla); só o total quando há um tipo só; `·` quando vazia |
-| Dica do botão (tooltip) | "A — 50 do modelo pronto, 8 sua(s) de 100. Clique para reforçar." |
-| Clique na classe | Grava 20 amostras novas (treinar ou reforçar) |
-| × numa classe com padrão **e** pessoais | Pergunta "Voltar "A" ao modelo pronto?" e descarta só as pessoais |
-| × numa classe só pessoal ou só padrão | Apaga a classe inteira, com confirmação |
-| **Adicionar modelo pronto** | Para quem treinou do zero: soma o modelo pronto ao treino próprio |
-| **Restaurar modelo pronto** | Para quem já usa o padrão: repõe as amostras padrão que cederam lugar aos reforços. Pede confirmação |
-| **Apagar tudo** | Apaga padrão e pessoais |
-
-#### 5.1.5 O arquivo `modelos/padrao.json`
-
-Mesmo formato do botão **Exportar** (`soletra-modelo`, esquema 1, `versaoFeatures` 1), com dois
-campos a mais: `pessoas` (quantos exports foram juntados) e `tauAbs: null` (recalibrado na
-instalação). É lido com `fetch(chrome.runtime.getURL('modelos/padrao.json'))` — página da
-própria extensão, sem precisar de `web_accessible_resources`.
-
-O arquivo atual foi gerado a partir do modelo exportado pelo autor (31 classes × 60 amostras,
-uma pessoa), reduzido a **50 amostras por classe** escolhidas espalhadas pela sessão de
-captura (índices `⌊i·60/50⌋`), não as 50 primeiras.
-
-#### 5.1.6 Ferramenta `tools/montar-modelo-padrao.mjs`
-
-```
-node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json a.json b.json ...
-```
-
-Junta os exports de **várias pessoas** num modelo pronto:
-
-- **Amostragem balanceada por pessoa**: cada pessoa tem a mesma cota na classe; a sobra de quem
-  gravou pouco é redistribuída entre os outros. Sem isso, quem grava mais domina o padrão.
-- **Amostras espalhadas** pela sessão de cada pessoa, não as primeiras.
-- **Avisos** quando há menos de 3 pessoas no total, ou quando uma classe tem um único
-  contribuinte.
-- **Validação** da saída com o mesmo `SignModelStore.validarArquivo` da importação; um export
-  inválido aborta com o número do arquivo.
-- O padrão de 50 por classe vem de `AMOSTRAS_PADRAO`: gerar mais seria peso morto no pacote,
-  porque a instalação descartaria o resto.
-
-#### 5.1.7 Generalização: ponto de atenção
-
-Um modelo treinado por **uma pessoa só** aprende a mão dela — tamanho, proporção dos dedos, o
-jeito particular de fazer cada letra — e pode falhar em silêncio com quem não participou. O
-`padrao.json` atual vem de uma pessoa (`pessoas: 1`). Aumentar para 50 amostras por letra não
-resolve isso. O caminho previsto é coletar exports de colegas e voluntários, com consentimento, e
-rodar a ferramenta de montagem (seção 8).
-
-### 5.2 Teto de 100 amostras por classe e avisos de limite
-
-#### 5.2.1 Mudança
-
-| Constante | Antes | Agora |
-|---|---:|---:|
-| `AMOSTRAS_MAXIMAS` (teto por classe) | 60 | **100** |
-| `AMOSTRAS_PADRAO` (modelo pronto por classe) | — | **50** |
-| `POR_CLASSE_PADRAO` (ferramenta) | 30 | **50** |
-
-Com o modelo pronto entrando com 50, sobram **50 lugares livres** por letra para o reforço
-pessoal antes que qualquer amostra precise ceder. Na instalação, o número de amostras do padrão
-é `min(50, 100 − pessoais)`, então o treino pessoal nunca é empurrado para fora pelo padrão.
-
-Custo de armazenamento: 31 classes × 100 amostras × 63 números ficam bem abaixo da quota de
-10 MB do `chrome.storage.local`.
-
-#### 5.2.2 Problema que os avisos resolvem
-
-O store descartava amostras em silêncio no teto. Uma letra que já funcionava podia piorar depois
-de um reforço, sem o usuário entender por quê.
-
-#### 5.2.3 Avisos na interface
-
-| Momento | O que aparece |
-|---|---|
-| **Na grade** | A classe com 100 amostras fica com **borda tracejada** e número em negrito (estado `classe--cheia`). Tooltip: "Classe cheia (100/100): gravar mais substitui as mais antigas". O texto de ajuda abaixo da grade explica a marcação |
-| **Antes de gravar — só o padrão vai ceder** | Mensagem informativa: "A chegou ao limite de 100 amostras: N do modelo pronto vão dar lugar às que você gravar agora." A gravação começa normalmente, porque é o reforço esperado |
-| **Antes de gravar — amostras do usuário vão sair** | Confirmação "A já está cheia" (ou "vai passar do limite") dizendo quantas amostras suas e quantas do modelo pronto serão descartadas, com **Gravar mesmo assim** / **Cancelar**, e a sugestão de apagar a letra no × e gravar de novo se ela tiver piorado |
-| **Durante a gravação no teto** | A barra de gravação fica laranja e mostra "limite de 100: substituindo as mais antigas" — explica por que o total parou de subir |
-
-A conta é feita antes da captura: `excesso = total + 20 − 100`; o padrão cede até `padrao`
-amostras e o resto sai das pessoais.
-
-### 5.3 "Apagar tudo" mantém o caminho de volta ao modelo pronto
-
-Antes, depois de **Apagar tudo** o botão de restaurar sumia (o modelo ficava vazio), e só o
-cartão de boas-vindas oferecia o modelo pronto — que não aparecia se o usuário já tivesse
-escolhido "Treinar do zero" naquela abertura.
-
-Agora:
-
-- O botão **Restaurar modelo pronto** continua visível com o modelo vazio; só some se o
-  `padrao.json` não estiver na extensão.
-- Com o modelo vazio, ele carrega o padrão **sem pedir confirmação**: não há treino a perder.
-- A mensagem depois de apagar diz: "Modelo apagado. Para voltar a usar o modelo pronto, clique
-  em "Restaurar modelo pronto"."
-
-### 5.4 Botões de janela no estilo do macOS (fechar, minimizar, tela cheia)
-
-#### 5.4.1 Comportamento
-
-Três botões redondos no canto esquerdo do topo, nas cores do macOS (vermelho `#ff5f57`, amarelo
-`#febc2e`, verde `#28c840`). Os símbolos (×, −, setas) aparecem ao passar o mouse sobre o grupo
-ou com foco de teclado, como no macOS. Os três ficam habilitados e com dica nas duas telas.
-
-| Botão | No painel lateral | Na tela cheia (aba) |
-|---|---|---|
-| 🔴 Fechar | Fecha o painel (`window.close()`) | Fecha a aba (`chrome.tabs.remove`) |
-| 🟡 Minimizar | Avisa que já está minimizado — o painel lateral **é** o estado minimizado | Reabre o painel lateral na mesma janela e fecha a aba |
-| 🟢 Maximizar | Abre o Soletra numa **aba da janela atual**, ocupando o navegador inteiro, e fecha o painel | Alterna a tela cheia de verdade (Fullscreen API); Esc também sai |
-
-#### 5.4.2 Decisões
-
-- **Aba, não janela nova.** A primeira versão abria uma janela própria (`chrome.windows.create`
-  em tela cheia); foi trocada por uma aba na janela atual, que se adapta ao navegador. Se já
-  houver uma aba do Soletra aberta, ela é recarregada e trazida para frente
-  (`chrome.runtime.getContexts`), em vez de empilhar outra.
-- **Uma página por vez, e a câmera solta antes.** Em muitas webcams no Windows o acesso é
-  exclusivo; a página que sai desliga câmera e reconhecimento **antes** de abrir a outra. O que
-  estava ligado é anotado em `storage.session` (`soletra.janela.retomar`) e religado do outro
-  lado. A anotação é apagada na leitura: reabrir o painel no dia seguinte não liga a câmera
-  sozinho.
-- **Gesto do usuário.** `chrome.sidePanel.open` só funciona dentro do clique, sem `await` antes.
-  Por isso a janela da aba é lida já na abertura da página, e a chamada é a primeira do clique.
-- **Modo pela URL.** A mesma `panel.html` roda nos dois modos; `?modo=aba` liga o layout de tela
-  cheia (coluna centrada de até 760 px, letra maior, vídeo grande). O painel lateral não recebe
-  parâmetro, então sem ele é painel.
-- **Sem permissão nova.** `tabs.create/remove/reload`, `windows.update` e `runtime.getContexts`
-  sobre páginas da própria extensão não exigem permissão no manifesto.
-
-#### 5.4.3 Limitações
-
-- Voltar ao painel usa `chrome.sidePanel.open` (Chrome 116+), e o manifesto aceita a partir da
-  114. Sem a API, aparece um aviso pedindo para fechar a aba e clicar no ícone do Soletra.
-- Abrir o painel pelo ícone com a aba de tela cheia ainda aberta faz as duas páginas disputarem
-  a câmera.
-
-### 5.5 Documentação
-
-- `README.md`: seções "Modelo pronto" (com a ferramenta de montagem) e "Tela cheia, painel e
-  fechar"; teto de 100 e padrão de 50; estrutura de arquivos com `janela.js`.
-- `PRIVACY.md`: linha nova na tabela de dados para as amostras do modelo pronto; parágrafo sobre
-  as amostras de voluntários; "Apagar tudo" passa a incluir o modelo pronto.
-- Este resumo.
-
----
-
-## 6. Conformidade e privacidade (LGPD)
-
-O `PRIVACY.md` está na versão 0.2.0 e mapeia cada dado tratado com finalidade, local de
-armazenamento e retenção.
+## 9. Privacidade e LGPD
 
 | Ponto | Situação |
 |---|---|
-| Quadros de vídeo | Nunca gravados nem transmitidos; memória do WASM, sobrescrita por quadro |
-| Amostras de treino | **Vetores numéricos, não imagens** — geometria normalizada da mão. Ainda assim tratadas como **dado biométrico derivado** |
-| Amostras do modelo pronto | Vêm empacotadas na extensão, de voluntários, sem nome nem identificador; copiadas para o `storage.local` só quando o usuário escolhe usá-las. Escolher o modelo pronto não envia nada |
-| Direito de eliminação (art. 18, VI) | Botão "Apagar tudo" (e × para apagar uma única classe) — remove também as amostras do modelo pronto; `sign-model-store` garante que não resta resíduo no storage (cenários 9 e 16) |
-| Direito de portabilidade (art. 18, V) | Export/import do modelo em JSON com validação de esquema. O export traz padrão e pessoais juntos; reimportado, tudo vira pessoal |
-| Único ponto de saída de dados | O termo de busca, **apenas** depois de escolher a plataforma no seletor do "Pesquisar" — e só para ela |
-| Permissões declaradas | `sidePanel`, `storage`, `search` — **sem `host_permissions`**, sem content scripts. Os botões de janela não acrescentaram permissão |
-| Serviços externos de IA | Nenhum. Inferência 100% local por WebAssembly |
+| Quadros de vídeo | Nunca gravados nem transmitidos; ficam na memória do WASM e são sobrescritos a cada quadro |
+| Amostras de treino | Vetores numéricos, não imagens; ainda assim tratadas como **dado biométrico derivado** |
+| Consentimento | Pedido antes da primeira ativação do reconhecimento, com data registrada (RF15) |
+| Amostras do modelo pronto | Empacotadas, sem nome nem identificador; copiadas para o storage só se o usuário escolher |
+| Direito de eliminação (art. 18, VI) | × por classe e "Apagar tudo", que alcança também o modelo pronto, sem resíduo |
+| Direito de portabilidade (art. 18, V) | Exportar e importar o modelo em JSON |
+| Único dado que sai do dispositivo | O termo de busca, depois da escolha da plataforma, e só para ela |
+| Permissões | `sidePanel`, `storage`, `search`; sem `host_permissions` e sem content scripts |
+| Serviços externos de IA | Nenhum |
 
-**Pontos de atenção para publicação:**
-
-- Chrome Web Store e Edge Add-ons exigem justificativa de uso da câmera e URL pública da
-  política de privacidade. A justificativa a declarar já está redigida no `README.md`. A
-  permissão `search` também pede justificativa: aciona o buscador padrão do navegador quando o
-  usuário escolhe esse destino.
-- O `PRIVACY.md` afirma que os voluntários do modelo pronto consentiram com a distribuição. Esse
-  consentimento precisa ser **registrado por escrito** para cada pessoa cujo export entrar no
-  `padrao.json` (inclusive o autor), e anexado à documentação do TCC.
+Política completa em [PRIVACY.md](PRIVACY.md). Pendências na seção 5.4.
 
 ---
 
-## 7. Como rodar e verificar
+## 10. Como executar e verificar
+
+### 10.1 Instalação
+
+1. Abrir `chrome://extensions` (Chrome) ou `edge://extensions` (Edge).
+2. Ativar o **Modo do desenvolvedor**.
+3. **Carregar sem compactação** e selecionar a raiz do repositório.
+4. Clicar no ícone do Soletra para abrir o painel.
+
+Depois de alterar o código, clicar em ↻ no cartão da extensão. Se o vídeo estiver com atraso,
+desativar a aceleração de hardware do navegador (seção 5.3).
+
+### 10.2 Comandos
 
 ```
 node tests/todos.mjs                     # suíte completa — 97 cenários
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
-node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 ```
 
-**Instalação em modo desenvolvedor:**
+### 10.3 Roteiro de teste manual
 
-1. Chrome: `chrome://extensions` — Edge: `edge://extensions`
-2. Ative **Modo do desenvolvedor**
-3. **Carregar sem compactação** → selecione a raiz do repositório
-4. Clique no ícone do Soletra para abrir o painel
+1. Abrir o painel → a área de reconhecimento **não aparece**.
+2. **Iniciar câmera** → autorizar na aba aberta → voltar e iniciar → a área aparece.
+3. Ligar **Reconhecimento** → aceitar o consentimento → cartão "Como você quer começar?" →
+   **Usar modelo pronto** → soletrar letras sem treinar.
+4. Alternar para **Números** e reconhecer dígitos.
+5. Fazer S, relaxar, S → texto `SS`. Testar **Repetir letra**, **Espaço**, **Apagar**,
+   **Limpar** e digitação manual.
+6. **Pesquisar** → conferir a ordem Amazon, Google, Maps, Wikipédia, YouTube → escolher uma →
+   nova aba com o termo. Repetir com **Buscador padrão** e com Esc (nada é aberto).
+7. Reforçar uma letra → selo `50+20` e uso `70%`; reforçar até 100 → `100%`, borda tracejada e
+   aviso de limite. Conferir abaixo da grade a linha "Armazenamento: … MB de 10 MB (…%)".
+8. × na letra reforçada → volta a `50`. **Apagar tudo** → **Restaurar modelo pronto**.
+9. **Exportar**, apagar e **Importar**.
+10. 🟢 abre em aba com a câmera religada; 🟢 de novo → tela cheia; 🟡 → painel; 🔴 → fecha.
+11. **Parar** a câmera → a área de reconhecimento some; religar → volta com o texto preservado.
 
-**Roteiro de teste manual das funcionalidades novas:**
+### 10.4 Diagnóstico
 
-1. Com o storage limpo, abrir o painel → cartão "Como você quer começar?" → **Usar modelo
-   pronto** → ligar câmera e Reconhecimento e reconhecer letras sem treinar.
-2. Clicar numa letra para reforçar → selo passa a `50+20`.
-3. Reforçar a mesma letra até 100 → borda tracejada; nova tentativa mostra o aviso ou a
-   confirmação de limite; barra laranja durante a gravação.
-4. × na letra reforçada → "Voltar ao modelo pronto" → selo volta a `50`.
-5. **Apagar tudo** → o botão **Restaurar modelo pronto** continua visível → clicar recarrega o
-   padrão sem confirmação.
-6. Verde → abre como aba ocupando o navegador, com a câmera religada; verde de novo → tela
-   cheia; amarelo → volta ao painel lateral; vermelho → fecha.
-7. Exportar, apagar e reimportar o modelo.
-
-**Diagnóstico de latência:** abrir `spike/spike.html` como página da extensão. Mede latência por
-delegate separando quadros com e sem mão rastreada (regimes de custo diferentes — sem
-rastreamento o MediaPipe roda o detector de palma a cada quadro).
-
-**Fluxo de permissão:** extensões não têm permissão `"camera"` no manifesto, e o diálogo nativo
-não aparece dentro do painel lateral. A extensão encaminha para `permission/request.html` em aba
-de topo; concedida ali, a permissão vale para toda a origem `chrome-extension://<id>` — inclusive
-para a aba de tela cheia.
+`spike/spike.html`, aberta como página da extensão, mede a latência por delegate, separando
+quadros com e sem mão rastreada.
 
 ---
 
-## 8. Riscos, pontos de atenção e próximos passos
+## 11. Trabalhos futuros
 
-### 8.1 Riscos
+Em ordem de prioridade para o TCC:
 
-| Risco | Impacto | Mitigação atual |
-|---|---|---|
-| Modelo pronto treinado por uma pessoa só | Pode falhar com mãos diferentes da do autor, sem erro aparente | Reforço por letra, voltar ao padrão por letra; ferramenta de montagem pronta para juntar várias pessoas, com aviso abaixo de 3 |
-| Ausência de matriz de confusão / avaliação formal | Não se sabe quais pares de configuração realmente colidem; hoje é suposição (O≡0, V≡2) | Previsto em `src/sign-eval.js` (ainda não implementado) |
-| Testes novos ainda não executados | Algum cenário novo pode falhar | Rodar `node tests/todos.mjs` antes da entrega |
-| 20 MB de binários no repositório | Clone pesado; limite de tamanho das lojas | Decisão consciente — CDN é proibida pela CSP |
-| Dependência de uma versão fixa do MediaPipe | Correções de segurança upstream exigem revendorização manual | `INTEGRIDADE.json` + `verificar-vendor.mjs` detectam divergência |
-| Modelo treinado pelo usuário = variabilidade de acurácia | Usuário com treino ruim tem experiência ruim | Calibração automática de τ_abs; modelo pronto como ponto de partida; teto de 100 com aviso na interface |
-| Cobertura de 21/26 letras | Palavras com H, J, K, X, Z exigem edição manual | Limitação declarada na UI; text-box editável |
-| Painel e aba de tela cheia abertos juntos | Disputam a câmera | A troca pelos botões solta a câmera antes; abrir pelo ícone com a aba aberta não é tratado |
-| `sidePanel.open` só no Chrome 116+ | No 114–115, o amarelo não volta ao painel | Aviso na interface |
-| Imagens de origem das logos fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado | Os PNGs finais estão empacotados em `icons/plataformas/` e sua presença é conferida por teste |
-| URLs de terceiros podem mudar | Uma plataforma que altere o formato de busca quebra aquele destino | URLs fixadas por teste; o formato do Maps foi conferido na documentação oficial |
-
-### 8.2 Próximos passos registrados
-
-1. **Coletar exports de várias pessoas** (com consentimento por escrito) e regenerar o
-   `padrao.json` com `tools/montar-modelo-padrao.mjs`.
-2. **Matriz de confusão e avaliação leave-one-out** (`src/sign-eval.js`) — medir quais pares de
-   configurações realmente colidem, e medir a acurácia do modelo pronto em quem não participou do
-   treino (resultado forte para o TCC).
-3. **Escolha "Substituir / Mesclar" na importação** — o store já suporta `mesclar`; a interface
-   ainda só substitui.
-4. **Letras dinâmicas (H, J, K, X, Z e Ç)** — exigem um segundo pipeline com componente
-   temporal: buffer de landmarks e classificador de sequência, com dataset próprio.
-5. **Ablação da normalização** — rotação ligada versus desligada, peso do eixo z, e efeito de
-   acrescentar distâncias ponta-de-dedo→punho ao vetor (`VERSAO_FEATURES` 2).
-6. **Captura em segundo plano via `offscreen` document** — manter o modelo quente entre aberturas
-   do painel.
-7. Outras ideias levantadas: modo prática/jogo (o app sorteia uma letra e o usuário sinaliza),
-   treino guiado com imagem de referência por letra, autocompletar de palavras, vários perfis de
-   modelo, barra das 3 classes mais prováveis ao vivo, atalho de teclado e comandos por gesto
-   (espaço, apagar, pesquisar).
+1. **Avaliação formal** (`src/sign-eval.js`): matriz de confusão e leave-one-out, incluindo a
+   acurácia do modelo pronto em quem não participou do treino. É o resultado quantitativo que o
+   trabalho ainda não tem.
+2. **Coletar exports de várias pessoas**, com consentimento por escrito, e regenerar o
+   `padrao.json`.
+3. **Opção "Mesclar" na importação**, que o armazenamento já suporta.
+4. **Letras dinâmicas (H, J, K, X, Z e Ç)** com um pipeline temporal.
+5. **Ablação da normalização:** rotação ligada × desligada, peso do eixo z e novas distâncias no
+   vetor (`VERSAO_FEATURES` 2).
+6. **Publicação** na Chrome Web Store e no Edge Add-ons.
+7. **Documento `offscreen`** para manter o detector carregado entre aberturas.
+8. Ideias levantadas: modo prática (o app sorteia uma letra), treino guiado com imagem de
+   referência, autocompletar de palavras, vários perfis de modelo, as 3 classes mais prováveis
+   ao vivo, atalhos de teclado e comandos por gesto.
 
 ---
 
-## 9. Histórico de alterações
+## 12. Histórico de alterações
 
 | Data | Commit | Descrição |
 |---|---|---|
 | 19/09/2026 | `bf7cc0c` | Versão inicial: câmera no painel lateral, pipeline MediaPipe → KNN → estabilização, treino, export/import |
 | 19/09/2026 | `7a1df0e` | Configuração local do Claude Code deixa de ser versionada |
-| 19/09/2026 | `6ed3405` | Produto renomeado de RVL Libras para Soletra, com migração das chaves de storage |
-| 19/09/2026 | `c353056` | Regra global impede que `display` de autor anule o atributo `hidden` |
+| 19/09/2026 | `6ed3405` | Produto renomeado de RVL Libras para Soletra, com migração das chaves |
+| 19/09/2026 | `c353056` | `display` de autor deixa de anular o atributo `hidden` |
 | 19/09/2026 | `8b29921` | Revisão do painel de treino e do modal de confirmação |
 | 19/09/2026 | `13863c8` | Seletor de plataforma de destino na pesquisa |
 | 19/09/2026 | `840b6d8` | Correção da descrição do limiar no README |
 | 19/09/2026 | `731c1d8` | Marca do Soletra como ícone da extensão |
 | 19/09/2026 | `5f25a9b` | Recalibração de modelos salvos com o limiar antigo |
 | 19/09/2026 | `b4e1e61` | README, RESUMO e PRIVACY alinhados ao código |
-| 13/10/2026 | `0a6ef74` + `c89af4c` | Modelo pronto: origem padrão × pessoal no store, boas-vindas, reforço e voltar ao padrão por classe, restaurar (seção 5.1) |
-| 13/10/2026 | `277d283` | Ferramenta de montagem do modelo pronto e `modelos/padrao.json` com 50 amostras por classe (seções 5.1.5 e 5.1.6) |
-| 13/10/2026 | `0a6ef74` + `c89af4c` | Teto de 100 por classe e avisos de limite na interface (seção 5.2) |
-| 13/10/2026 | `c89af4c` | "Apagar tudo" mantém o botão de restaurar o modelo pronto (seção 5.3) |
-| 13/10/2026 | `c89af4c` | Botões de janela no estilo do macOS e tela cheia como aba (seção 5.4) |
-| 13/10/2026 | (este commit) | README, PRIVACY e este resumo documentam tudo acima (seção 5.5) |
+| 13/10/2026 | `0a6ef74` | Amostras do modelo pronto separadas das pessoais |
+| 13/10/2026 | `277d283` | Ferramenta de montagem e `modelos/padrao.json` com 50 amostras por classe |
+| 13/10/2026 | `c89af4c` | Boas-vindas, reforço e volta ao padrão por classe, teto de 100 com avisos, botões de janela e tela cheia como aba |
+| 13/10/2026 | `6163dfa` | Documentação do modelo pronto, do teto e dos botões de janela |
+| 21/10/2026 | (a commitar) | Área de reconhecimento só com a câmera ativa; captura a 60 fps; plataformas em ordem alfabética; % de uso por classe e uso total do armazenamento; `.gitattributes` e diagnóstico de quebra de linha no verificador do MediaPipe; data e tabelas do `PRIVACY.md`; README e esta documentação reescritos |
 
 ---
 
-## 10. Sobre o repositório de referência
+## 13. Repositório de referência avaliado
 
 O projeto [WellingtonDev25/leitor_libras](https://github.com/WellingtonDev25/leitor_libras) foi
-avaliado como base e **descartado**. É um script Python de 56 linhas com modelo Teachable Machine
-que classifica **pixels 224×224** — o MediaPipe ali serve apenas para recortar a *bounding box* da
-mão, e os landmarks nunca chegam ao classificador. Reconhece **5 classes** (`A`–`E`), não inclui
-dataset nem script de treino, não tem estabilização e **não declara licença**, o que reservaria
-todos os direitos ao autor.
+avaliado como base e **descartado**. É um script Python de 56 linhas com um modelo Teachable
+Machine que classifica **pixels 224×224**; o MediaPipe ali só recorta a região da mão, e os
+landmarks nunca chegam ao classificador. Reconhece **5 classes** (A–E), não inclui dataset nem
+script de treino, não tem estabilização e **não declara licença**, o que reservaria todos os
+direitos ao autor.
 
-A abordagem adotada aqui — classificar sobre landmarks em vez de pixels — é tecnicamente
-superior: modelo de KB em vez de MB, e robustez a fundo, iluminação e tom de pele.
+A abordagem adotada aqui, classificar sobre landmarks em vez de pixels, é tecnicamente superior:
+modelo de KB em vez de MB e robustez a fundo, iluminação e tom de pele.
