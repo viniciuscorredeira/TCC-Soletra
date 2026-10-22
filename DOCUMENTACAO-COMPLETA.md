@@ -6,7 +6,7 @@
 |---|---|
 | **Natureza** | Trabalho de Conclusão de Curso |
 | **Versão do produto** | 0.2.0 (`manifest.json`) |
-| **Documento atualizado em** | 21/10/2026 |
+| **Documento atualizado em** | 22/10/2026 |
 | **Repositório** | `github.com/viniciuscorredeira/TCC-Soletra` |
 | **Plataforma** | Extensão para Google Chrome e Microsoft Edge (Manifest V3), versão 114 ou superior |
 
@@ -171,7 +171,8 @@ primeira vez. Cada passo remete às funcionalidades (RF) descritas na seção 5.
     se aparecerem letras erradas, **Exigente**. O tempo de confirmação pode ser **Rápido**,
     **Normal** ou **Calmo** (RF26).
 12. **Escolher a mão.** Em **Treinar sinais**, o usuário indica se sinaliza com a direita ou a
-    esquerda (RF46). Se a câmera perceber a mão oposta, o painel alerta (RF28).
+    esquerda (RF46). Se a câmera perceber a mão oposta, a tradução trava até a mão certa voltar,
+    e o aviso oferece trocar a mão ou marcar a câmera como **Invertida** (RF28).
 13. **Reforçar uma letra.** Se uma letra falhar com a sua mão, um clique nela grava 20 amostras
     suas, que se somam às do modelo pronto (RF47, RF65). A grade mostra quanto espaço cada letra
     ocupa (RF61) e o uso total do armazenamento (RF62).
@@ -184,8 +185,9 @@ primeira vez. Cada passo remete às funcionalidades (RF) descritas na seção 5.
     ou em apresentação; o amarelo volta ao painel (RF70, RF71).
 16. **Parar.** **Parar** desliga a câmera e esconde a área de reconhecimento; o texto continua
     guardado até o navegador ser fechado (RF04, RF16, RF36).
-17. **Próximas aberturas.** A câmera escolhida, a mão, o conjunto (Letras/Números) e os ajustes
-    são lembrados (RF08, RF26, RF46). O consentimento não é pedido de novo.
+17. **Próximas aberturas.** A câmera escolhida, a mão, a marcação de imagem invertida de cada
+    câmera, o conjunto (Letras/Números) e os ajustes são lembrados (RF08, RF26, RF46). O
+    consentimento não é pedido de novo.
 
 ---
 
@@ -205,9 +207,9 @@ vídeo e letra maiores). O tema segue o claro ou escuro do sistema operacional.
 | ↳ **Leitura** | Com o reconhecimento ligado | O anel com a letra candidata e o cadeado, a dica, a barra de nitidez e os indicadores de desempenho |
 | ↳ **Texto** | Idem | Caixa **Texto reconhecido** e botões **Espaço**, **Apagar**, **Repetir letra**, **Limpar** e **Pesquisar** |
 | ↳ **Ajustar sensibilidade** | Seção recolhível | **Rigor do reconhecimento** e **Tempo para confirmar**; o título mostra o ajuste atual |
-| ↳ **Avisos** | Idem | Poucas classes treinadas, letras com movimento, mão diferente da configurada |
+| ↳ **Avisos** | Idem | Poucas classes treinadas, letras com movimento e a trava de mão diferente da configurada, com os botões **Usar a mão …** e **A câmera inverte a imagem** |
 | **Boas-vindas** | Com o modelo vazio | Cartão "Como você quer começar?" com **Usar modelo pronto** e **Treinar do zero** |
-| **Treinar sinais** | Seção recolhível | Mão dominante, grade de classes (selo de amostras, % de uso, barra), barra de gravação com **Cancelar**, texto de ajuda, uso do armazenamento, **Adicionar/Restaurar modelo pronto**, **Exportar**, **Importar** e **Apagar tudo** |
+| **Treinar sinais** | Seção recolhível | Mão dominante, imagem desta câmera (**Normal / Invertida**), grade de classes (selo de amostras, % de uso, barra), barra de gravação com **Cancelar**, texto de ajuda, uso do armazenamento, **Adicionar/Restaurar modelo pronto**, **Exportar**, **Importar** e **Apagar tudo** |
 | **Rodapé** | Base | Resolução e taxa da câmera ("1280×720 · 30 fps") e a nota "Vídeo processado localmente" |
 | **Janelas sobrepostas** | Sobre o painel | Confirmação (Sim/Não ou rótulos próprios) e o seletor "Onde pesquisar?" |
 
@@ -249,9 +251,15 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 - **Usuário:** escolhe a câmera e clica em **Iniciar câmera**.
 - **Sistema:** mostra "Iniciando…" e "Solicitando acesso à câmera…", pede à câmera escolhida
-  imagem de 1280×720 a 60 quadros por segundo (o navegador usa o máximo que ela oferecer) e,
-  quando o vídeo chega, exibe a imagem, o selo **Ativa**, a etiqueta **AO VIVO** e, no rodapé, a
-  resolução e a taxa reais (ex.: "1280×720 · 30 fps"). A área de reconhecimento aparece (RF16).
+  imagem de 1280×720 a 60 quadros por segundo — 60 é também o teto: acima disso só se gastaria
+  decodificação — e, quando o vídeo chega, exibe a imagem, o selo **Ativa**, a etiqueta
+  **AO VIVO** e, no rodapé, a resolução e a taxa reais (ex.: "1280×720 · 30 fps"). A área de
+  reconhecimento aparece (RF16).
+- **Alertas:** se a câmera entregar menos de 60 fps, o painel avisa a taxa real e o efeito: "Sua
+  câmera está entregando 30 fps, abaixo dos 60 fps suportados. O reconhecimento continua
+  funcionando, mas o vídeo pode ficar menos fluido." Abaixo de 15 fps — a taxa de análise
+  (RF31) — o aviso diz que o reconhecimento vai responder mais devagar. A taxa avaliada é a que
+  a câmera declara ao navegador; uma queda por pouca luz não é detectada.
 - **Exceções:** se a permissão ainda não foi decidida, o sistema encaminha para a aba de
   autorização (RF12); se a câmera falhar, mostra a mensagem do erro (RF11).
 
@@ -299,6 +307,8 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 - **Sistema:** exibe a imagem espelhada, como um espelho, para que quem sinaliza veja a própria
   mão do lado em que ela está. O espelhamento é só visual: a análise usa a imagem original.
+- **Exceção:** numa câmera marcada como **Invertida** (RF46), que já entrega a imagem espelhada,
+  o painel não espelha de novo — senão quem sinaliza deixaria de se ver como num espelho.
 
 #### RF11 — Mensagens de erro da câmera ✅
 
@@ -450,17 +460,27 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
   como ele. Treine pelo menos mais um para o reconhecimento conseguir distinguir." O aviso some a
   partir da segunda classe treinada.
 
-#### RF28 — Alerta de mão diferente da configurada ⚠️
+#### RF28 — Trava de mão diferente da configurada ⚠️
 
 - **Usuário:** escolhe em **Treinar sinais** com qual mão vai sinalizar (RF46), por exemplo
   **Direita**, e passa a sinalizar com a esquerda.
-- **Sistema:** o detector identifica que a mão na imagem é a esquerda e o painel alerta: "A câmera
-  sugere que você está usando a mão esquerda, mas o modelo está configurado para direita. Se os
-  sinais não forem reconhecidos, troque em "Treinar sinais"." O alerta some quando a mão
-  detectada volta a ser a configurada ou quando o usuário troca a configuração.
-- **Ressalva:** é só um alerta; o sistema nunca troca a mão sozinho. Câmeras virtuais (Iriun,
-  OBS, DroidCam) às vezes espelham a imagem na origem, e então a mão detectada sai invertida e o
-  alerta pode aparecer sem motivo.
+- **Sistema:** **bloqueia a tradução.** Um sinal feito com a outra mão chega espelhado ao
+  classificador e pode virar outra letra com confiança alta — erro silencioso, pior que "não
+  reconhecido". Enquanto a trava durar, nenhuma letra é confirmada, o anel fica vermelho com
+  "!", a dica diz "Tradução bloqueada: mão diferente da configurada." e uma gravação de treino
+  em curso pausa ("pausado: use a mão direita"), para o modelo não aprender com a mão errada.
+- **Alertas:** o painel explica: "A câmera está vendo a mão esquerda, mas o modelo está
+  configurado para a mão direita. A tradução fica bloqueada até a mão certa voltar. Se você está
+  usando a mão direita, esta câmera provavelmente inverte a imagem." e oferece as duas saídas:
+  **Usar a mão esquerda** (troca a configuração) e **A câmera inverte a imagem** (marca a câmera
+  como **Invertida**, RF46).
+- **Sem falso alarme:** a indicação de mão do detector oscila de um quadro para outro,
+  sobretudo com a mão de perfil. A trava só engata depois de **5 quadros seguidos** com a mão
+  errada (cerca de 330 ms) e só solta depois de **3 quadros seguidos** com a certa; quadros com
+  confiança abaixo de **0,8** não contam para nenhum dos lados.
+- **Ressalva:** o sistema nunca troca a mão sozinho, e não há como detectar por API uma câmera
+  que espelha a imagem na origem (Iriun, OBS, DroidCam): o usuário a marca uma vez, e a escolha
+  fica guardada para aquela câmera.
 
 #### RF29 — Aviso das letras não reconhecidas ✅
 
@@ -568,7 +588,14 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 - **Sistema:** passa a tratar os sinais como feitos com essa mão. A mão esquerda é espelhada antes
   da análise, então as mesmas amostras (inclusive as do modelo pronto) servem para as duas mãos,
   sem treinar de novo. A escolha fica salva e não pode ser trocada durante uma gravação.
-- **Alertas:** se a mão vista pela câmera não for a configurada, aparece o alerta do RF28.
+- **Imagem desta câmera:** logo abaixo, **Normal** (padrão) ou **Invertida**. Câmeras que
+  espelham a imagem na origem fazem a mão direita parecer a esquerda; marcada como Invertida, a
+  câmera tem a imagem corrigida na normalização, na trava do RF28 e na exibição (RF10). A
+  escolha é guardada **por câmera**, então quem alterna entre a Iriun e a webcam integrada não
+  reconfigura a cada troca. Fica desabilitada sem câmera ativa e durante uma gravação.
+- **Atenção:** amostras pessoais gravadas antes de marcar uma câmera como Invertida ficaram com
+  os lados trocados e podem precisar ser gravadas de novo.
+- **Alertas:** se a mão vista pela câmera não for a configurada, a tradução trava (RF28).
 
 #### RF47 — Treinar uma letra ou número ✅
 
@@ -820,7 +847,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 | **Acentos e pontuação** | Não atendido | Não fazem parte do alfabeto manual estático | Texto acentuado só por digitação | Edição manual (já disponível) |
 | **Sinais de palavras e frases da Libras** | Fora do escopo | O projeto trata da datilologia, não da língua completa, que tem sinais com movimento, expressão facial e duas mãos | O Soletra soletra; não traduz Libras | Trabalho de outra ordem de grandeza |
 | **Sinais com as duas mãos** | Não atendido | O detector é configurado para uma mão (`numHands: 1`) | Nenhum para o alfabeto manual, que usa uma mão | — |
-| **Detecção da mão dominante** | Atendido parcialmente (RF28) | A indicação de mão do MediaPipe pressupõe imagem espelhada, e webcams virtuais (Iriun, OBS, DroidCam) às vezes espelham na origem, sem como detectar | Vira só um aviso; a decisão é a escolha manual do usuário | — |
+| **Detecção da mão dominante** | Atendido parcialmente (RF28) | A indicação de mão do MediaPipe pressupõe imagem espelhada, e webcams virtuais (Iriun, OBS, DroidCam) às vezes espelham na origem, sem como detectar | A mão errada trava a tradução; a inversão da câmera é marcada pelo usuário, uma vez por câmera (RF46) | Perguntar a marcação na primeira vez que cada câmera nova é usada: uma imagem espelhada é geometricamente idêntica à da outra mão, então não há como inferi-la do quadro |
 | **Avaliação formal de acurácia** | Não atendido | Não há matriz de confusão nem avaliação leave-one-out | O TCC **não tem números de acurácia** medidos; os pares que colidem (O≡0, V≡2, W≡3) são supostos, não medidos | `src/sign-eval.js` (previsto, não implementado) |
 | **Generalização do modelo pronto** | Não validado (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`) | Pode falhar com mãos diferentes da do autor, sem erro aparente | Coletar exports de colegas e voluntários e regenerar com a ferramenta de montagem |
 | **Velocidade de soletração** | Limitação de projeto | Cada letra exige ~700 ms de permanência mais a votação, para evitar letras falsas a cada tremor | Soletração mais lenta que a natural | Ajuste "Rápido" (450 ms) já disponível |
@@ -851,7 +878,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 97 cenários cobrem a lógica. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
+| **Testes de interface** | Não atendido | Os 104 cenários cobrem a lógica. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -932,8 +959,10 @@ Câmera ─► MediaPipe HandLandmarker ─► 21 pontos (x, y, z)
 
 ### 9.1 Captura (`camera-controller.js`)
 
-- Pede `getUserMedia` com resolução ideal de **1280×720** e taxa ideal de **60 fps**, sem áudio.
-  Com uma câmera escolhida, usa `deviceId: { exact }` para garantir aquela câmera.
+- Pede `getUserMedia` com resolução ideal de **1280×720** e taxa `{ ideal: 60, max: 60 }`, sem
+  áudio. Com uma câmera escolhida, usa `deviceId: { exact }` para garantir aquela câmera.
+- `avaliarTaxaDeQuadros()` lê a taxa negociada em `track.getSettings()`, arredondada (59,94 conta
+  como 60), e o painel avisa quando ela fica abaixo de `FPS_MAXIMO` (60).
 - Cada chamada de `start()` recebe um *token*: se o usuário parar ou trocar de câmera enquanto o
   navegador ainda responde, o resultado antigo é descartado e sua câmera, liberada.
 - `stop()` encerra todas as *tracks* e solta o `srcObject`: o LED da câmera apaga.
@@ -959,10 +988,23 @@ Câmera ─► MediaPipe HandLandmarker ─► 21 pontos (x, y, z)
 - Modelo `hand_landmarker.task` do MediaPipe Tasks Vision 1.0.1, em modo **VIDEO**, com **uma
   mão** (`numHands: 1`) e confiança mínima de 0,5 para detecção, presença e rastreamento.
 - Delegate **CPU** (ver decisões, seção 16).
-- Devolve os 21 pontos da mão e a lateralidade detectada. A lateralidade do MediaPipe pressupõe
-  imagem espelhada, e a câmera entrega a imagem crua, então ela é invertida antes de ser usada.
-  Mesmo assim serve só de **pista** para o alerta de mão (RF28), nunca para decidir a
-  normalização, porque câmeras virtuais podem espelhar na origem sem que haja como detectar.
+- Devolve os 21 pontos da mão, a lateralidade detectada e a confiança dela. A lateralidade do
+  MediaPipe pressupõe imagem espelhada, e a câmera entrega a imagem crua, então ela é invertida
+  antes de ser usada. Ela alimenta a trava de mão (RF28), nunca a normalização, que segue a mão
+  configurada pelo usuário.
+
+### 9.3.1 Trava de mão (`trava-mao.js`) e câmera invertida
+
+- O `SignRecognizer` corrige a lateralidade pela marcação da câmera: numa câmera **Invertida**,
+  a mão vista é trocada antes da comparação, e a normalização recebe a mão **como ela aparece no
+  quadro** (a direita vira esquerda), o que mantém as amostras compatíveis com o modelo pronto.
+- A `TravaMao` compara, quadro a quadro, a mão detectada com a configurada, com histerese:
+  **5 quadros** seguidos com a mão errada para travar, **3** com a certa para soltar, e quadros
+  com confiança abaixo de **0,8** ignorados — sem zerar a contagem, para um quadro de perfil no
+  meio não adiar a trava indefinidamente.
+- Travada, o quadro vale como "sem mão" para o estabilizador (o candidato em formação se perde),
+  o estado visual vira `mao-incorreta` e a captura de treino não grava. Trocar a mão, a marcação
+  da câmera ou a própria câmera reinicia a trava.
 
 ### 9.4 Normalização (`sign-features.js`)
 
@@ -1060,7 +1102,7 @@ mudança, e some quando o navegador fecha — o que é também a escolha certa d
 | `soletra.modelo.v1.indice` | `storage.local` | Esquema, versão das features, mão, τ_abs, k, versão da calibração, contagem de amostras pessoais e do modelo pronto por classe |
 | `soletra.modelo.v1.classe.<X>` | `storage.local` | Amostras **pessoais** da classe X |
 | `soletra.modelo.v1.padrao.<X>` | `storage.local` | Amostras do **modelo pronto** na classe X |
-| `soletra.reconhecimento.prefs` | `storage.local` | Mão, conjunto, rigor e tempo para confirmar |
+| `soletra.reconhecimento.prefs` | `storage.local` | Mão, conjunto, rigor, tempo para confirmar e câmeras marcadas como invertidas (por `deviceId`) |
 | `soletra.preferredDeviceId` | `storage.local` | Última câmera escolhida |
 | `soletra.consentimento.reconhecimento` | `storage.local` | Data e versão do aceite |
 | `soletra.texto` | `storage.session` | Texto composto |
@@ -1340,7 +1382,7 @@ escolha com o usuário.
 node tests/todos.mjs
 ```
 
-**97 cenários em 11 arquivos, todos passando** (21/10/2026), em Node puro, sem framework e sem
+**104 cenários em 12 arquivos, todos passando** (22/10/2026), em Node puro, sem framework e sem
 dependências.
 
 | Arquivo | Cenários | O que cobre |
@@ -1353,7 +1395,8 @@ dependências.
 | `text-composer.test.mjs` | 7 | Espaço, apagar, limite, preparo para busca |
 | `search-targets.test.mjs` | 7 | URLs, codificação, catálogo íntegro, logos presentes, ordem alfabética |
 | `migracao-storage.test.mjs` | 7 | Migração idempotente e sem sobrescrever dado novo |
-| `camera-controller.test.mjs` | 6 | Recarregar sem ligar a câmera, limpar erro, reabrir a mesma câmera, ler os nomes sem ligar, não acessar sem permissão |
+| `camera-controller.test.mjs` | 7 | Recarregar sem ligar a câmera, limpar erro, reabrir a mesma câmera, ler os nomes sem ligar, não acessar sem permissão, teto de 60 fps e aviso abaixo disso |
+| `trava-mao.test.mjs` | 6 | Trava após quadros seguidos, oscilação ignorada, soltura, confiança baixa, reinício |
 | `integracao.test.mjs` | 6 | Pipeline completo de ponta a ponta |
 | `montar-modelo-padrao.test.mjs` | 5 | Montagem balanceada, redistribuição, amostras espalhadas, validação |
 
@@ -1370,6 +1413,8 @@ dependências.
 - **Modelo pronto:** no teto o padrão cede primeiro; voltar ao padrão é por classe; reinstalar
   não custa o treino pessoal; "Apagar tudo" alcança o padrão.
 - **Montagem balanceada:** quem gravou mais não domina o modelo pronto.
+- **Trava de mão:** um quadro errado isolado não bloqueia a tradução, e um quadro ambíguo no
+  meio de uma sequência errada não adia a trava.
 
 ### 17.3 Spike de diagnóstico
 
@@ -1394,7 +1439,10 @@ de custo diferentes (sem rastreamento, o detector de palma roda a cada quadro).
    a linha "Armazenamento: …".
 8. × na letra reforçada → volta a "50". **Apagar tudo** → **Restaurar modelo pronto**.
 9. **Exportar**, apagar e **Importar**; tentar importar um arquivo inválido.
-10. Configurar mão direita e sinalizar com a esquerda → alerta de mão.
+10. Configurar mão direita e sinalizar com a esquerda → a tradução trava (anel vermelho com "!")
+    e nenhuma letra entra no texto; voltar à direita → destrava. Repetir durante uma gravação →
+    "pausado". Marcar **A câmera inverte a imagem** → o vídeo deixa de ser espelhado pelo painel.
+    Com uma câmera abaixo de 60 fps, conferir o aviso de taxa.
 11. 🟢 abre em aba com a câmera religada; 🟢 → tela cheia; 🟡 → painel; 🔴 → fecha.
 12. **Parar** → a área some; religar → volta com o texto preservado.
 13. Desconectar a câmera em uso → erro "A câmera em uso foi desconectada."
@@ -1482,7 +1530,7 @@ Depois de alterar o código, clicar em ↻ no cartão da extensão e reabrir o p
 ### 19.2 Comandos
 
 ```
-node tests/todos.mjs                     # suíte completa — 97 cenários
+node tests/todos.mjs                     # suíte completa — 104 cenários
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
@@ -1500,7 +1548,9 @@ node tools/make-icons.mjs                # regenera os ícones da extensão
 | Letras certas não são aceitas | Limiar apertado para a mão do usuário | Rigor **Tolerante**; reforçar a letra em Treinar sinais |
 | Aparecem letras erradas | Limiar frouxo, letras parecidas | Rigor **Exigente**; conferir a mão configurada |
 | Toda letra vira a mesma | Só uma classe treinada no conjunto | Treinar pelo menos mais uma (o painel avisa) |
-| Alerta de mão aparece sem motivo | Câmera virtual que espelha a imagem | Ignorar o alerta se o reconhecimento funciona |
+| Tradução bloqueada com a mão certa | Câmera (geralmente virtual: Iriun, OBS, DroidCam) que espelha a imagem | Clicar **A câmera inverte a imagem** no aviso, ou marcar **Invertida** em Treinar sinais |
+| Letras pioraram depois de marcar a câmera como Invertida | Amostras pessoais gravadas antes, com os lados trocados | Apagar essas letras no × e gravar de novo |
+| Aviso "abaixo dos 60 fps suportados" | A câmera não oferece 60 fps nessa resolução | Nada a fazer se o vídeo está bom; acima de 15 fps o reconhecimento não é afetado |
 | Verificador acusa `CRLF` | Clone antigo, anterior ao `.gitattributes` | `git rm --cached -r -q vendor && git checkout HEAD -- vendor` |
 | "O modelo salvo foi gravado com outra versão da normalização" | Modelo de uma versão incompatível | Treinar de novo ou restaurar o modelo pronto |
 
@@ -1521,13 +1571,14 @@ sidepanel/seletor-plataforma.js janela "Onde pesquisar?"
 sidepanel/dialogo.js            janela de confirmação
 sidepanel/janela.js             botões fechar / painel / tela cheia
 
-src/camera-controller.js        ciclo de vida da câmera (1280×720 / 60 fps)
+src/camera-controller.js        ciclo de vida da câmera (1280×720 / até 60 fps) e avaliação da taxa
 src/sign-recognizer.js          orquestrador do reconhecimento; mede o armazenamento
 src/hand-landmarker.js          adaptador do MediaPipe (único módulo dependente de WASM)
 src/inference-loop.js           agendador rVFC, taxa adaptativa, timestamp monotônico
 src/sign-features.js            21 pontos → 63 números; VERSAO_FEATURES
 src/sign-classifier.js          KNN ponderado, rejeição, calibração do limiar
 src/sign-stabilizer.js          votação, permanência, trava e liberação
+src/trava-mao.js                trava de mão diferente da configurada, com histerese
 src/sign-classes.js             catálogo de letras estáticas, dinâmicas e números
 src/sign-model-store.js         persistência, origem padrão × pessoal, teto, quota, export/import
 src/text-composer.js            composição do texto e preparo para a busca
@@ -1539,7 +1590,7 @@ modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
 tools/                          montagem do modelo pronto, verificação do vendor, PNG, ícones, logos
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
-tests/                          97 cenários; tests/todos.mjs roda todos
+tests/                          104 cenários; tests/todos.mjs roda todos
 
 README.md                       visão técnica para desenvolvedores
 RESUMO-PROJETO.md               resumo para acompanhamento do TCC
@@ -1547,7 +1598,7 @@ PRIVACY.md                      política de privacidade
 DOCUMENTACAO-COMPLETA.md        este documento
 ```
 
-Total de código próprio: cerca de **8.330 linhas**, incluindo testes e ferramentas.
+Total de código próprio: cerca de **8.690 linhas**, incluindo testes e ferramentas.
 
 ---
 
@@ -1555,7 +1606,9 @@ Total de código próprio: cerca de **8.330 linhas**, incluindo testes e ferrame
 
 | Módulo | Parâmetro | Valor |
 |---|---|---|
-| Câmera | Resolução / taxa ideais | 1280×720 / 60 fps |
+| Câmera | Resolução ideal / taxa ideal e máxima | 1280×720 / 60 fps |
+| Câmera | Taxa abaixo da qual o painel avisa | 60 fps |
+| Trava de mão | Quadros para travar / para soltar / confiança mínima | 5 / 3 / 0,8 |
 | Loop | Taxa alvo / recuo / p95 que dispara o recuo / volta | 15 Hz / 8 Hz / 50 ms / < 25 ms |
 | Loop | Medições consideradas | 30 |
 | Detector | Mãos / modo / confianças mínimas | 1 / VIDEO / 0,5 |
@@ -1617,6 +1670,8 @@ Em ordem de prioridade para o TCC:
 | 13/10/2026 | `c89af4c` | Boas-vindas, reforço e volta ao padrão por classe, teto de 100 com avisos, botões de janela e tela cheia como aba |
 | 13/10/2026 | `6163dfa` | Documentação do modelo pronto, do teto e dos botões de janela |
 | 21/10/2026 | (a commitar) | Área de reconhecimento só com a câmera ativa; captura a 60 fps; plataformas em ordem alfabética; % de uso por classe e uso total do armazenamento; `.gitattributes` e diagnóstico de quebra de linha no verificador; `PRIVACY.md` atualizado; README, RESUMO e esta documentação |
+| 22/10/2026 | `3b1dde2` | Captura limitada a 60 fps, com aviso quando a câmera entrega menos |
+| 22/10/2026 | `f5f7cc9` | Mão diferente da configurada trava a tradução e a captura de treino; opção de câmera com imagem invertida, guardada por câmera |
 
 ---
 

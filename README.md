@@ -19,7 +19,8 @@ sai do dispositivo é o texto que o usuário escolhe pesquisar, na plataforma qu
 | Recurso | Comportamento |
 |---|---|
 | Seleção de dispositivo | Dropdown alimentado por `enumerateDevices()`; trocar a câmera reabre o stream sem recarregar a extensão |
-| Iniciar câmera | `getUserMedia()` com o `deviceId` selecionado (1280×720 / 60 fps ideais, sem áudio) |
+| Iniciar câmera | `getUserMedia()` com o `deviceId` selecionado (1280×720 ideais, `frameRate: { ideal: 60, max: 60 }`, sem áudio) |
+| Taxa abaixo de 60 fps | `avaliarTaxaDeQuadros()` lê a taxa negociada em `track.getSettings()`; abaixo de 60 o painel avisa a taxa real e o efeito (vídeo menos fluido; abaixo dos 15 Hz da inferência, reconhecimento mais lento). Uma queda por pouca luz não aparece em `getSettings()` e não é detectada |
 | Parar transmissão | `track.stop()` em todas as tracks e `srcObject = null` — o LED da câmera apaga |
 | Recarregar | Reenumera dispositivos preservando o estado: só reabre o stream se a câmera estava ativa; se estava desligada, continua desligada (apenas limpa erro anterior) |
 | Estado visual | Badge (Parada / Iniciando / Ativa / Erro), tag AO VIVO e resolução/fps no rodapé |
@@ -27,6 +28,8 @@ sai do dispositivo é o texto que o usuário escolhe pesquisar, na plataforma qu
 | Área de reconhecimento | Só aparece com a câmera **ativa** — e, portanto, com a permissão já concedida. Some ao parar a câmera (ou em erro) e volta ao religar; uma captura de treino em andamento é cancelada, já que o botão de cancelar dela ficaria oculto. O texto reconhecido é preservado |
 
 O vídeo é exibido espelhado (`scaleX(-1)`), como convém a quem sinaliza olhando para a própria imagem.
+Numa câmera marcada como **Invertida** (ver "Mão dominante e câmeras invertidas"), que já entrega
+a imagem espelhada, o `scaleX(-1)` é removido para o efeito de espelho se manter.
 
 ### Nomes reais dos dispositivos
 
@@ -129,6 +132,23 @@ passa por um modal de confirmação com o foco inicial no "Não". "Ajustar sensi
 rigor do classificador (multiplicador do limiar: Tolerante, Normal, Exigente) e o tempo para
 confirmar uma letra (Rápido 450 ms, Normal 700 ms, Calmo 1000 ms).
 
+### Mão dominante e câmeras invertidas
+
+As features espelham a mão esquerda, então um sinal feito com a mão **não configurada** chega
+espelhado ao classificador e pode virar outra letra com confiança alta. Por isso a mão
+diferente da configurada **bloqueia a tradução** e a captura de treino (`src/trava-mao.js`): o
+anel fica vermelho com "!" e o aviso oferece "Usar a mão …" ou "A câmera inverte a imagem". O
+handedness do MediaPipe oscila quadro a quadro, então a trava tem histerese — 5 quadros
+seguidos com a mão errada para travar, 3 com a certa para soltar — e ignora quadros com score
+abaixo de 0,8.
+
+Webcams virtuais (Iriun, OBS, DroidCam) às vezes espelham a imagem na origem, e não há API que
+diga isso. Em "Treinar sinais", **Imagem desta câmera: Normal / Invertida** registra a inversão
+**por `deviceId`**; numa câmera invertida, o `SignRecognizer` troca o handedness antes da trava
+e passa à normalização a mão como ela aparece no quadro, mantendo as amostras compatíveis com o
+modelo pronto. Amostras pessoais gravadas numa câmera invertida antes da marcação ficaram com os
+lados trocados e podem precisar ser regravadas.
+
 O modelo pode ser **exportado e importado** em JSON — ~430 KB com as 21 letras e ~640 KB com
 letras e números, a 20 amostras por classe: treine uma vez e distribua o
 arquivo junto com a extensão. A importação aceita também os arquivos exportados quando o
@@ -212,7 +232,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 node tests/todos.mjs
 ```
 
-97 cenários, em Node puro, sem framework e sem dependências. Os módulos de lógica são todos
+104 cenários, em Node puro, sem framework e sem dependências. Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
 (`src/hand-landmarker.js`) é fino de propósito e validado pelo diagnóstico acima.
 
@@ -233,6 +253,8 @@ Cenários que merecem destaque por travarem bugs silenciosos:
 - **Migração de storage** — renomear as chaves `rvl.*` sem migrá-las não daria erro: o modelo
   continuaria no disco sob nomes que ninguém lê. A migração é idempotente e nunca sobrescreve
   dado novo com resíduo antigo.
+- **Trava de mão** — um quadro de handedness errado isolado não pode bloquear a tradução, e um
+  quadro de baixa confiança no meio de uma sequência errada não pode adiar a trava.
 
 ## Por que painel lateral e não popup
 
@@ -308,13 +330,14 @@ sidepanel/janela.js           botões de janela (fechar, voltar ao painel, tela 
 icons/plataformas/            logos das plataformas de busca, empacotadas
 sidepanel/seletor-plataforma.js  modal de escolha do destino da pesquisa
 
-src/camera-controller.js      ciclo de vida do MediaStream e restrições de captura (1280×720 / 60 fps)
+src/camera-controller.js      ciclo de vida do MediaStream, restrições de captura (1280×720 / até 60 fps) e avaliação da taxa
 src/sign-recognizer.js        orquestrador; expõe um onStateChange, como o CameraController
 src/hand-landmarker.js        adaptador do MediaPipe (único módulo dependente de WASM)
 src/inference-loop.js         agendador rVFC, throttle adaptativo, timestamp monotônico
 src/sign-features.js          landmarks → 63 números; tem VERSAO_FEATURES
 src/sign-classifier.js        KNN ponderado, rejeição, calibração de limiar
 src/sign-stabilizer.js        máquina de confirmação e trava anti-repetição
+src/trava-mao.js              trava de mão diferente da configurada, com histerese
 src/sign-classes.js           catálogo de classes estáticas, dinâmicas e números
 src/sign-model-store.js       persistência, quota, export/import com validação de esquema
 src/text-composer.js          composição do texto e normalização para a busca

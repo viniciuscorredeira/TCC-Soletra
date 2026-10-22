@@ -1,6 +1,6 @@
 # Política de Privacidade — Soletra
 
-**Versão 0.2.0 — última atualização: 21/10/2026**
+**Versão 0.2.0 — última atualização: 22/10/2026**
 
 ## Resumo
 
@@ -28,7 +28,7 @@ de clicar em "Pesquisar" e escolher a plataforma — e apenas nesse momento. Vej
 | **Amostras do modelo pronto** (quando o usuário escolhe usá-lo) | Reconhecer sem treino próprio | Empacotadas na extensão (`modelos/padrao.json`); copiadas para `chrome.storage.local` ao escolher | Até o usuário apagar o modelo ou desinstalar a extensão |
 | **Texto composto** | Montar a palavra ou frase | `chrome.storage.session` | Até fechar o navegador |
 | **Termo enviado à plataforma escolhida** | Abrir a pesquisa solicitada | **Sai do dispositivo** — vai à plataforma que o usuário selecionou | Fora do controle da extensão |
-| Preferências (`deviceId`, mão dominante, conjunto Letras/Números, tempo de confirmação, rigor) | Restaurar a configuração do usuário | `chrome.storage.local` | Até a desinstalação |
+| Preferências (`deviceId`, mão dominante, conjunto Letras/Números, tempo de confirmação, rigor, `deviceId` das câmeras marcadas como de imagem invertida) | Restaurar a configuração do usuário | `chrome.storage.local` | Até a desinstalação |
 | Registro do consentimento (data e versão do aceite) | Comprovar o consentimento antes de ativar o reconhecimento | `chrome.storage.local` | Até a desinstalação |
 
 As amostras de treino são **vetores numéricos, não imagens**: o que fica gravado é a geometria
