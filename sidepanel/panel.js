@@ -1,4 +1,4 @@
-import { CameraController } from '../src/camera-controller.js';
+import { CameraController, avaliarTaxaDeQuadros, FPS_MAXIMO } from '../src/camera-controller.js';
 import { SignRecognizer } from '../src/sign-recognizer.js';
 import { montarRecognitionView } from './recognition-view.js';
 import { montarTrainingView } from './training-view.js';
@@ -104,6 +104,19 @@ function describeTrack(track) {
   return parts.length ? parts.join(' · ') : 'Transmitindo';
 }
 
+/**
+ * Abaixo de 60 fps o vídeo fica menos fluido; só abaixo da taxa do loop de
+ * inferência (15 Hz) é que o reconhecimento em si passa a responder mais
+ * devagar — e o aviso diz qual dos dois casos é.
+ */
+function avisoTaxaBaixa(fps) {
+  const efeito =
+    fps < 15
+      ? 'O reconhecimento vai responder mais devagar.'
+      : 'O reconhecimento continua funcionando, mas o vídeo pode ficar menos fluido.';
+  return `Sua câmera está entregando ${fps} fps, abaixo dos ${FPS_MAXIMO} fps suportados. ${efeito}`;
+}
+
 function render(snapshot) {
   const { state, error, devices, activeDeviceId, track } = snapshot;
   const status = STATUS[state] || STATUS.idle;
@@ -135,7 +148,9 @@ function render(snapshot) {
     showMessage(error.message, 'error');
     el.btnPermission.hidden = error.code !== 'permission-denied';
   } else if (state === 'active') {
-    clearMessage();
+    const taxa = avaliarTaxaDeQuadros(track?.getSettings?.());
+    if (taxa?.abaixo) showMessage(avisoTaxaBaixa(taxa.fps), 'warn');
+    else clearMessage();
     el.btnPermission.hidden = true;
   } else if (!hasDevices) {
     showMessage('Nenhuma câmera encontrada. Conecte um dispositivo e clique em Recarregar.', 'warn');

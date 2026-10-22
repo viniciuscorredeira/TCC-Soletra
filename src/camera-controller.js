@@ -8,11 +8,28 @@
 
 /** @typedef {'idle'|'requesting'|'active'|'stopped'|'error'} CameraState */
 
+/** Teto da captura. Acima disso só se gasta decodificação: o reconhecimento
+ *  analisa no máximo 15 quadros por segundo (ver inference-loop). */
+export const FPS_MAXIMO = 60;
+
 const DEFAULT_CONSTRAINTS = {
   width: { ideal: 1280 },
   height: { ideal: 720 },
-  frameRate: { ideal: 60 }
+  frameRate: { ideal: FPS_MAXIMO, max: FPS_MAXIMO }
 };
+
+/**
+ * Taxa negociada com a câmera, a partir de track.getSettings(). É a taxa que o
+ * dispositivo declara — uma queda por pouca luz (exposição automática) não
+ * aparece aqui.
+ * @returns {{fps: number, abaixo: boolean}|null} null quando o navegador não informa
+ */
+export function avaliarTaxaDeQuadros(settings) {
+  const fps = settings?.frameRate;
+  if (!Number.isFinite(fps) || fps <= 0) return null;
+  // Arredondado: há câmeras que declaram 59,94 e não fazem sentido reclamar.
+  return { fps: Math.round(fps), abaixo: Math.round(fps) < FPS_MAXIMO };
+}
 
 /** Traduz a exceção do getUserMedia para uma mensagem acionável em pt-BR. */
 export function describeMediaError(error) {

@@ -144,4 +144,23 @@ const modUrl = new URL('../src/camera-controller.js', import.meta.url).href;
   console.log('OK  cenário 6 — sem permissão o priming é evitado');
 }
 
+// --- Cenário 7: captura limitada a 60 fps e aviso abaixo disso --------------
+{
+  const { videoEl } = setup();
+  const { CameraController, avaliarTaxaDeQuadros, FPS_MAXIMO } = await import(modUrl + '?7');
+  const c = new CameraController(videoEl, () => {});
+
+  await c.start('dev-a');
+  assert.equal(FPS_MAXIMO, 60);
+  assert.deepEqual(calls.lastConstraints.video.frameRate, { ideal: 60, max: 60 });
+
+  // O mock declara 30 fps: abaixo do teto, precisa avisar.
+  assert.deepEqual(avaliarTaxaDeQuadros(c.getActiveTrack().getSettings()), { fps: 30, abaixo: true });
+  assert.deepEqual(avaliarTaxaDeQuadros({ frameRate: 60 }), { fps: 60, abaixo: false });
+  assert.deepEqual(avaliarTaxaDeQuadros({ frameRate: 59.94 }), { fps: 60, abaixo: false }, '59,94 não é queda');
+  assert.equal(avaliarTaxaDeQuadros({}), null, 'sem frameRate não há o que avaliar');
+  assert.equal(avaliarTaxaDeQuadros(undefined), null);
+  console.log('OK  cenário 7 — captura pede no máximo 60 fps e sinaliza câmera abaixo disso');
+}
+
 console.log('\ntodos os cenários passaram');
