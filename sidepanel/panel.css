@@ -167,6 +167,9 @@ main {
   transform: scaleX(-1);
 }
 
+/* A câmera já espelha na origem: o vídeo chega como um espelho. */
+#preview.preview--origem-espelhada { transform: none; }
+
 body[data-state="active"] #preview { display: block; }
 body[data-state="active"] .placeholder { display: none; }
 
@@ -399,6 +402,11 @@ select:disabled { opacity: 0.55; }
 .ring--travado { border-color: var(--warn); --cor-anel: var(--warn); }
 .ring--travado .ring__char { color: var(--warn); font-size: 18px; }
 .ring--vazio .ring__char { color: var(--text-dim); }
+.ring--bloqueado { border-color: var(--err); --cor-anel: var(--err); }
+.ring--bloqueado .ring__char { color: var(--err); }
+
+.trava-mao { display: flex; flex-direction: column; gap: 8px; }
+.trava-mao p { margin: 0; }
 
 .ring--confirmado { animation: flash 0.35s ease-out; }
 

@@ -15,6 +15,7 @@ export function montarTrainingView(acoes) {
     box: document.getElementById('treinoBox'),
     resumo: document.getElementById('treinoResumo'),
     segMao: [document.getElementById('btnDireita'), document.getElementById('btnEsquerda')],
+    segImagem: [document.getElementById('btnImagemNormal'), document.getElementById('btnImagemInvertida')],
     grade: document.getElementById('gradeClasses'),
     status: document.getElementById('capturaStatus'),
     statusTexto: document.getElementById('capturaTexto'),
@@ -32,6 +33,9 @@ export function montarTrainingView(acoes) {
 
   for (const seg of el.segMao) {
     seg.addEventListener('click', () => acoes.definirMao(seg.dataset.mao));
+  }
+  for (const seg of el.segImagem) {
+    seg.addEventListener('click', () => acoes.definirCameraEspelhada(seg.dataset.espelhada === '1'));
   }
   el.btnCancelar.addEventListener('click', acoes.cancelarCaptura);
   el.btnExportar.addEventListener('click', acoes.exportar);
@@ -117,6 +121,11 @@ export function montarTrainingView(acoes) {
       seg.classList.toggle('seg--on', seg.dataset.mao === s.mao);
       seg.disabled = capturando;
     }
+    // A inversão é guardada por câmera: sem uma em uso, não há o que marcar.
+    for (const seg of el.segImagem) {
+      seg.classList.toggle('seg--on', (seg.dataset.espelhada === '1') === s.cameraEspelhada);
+      seg.disabled = capturando || !s.temCamera;
+    }
 
     const treinadas = classes.filter((c) => (s.amostrasPorClasse[c] || 0) > 0).length;
     const resumo = `${treinadas}/${classes.length}`;
@@ -183,6 +192,7 @@ export function montarTrainingView(acoes) {
       const noTeto = total >= AMOSTRAS_MAXIMAS;
       const texto =
         `Gravando "${s.captura.classe}" — ${s.captura.capturadas}/${s.captura.alvo}` +
+        (s.travaMao ? ` · pausado: use a mão ${s.mao}` : '') +
         (noTeto ? ` · limite de ${AMOSTRAS_MAXIMAS}: substituindo as mais antigas` : '');
       if (el.statusTexto.textContent !== texto) el.statusTexto.textContent = texto;
       el.status.classList.toggle('captura--teto', noTeto);

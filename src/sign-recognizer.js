@@ -17,6 +17,7 @@ import { SignStabilizer, PADROES_ESTABILIZADOR } from './sign-stabilizer.js';
 import { TextComposer } from './text-composer.js';
 import { SignModelStore, AMOSTRAS_RECOMENDADAS, VERSAO_CALIBRACAO } from './sign-model-store.js';
 import { CONJUNTO_PADRAO, classesDoConjunto } from './sign-classes.js';
+import { TravaMao } from './trava-mao.js';
 
 /** @typedef {'desligado'|'carregando'|'pronto'|'reconhecendo'|'treinando'|'erro'} EstadoReconhecimento */
 
@@ -29,6 +30,8 @@ const CAMINHO_MODELO_PADRAO = 'modelos/padrao.json';
 /** Intervalo entre amostras na captura de treino: amostras coladas no tempo
  *  são quase idênticas e inflam o modelo sem acrescentar variabilidade. */
 const INTERVALO_CAPTURA = 150;
+
+const oposta = (mao) => (mao === 'esquerda' ? 'direita' : 'esquerda');
 
 export class SignRecognizer {
   /**
@@ -44,7 +47,15 @@ export class SignRecognizer {
     this.erro = null;
     this.mao = 'direita';
     this.conjunto = CONJUNTO_PADRAO;
-    this.avisoMao = null;
+    this.trava = new TravaMao();
+    /**
+     * Câmeras que espelham a imagem na origem, por deviceId. Por dispositivo e
+     * não global: a Iriun pode espelhar e a webcam integrada não, e quem
+     * alterna entre as duas não deveria ter de reconfigurar a cada troca.
+     * @type {Record<string, boolean>}
+     */
+    this.espelhadas = {};
+    this.deviceId = null;
 
     this.store = new SignModelStore();
     this.classificador = new SignClassifier();
@@ -88,6 +99,7 @@ export class SignRecognizer {
         this.estabilizador.opcoes.T_PERMANENCIA = p.tPermanencia;
       }
       if (Number.isFinite(p?.rigor)) this.classificador.rigor = p.rigor;
+      if (p?.espelhadas && typeof p.espelhadas === 'object') this.espelhadas = { ...p.espelhadas };
     } catch { /* preferências são conveniência: seguir com os padrões */ }
 
     try {
@@ -133,6 +145,7 @@ export class SignRecognizer {
     this.estabilizador.reiniciar();
     this.captura = null;
     this._ultimoSnapshotSinal = null;
+    this.trava.reiniciar();
     // O detector fica vivo de propósito: recriá-lo custa dezenas de ms e o
     // usuário que desliga costuma religar.
     this._definirEstado('desligado');
@@ -144,7 +157,28 @@ export class SignRecognizer {
    */
   aoMudarCamera(snapshotCamera) {
     this._cameraAtiva = snapshotCamera?.state === 'active';
+    const deviceId = snapshotCamera?.activeDeviceId || null;
+    if (deviceId !== this.deviceId) {
+      // Outra câmera pode inverter a imagem de outro jeito: a evidência
+      // acumulada pela trava não vale mais.
+      this.deviceId = deviceId;
+      this.trava.reiniciar();
+      this._emitir();
+    }
     this._sincronizarLoop();
+  }
+
+  /** Se a câmera em uso espelha a imagem na origem, segundo o usuário. */
+  get cameraEspelhada() {
+    return Boolean(this.deviceId && this.espelhadas[this.deviceId]);
+  }
+
+  /**
+   * Mão como ela aparece no quadro cru. Uma câmera que espelha na origem faz a
+   * mão direita parecer a esquerda — para a normalização e para o handedness.
+   */
+  get _maoNaImagem() {
+    return this.cameraEspelhada ? oposta(this.mao) : this.mao;
   }
 
   _sincronizarLoop() {
@@ -157,6 +191,7 @@ export class SignRecognizer {
     } else if (!deveRodar && this.loop.rodando) {
       this.loop.parar();
       this.estabilizador.reiniciar();
+      this.trava.reiniciar();
       this._ultimoSnapshotSinal = null;
       if (this._ligado) this._definirEstado('pronto');
     }
@@ -223,8 +258,20 @@ export class SignRecognizer {
 
   async definirMao(mao) {
     this.mao = mao === 'esquerda' ? 'esquerda' : 'direita';
-    this.avisoMao = null;
+    this.trava.reiniciar();
+    this.estabilizador.reiniciar();
     await this.store.atualizarParametros({ mao: this.mao });
+    await this._persistirPrefs();
+    this._emitir();
+  }
+
+  /** Marca a câmera em uso como espelhada (ou não). Sem câmera ativa, não há o que marcar. */
+  async definirCameraEspelhada(espelhada) {
+    if (!this.deviceId) return;
+    if (espelhada) this.espelhadas[this.deviceId] = true;
+    else delete this.espelhadas[this.deviceId];
+    this.trava.reiniciar();
+    this.estabilizador.reiniciar();
     await this._persistirPrefs();
     this._emitir();
   }
@@ -248,7 +295,8 @@ export class SignRecognizer {
           mao: this.mao,
           conjunto: this.conjunto,
           tPermanencia: this.estabilizador.opcoes.T_PERMANENCIA,
-          rigor: this.classificador.rigor
+          rigor: this.classificador.rigor,
+          espelhadas: this.espelhadas
         }
       });
     } catch { /* preferência perdida não quebra o fluxo */ }
@@ -381,7 +429,7 @@ export class SignRecognizer {
     const features = extrairFeatures(deteccao.landmarks, {
       largura: video.videoWidth,
       altura: video.videoHeight,
-      mao: this.mao
+      mao: this._maoNaImagem
     });
 
     if (!features) {
@@ -390,12 +438,19 @@ export class SignRecognizer {
       return;
     }
 
-    // O handedness do MediaPipe não é confiável entre setups (ver
-    // hand-landmarker.js), então vira aviso, nunca decisão automática.
-    if (deteccao.handedness && deteccao.handedness !== this.mao) {
-      this.avisoMao = deteccao.handedness;
-    } else if (deteccao.handedness === this.mao) {
-      this.avisoMao = null;
+    // Mão diferente da configurada bloqueia a tradução e a captura: classificar
+    // um sinal espelhado produz a letra errada com confiança alta, e gravá-lo
+    // envenenaria o modelo. Para o estabilizador vale como "sem mão", o que
+    // zera o candidato em formação.
+    const vista = deteccao.handedness;
+    const detectada = vista && this.cameraEspelhada ? oposta(vista) : vista;
+    if (this.trava.processar({ detectada, confianca: deteccao.confiancaMao, esperada: this.mao })) {
+      this._ultimoSnapshotSinal = {
+        ...this.estabilizador.processar({ t, temMao: false }),
+        estadoVisual: 'mao-incorreta'
+      };
+      this._emitir();
+      return;
     }
 
     if (this.captura) {
@@ -455,7 +510,9 @@ export class SignRecognizer {
       erro: this.erro,
       conjunto: this.conjunto,
       mao: this.mao,
-      avisoMao: this.avisoMao,
+      travaMao: this.trava.travada ? { maoVista: this.trava.maoVista } : null,
+      cameraEspelhada: this.cameraEspelhada,
+      temCamera: Boolean(this.deviceId),
 
       candidato: sinal?.candidato ?? null,
       progresso: sinal?.progresso ?? 0,

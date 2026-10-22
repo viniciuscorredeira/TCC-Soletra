@@ -72,7 +72,7 @@ export class HandLandmarkerAdapter {
   /**
    * @param {HTMLVideoElement} video
    * @param {number} ts timestamp estritamente crescente (ver inference-loop)
-   * @returns {{landmarks: Array, handedness: string|null}|null} null sem mão
+   * @returns {{landmarks: Array, handedness: string|null, confiancaMao: number}|null} null sem mão
    */
   detectar(video, ts) {
     if (this._fechado) return null;
@@ -84,12 +84,13 @@ export class HandLandmarkerAdapter {
     // O handedness do MediaPipe pressupõe imagem espelhada, e o getUserMedia
     // entrega quadros crus — então vem invertido aqui. Pior: webcams virtuais
     // (Iriun, OBS, DroidCam) às vezes espelham na origem, sem como detectar por
-    // API. Por isso ele é devolvido apenas como pista para um aviso na UI; quem
-    // manda na normalização é a preferência explícita de mão dominante.
-    const bruto = r?.handednesses?.[0]?.[0]?.categoryName ?? null;
+    // API. Por isso o valor sai como "mão vista num quadro cru"; quem corrige a
+    // inversão da câmera é o SignRecognizer, com a preferência do usuário.
+    const categoria = r?.handednesses?.[0]?.[0];
+    const bruto = categoria?.categoryName ?? null;
     const handedness = bruto === 'Left' ? 'direita' : bruto === 'Right' ? 'esquerda' : null;
 
-    return { landmarks, handedness };
+    return { landmarks, handedness, confiancaMao: categoria?.score ?? 0 };
   }
 
   fechar() {

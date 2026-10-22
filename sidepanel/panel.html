@@ -141,7 +141,13 @@
 
           <p id="avisoPoucas" class="message message--warn" hidden></p>
           <p class="reco__aviso" id="avisoDinamicas"></p>
-          <p id="avisoMao" class="message message--warn" hidden></p>
+          <div id="avisoMao" class="message message--warn trava-mao" role="alert" hidden>
+            <p id="avisoMaoTexto"></p>
+            <div class="buttons">
+              <button id="btnUsarMaoVista" type="button" class="btn"></button>
+              <button id="btnInverterCamera" type="button" class="btn">A câmera inverte a imagem</button>
+            </div>
+          </div>
         </div>
 
         <!-- Primeira abertura: sem modelo, o reconhecimento não tem o que
@@ -173,6 +179,14 @@
               <div class="segmented segmented--cheio" role="group" aria-label="Mão dominante">
                 <button id="btnDireita" type="button" class="seg seg--on" data-mao="direita">Direita</button>
                 <button id="btnEsquerda" type="button" class="seg" data-mao="esquerda">Esquerda</button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field__label">Imagem desta câmera</span>
+              <div class="segmented segmented--cheio" role="group" aria-label="Imagem desta câmera"
+                title="Algumas câmeras (Iriun, OBS, DroidCam) espelham a imagem na origem e trocam os lados da mão">
+                <button id="btnImagemNormal" type="button" class="seg seg--on" data-espelhada="0">Normal</button>
+                <button id="btnImagemInvertida" type="button" class="seg" data-espelhada="1">Invertida</button>
               </div>
             </div>
             <div id="gradeClasses" class="grade"></div>

@@ -318,6 +318,8 @@ const recognitionView = montarRecognitionView({
   repetir: () => reconhecedor.estabilizador.liberarTrava(performance.now()),
   definirRigor: (v) => reconhecedor.definirRigor(v),
   definirPermanencia: (ms) => reconhecedor.definirPermanencia(ms),
+  definirMao: (mao) => reconhecedor.definirMao(mao),
+  definirCameraEspelhada: (v) => reconhecedor.definirCameraEspelhada(v),
   pesquisar
 });
 
@@ -392,6 +394,7 @@ const trainingView = montarTrainingView({
   },
   cancelarCaptura: () => reconhecedor.pararCaptura(),
   definirMao: (mao) => reconhecedor.definirMao(mao),
+  definirCameraEspelhada: (v) => reconhecedor.definirCameraEspelhada(v),
 
   async exportar() {
     const modelo = await reconhecedor.exportarModelo();

@@ -9,6 +9,7 @@ const SUITES = [
   'sign-features.test.mjs',
   'sign-classifier.test.mjs',
   'sign-stabilizer.test.mjs',
+  'trava-mao.test.mjs',
   'text-composer.test.mjs',
   'inference-loop.test.mjs',
   'sign-model-store.test.mjs',

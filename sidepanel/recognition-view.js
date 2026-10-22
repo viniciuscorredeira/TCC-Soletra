@@ -13,7 +13,8 @@ const DICAS = {
   'sem-mao': 'Mostre a mão para a câmera.',
   desconhecido: 'Sinal não reconhecido — ajuste a mão ou treine essa letra.',
   formando: 'Segure o sinal…',
-  travado: 'Relaxe a mão para repetir a mesma letra.'
+  travado: 'Relaxe a mão para repetir a mesma letra.',
+  'mao-incorreta': 'Tradução bloqueada: mão diferente da configurada.'
 };
 
 export function montarRecognitionView(acoes) {
@@ -36,6 +37,10 @@ export function montarRecognitionView(acoes) {
     avisoDinamicas: document.getElementById('avisoDinamicas'),
     avisoPoucas: document.getElementById('avisoPoucas'),
     avisoMao: document.getElementById('avisoMao'),
+    avisoMaoTexto: document.getElementById('avisoMaoTexto'),
+    btnUsarMaoVista: document.getElementById('btnUsarMaoVista'),
+    btnInverterCamera: document.getElementById('btnInverterCamera'),
+    preview: document.getElementById('preview'),
     ajustesResumo: document.getElementById('ajustesResumo'),
     segRigor: [...document.querySelectorAll('[data-rigor]')],
     segPerm: [...document.querySelectorAll('[data-perm]')]
@@ -52,6 +57,13 @@ export function montarRecognitionView(acoes) {
   el.btnRepetir.addEventListener('click', acoes.repetir);
   el.btnLimpar.addEventListener('click', acoes.limpar);
   el.btnPesquisar.addEventListener('click', acoes.pesquisar);
+
+  // As duas saídas da trava de mão, no próprio aviso: ou o usuário trocou de
+  // mão de propósito, ou a câmera inverte a imagem e a mão está certa.
+  let maoVista = null;
+  let espelhada = false;
+  el.btnUsarMaoVista.addEventListener('click', () => maoVista && acoes.definirMao(maoVista));
+  el.btnInverterCamera.addEventListener('click', () => acoes.definirCameraEspelhada(!espelhada));
 
   // Sensibilidade nas mãos do usuário: nenhum padrão serve para toda mão, toda
   // câmera e todo modelo treinado — e quem sente o atrito é quem sinaliza.
@@ -93,7 +105,11 @@ export function montarRecognitionView(acoes) {
     el.ring.classList.toggle('ring--vazio', !travado && !s.candidato);
     el.ringLock.hidden = !travado;
 
-    if (travado) el.ringChar.textContent = s.travadoEm;
+    const bloqueado = s.estadoVisual === 'mao-incorreta';
+    el.ring.classList.toggle('ring--bloqueado', bloqueado);
+
+    if (bloqueado) el.ringChar.textContent = '!';
+    else if (travado) el.ringChar.textContent = s.travadoEm;
     else if (s.candidato) el.ringChar.textContent = s.candidato;
     else el.ringChar.textContent = s.estadoVisual === 'desconhecido' ? '?' : '–';
 
@@ -150,13 +166,25 @@ export function montarRecognitionView(acoes) {
         ? `${d.hz} Hz · p50 ${d.p50.toFixed(0)} ms · p95 ${d.p95.toFixed(0)} ms${d.reduzido ? ' · desempenho reduzido' : ''}`
         : '—';
 
-    if (s.avisoMao) {
-      el.avisoMao.hidden = false;
-      el.avisoMao.textContent =
-        `A câmera sugere que você está usando a mão ${s.avisoMao}, mas o modelo está` +
-        ` configurado para ${s.mao}. Se os sinais não forem reconhecidos, troque em "Treinar sinais".`;
-    } else {
-      el.avisoMao.hidden = true;
+    // Uma câmera que espelha na origem já entrega a imagem como um espelho; o
+    // scaleX(-1) do CSS a desespelharia, e quem sinaliza deixaria de se ver do
+    // lado certo.
+    espelhada = Boolean(s.cameraEspelhada);
+    el.preview.classList.toggle('preview--origem-espelhada', espelhada);
+
+    maoVista = s.travaMao?.maoVista ?? null;
+    el.avisoMao.hidden = !maoVista;
+    if (maoVista) {
+      el.avisoMaoTexto.textContent =
+        `A câmera está vendo a mão ${maoVista}, mas o modelo está configurado para a mão ${s.mao}. ` +
+        'A tradução fica bloqueada até a mão certa voltar. ' +
+        (espelhada
+          ? `Se você está usando a mão ${s.mao}, esta câmera talvez não inverta a imagem.`
+          : `Se você está usando a mão ${s.mao}, esta câmera provavelmente inverte a imagem.`);
+      el.btnUsarMaoVista.textContent = `Usar a mão ${maoVista}`;
+      el.btnInverterCamera.textContent = espelhada
+        ? 'A câmera não inverte a imagem'
+        : 'A câmera inverte a imagem';
     }
   }
 
