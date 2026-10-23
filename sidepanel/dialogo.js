@@ -7,61 +7,38 @@
  * texto a terceiro) ou destrutivas (apagar amostras treinadas): nenhuma delas
  * pode depender de um diálogo que talvez não apareça, porque "aceitar em
  * silêncio" seria o pior resultado possível.
+ *
+ * Este módulo guarda só o pedido pendente; quem desenha é
+ * componentes/DialogoConfirmacao.jsx, com o Dialog do Radix — que já cuida de
+ * prender o foco, fechar no Escape e devolver o foco a quem estava com ele.
  */
-const el = {
-  fundo: document.getElementById('dialogoFundo'),
-  titulo: document.getElementById('dialogoTitulo'),
-  texto: document.getElementById('dialogoTexto'),
-  ok: document.getElementById('dialogoOk'),
-  cancelar: document.getElementById('dialogoCancelar')
-};
+import { criarLoja } from '../ui/loja.js';
+
+/**
+ * @typedef {object} PedidoConfirmacao
+ * @property {string} titulo
+ * @property {string} texto
+ * @property {string} rotuloOk
+ * @property {string} rotuloNao
+ * @property {boolean} perigo
+ * @property {Element | null} focoAnterior quem recebe o foco de volta ao fechar
+ */
+
+/** @type {ReturnType<typeof criarLoja<PedidoConfirmacao | null>>} */
+export const lojaConfirmacao = criarLoja(null);
 
 let resolverPendente = null;
-let focoAnterior = null;
 
-function fechar(resposta) {
+/** @param {boolean} resposta */
+export function responderConfirmacao(resposta) {
   if (!resolverPendente) return;
-
-  el.fundo.hidden = true;
-  document.removeEventListener('keydown', aoTeclar, true);
 
   const r = resolverPendente;
   resolverPendente = null;
-
-  // Devolver o foco evita que o leitor de tela e o Tab recomecem do topo do
-  // painel depois de cada confirmação.
-  focoAnterior?.focus?.();
-  focoAnterior = null;
+  lojaConfirmacao.definir(null);
 
   r(resposta);
 }
-
-function aoTeclar(evento) {
-  if (!resolverPendente) return;
-
-  if (evento.key === 'Escape') {
-    evento.preventDefault();
-    fechar(false);
-    return;
-  }
-
-  // Prende o foco nos dois botões: com o modal aberto, sair dele com Tab
-  // deixaria o usuário editando o painel por baixo de uma pergunta pendente.
-  if (evento.key === 'Tab') {
-    evento.preventDefault();
-    const foco = document.activeElement === el.ok ? el.cancelar : el.ok;
-    foco.focus();
-  }
-}
-
-// Clicar fora cancela — mas só no fundo, nunca num clique que começou dentro
-// da caixa e escorregou para fora ao soltar o botão.
-el.fundo.addEventListener('mousedown', (evento) => {
-  if (evento.target === el.fundo) fechar(false);
-});
-
-el.ok.addEventListener('click', () => fechar(true));
-el.cancelar.addEventListener('click', () => fechar(false));
 
 /**
  * @param {object} opcoes
@@ -82,23 +59,15 @@ export function confirmar({
 }) {
   // Uma segunda chamada com um diálogo aberto cancela o anterior, em vez de
   // deixar a promessa pendurada para sempre.
-  if (resolverPendente) fechar(false);
+  if (resolverPendente) responderConfirmacao(false);
 
-  el.titulo.textContent = titulo;
-  el.texto.textContent = texto;
-  el.ok.textContent = rotuloOk;
-  el.cancelar.textContent = rotuloNao;
-  el.ok.classList.toggle('btn--destrutivo', perigo);
-
-  focoAnterior = document.activeElement;
-  el.fundo.hidden = false;
+  // Lido antes de o diálogo abrir: depois, o foco já estaria dentro dele.
+  const focoAnterior = document.activeElement;
 
   const promessa = new Promise((resolve) => {
     resolverPendente = resolve;
   });
-
-  document.addEventListener('keydown', aoTeclar, true);
-  (perigo ? el.cancelar : el.ok).focus();
+  lojaConfirmacao.definir({ titulo, texto, rotuloOk, rotuloNao, perigo, focoAnterior });
 
   return promessa;
 }

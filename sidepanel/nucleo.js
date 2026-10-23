@@ -1,47 +1,59 @@
+/**
+ * Soletra — núcleo do painel.
+ *
+ * Tudo o que o painel FAZ mora aqui; os componentes React só desenham o estado
+ * destas lojas e chamam estas ações. É a mesma separação de antes entre
+ * render(snapshot) e a regra de negócio, agora com o desenho a cargo do React.
+ *
+ * Câmera e reconhecedor são únicos por página e nascem com o módulo, não com um
+ * componente: recriá-los a cada montagem do React abriria uma segunda câmera ou
+ * um segundo detector WASM por cima do primeiro.
+ */
 import { CameraController, avaliarTaxaDeQuadros, FPS_MAXIMO } from '../src/camera-controller.js';
 import { SignRecognizer } from '../src/sign-recognizer.js';
-import { montarRecognitionView } from './recognition-view.js';
-import { montarTrainingView } from './training-view.js';
+import { migrarChaves } from '../src/migracao-storage.js';
+import { AMOSTRAS_RECOMENDADAS, AMOSTRAS_MAXIMAS, SignModelStore } from '../src/sign-model-store.js';
+import { criarLoja } from '../ui/loja.js';
 import { confirmar } from './dialogo.js';
 import { escolherPlataforma } from './seletor-plataforma.js';
-import { migrarChaves } from '../src/migracao-storage.js';
-import { montarJanela, lerRetomada } from './janela.js';
-import { AMOSTRAS_RECOMENDADAS, AMOSTRAS_MAXIMAS } from '../src/sign-model-store.js';
+import { lerRetomada } from './janela.js';
 
 const PREF_KEY = 'soletra.preferredDeviceId';
 const CHAVE_CONSENTIMENTO = 'soletra.consentimento.reconhecimento';
 
-const el = {
-  body: document.body,
-  video: document.getElementById('preview'),
-  select: document.getElementById('deviceSelect'),
-  btnStart: document.getElementById('btnStart'),
-  btnStop: document.getElementById('btnStop'),
-  btnReload: document.getElementById('btnReload'),
-  btnPermission: document.getElementById('btnPermission'),
-  badge: document.getElementById('statusBadge'),
-  statusText: document.getElementById('statusText'),
-  message: document.getElementById('message'),
-  placeholderText: document.getElementById('placeholderText'),
-  liveTag: document.getElementById('liveTag'),
-  streamInfo: document.getElementById('streamInfo'),
-  secReco: document.getElementById('secReco')
-};
+/**
+ * O controller precisa do <video> no construtor, então o elemento nasce aqui e
+ * o componente do palco só o encaixa no lugar.
+ */
+export const video = document.createElement('video');
+video.id = 'preview';
+video.autoplay = true;
+video.muted = true;
+video.playsInline = true;
 
-const STATUS = {
-  idle: { label: 'Parada', badge: 'badge--idle', placeholder: 'Câmera parada' },
-  requesting: { label: 'Iniciando…', badge: 'badge--busy', placeholder: 'Solicitando acesso à câmera…' },
-  active: { label: 'Ativa', badge: 'badge--active', placeholder: '' },
-  stopped: { label: 'Parada', badge: 'badge--idle', placeholder: 'Transmissão encerrada' },
-  error: { label: 'Erro', badge: 'badge--error', placeholder: 'Não foi possível exibir o vídeo' }
-};
-
-const controller = new CameraController(el.video, render);
-
-const reconhecedor = new SignRecognizer(el.video, (snapshot) => {
-  recognitionView.renderizar(snapshot);
-  trainingView.renderizar(snapshot);
+/**
+ * Última snapshot do CameraController. `devices: null` só até a primeira
+ * enumeração — é o "Procurando câmeras…" do seletor.
+ */
+export const lojaCamera = criarLoja({
+  state: 'idle',
+  error: null,
+  devices: null,
+  activeDeviceId: null,
+  track: null
 });
+/** Última snapshot do SignRecognizer; null até ele carregar as preferências. */
+export const lojaReco = criarLoja(null);
+/** @type {ReturnType<typeof criarLoja<{texto: string, tipo: 'info'|'warn'|'error'} | null>>} */
+export const lojaMensagem = criarLoja(null);
+/** Se o botão "Conceder acesso à câmera" aparece. */
+export const lojaPermissao = criarLoja(false);
+/** deviceId escolhido no seletor de câmera — o que o <select> guardava em .value. */
+export const lojaDispositivo = criarLoja('');
+
+const controller = new CameraController(video, aoMudarCamera);
+
+const reconhecedor = new SignRecognizer(video, (snapshot) => lojaReco.definir(snapshot));
 
 /** Guarda a última câmera escolhida para restaurá-la na próxima abertura. */
 async function loadPreferredDeviceId() {
@@ -57,45 +69,32 @@ function savePreferredDeviceId(deviceId) {
   chrome.storage.local.set({ [PREF_KEY]: deviceId || '' }).catch(() => {});
 }
 
-function showMessage(text, kind = 'info') {
-  el.message.textContent = text;
-  el.message.className = `message message--${kind}`;
-  el.message.hidden = false;
+export function showMessage(texto, tipo = 'info') {
+  lojaMensagem.definir({ texto, tipo });
 }
 
 function clearMessage() {
-  el.message.hidden = true;
-  el.message.textContent = '';
+  lojaMensagem.definir(null);
 }
 
-/** @returns {boolean} true quando nenhum dispositivo tem rótulo legível. */
-function fillDeviceOptions(devices, activeDeviceId) {
-  const desired = activeDeviceId || el.select.value;
+/**
+ * Mantém a escolha do seletor coerente com a lista: sem a câmera desejada na
+ * lista, vale a primeira, como fazia o <select> nativo.
+ * @returns {boolean} true quando nenhum dispositivo tem rótulo legível.
+ */
+function sincronizarDispositivo(devices, activeDeviceId) {
+  if (devices.length === 0) return false;
 
-  el.select.replaceChildren();
+  const desired = activeDeviceId || lojaDispositivo.ler();
+  const existe = desired && devices.some((d) => d.deviceId === desired);
+  lojaDispositivo.definir(existe ? desired : devices[0].deviceId);
 
-  if (devices.length === 0) {
-    el.select.append(new Option('Nenhuma câmera detectada', ''));
-    el.select.disabled = true;
-    return false;
-  }
-
-  el.select.disabled = false;
-  devices.forEach((device, index) => {
-    // O rótulo só vem preenchido depois que a permissão é concedida; sem ele
-    // resta o índice, e o usuário não consegue distinguir os dispositivos.
-    const label = device.label || `Câmera ${index + 1} (nome indisponível)`;
-    el.select.append(new Option(label, device.deviceId));
-  });
-
-  if (desired && devices.some((d) => d.deviceId === desired)) {
-    el.select.value = desired;
-  }
-
+  // O rótulo só vem preenchido depois que a permissão é concedida; sem ele
+  // resta o índice, e o usuário não consegue distinguir os dispositivos.
   return devices.every((device) => !device.label);
 }
 
-function describeTrack(track) {
+export function describeTrack(track) {
   if (!track) return '—';
   const s = track.getSettings();
   const parts = [];
@@ -117,46 +116,32 @@ function avisoTaxaBaixa(fps) {
   return `Sua câmera está entregando ${fps} fps, abaixo dos ${FPS_MAXIMO} fps suportados. ${efeito}`;
 }
 
-function render(snapshot) {
+function aoMudarCamera(snapshot) {
   const { state, error, devices, activeDeviceId, track } = snapshot;
-  const status = STATUS[state] || STATUS.idle;
-
-  el.body.dataset.state = state;
-  el.badge.className = `badge ${status.badge}`;
-  el.statusText.textContent = status.label;
-  el.placeholderText.textContent = status.placeholder;
-  el.liveTag.hidden = state !== 'active';
-  el.streamInfo.textContent = state === 'active' ? describeTrack(track) : '—';
 
   // A câmera ligada é a validação para o reconhecimento existir: some ao parar
   // e volta ao religar. Uma captura de treino em curso é cancelada, já que o
   // botão de cancelar dela ficaria escondido.
-  el.secReco.hidden = state !== 'active';
   if (state !== 'active' && reconhecedor.captura) reconhecedor.pararCaptura();
 
-  const labelsMissing = fillDeviceOptions(devices, activeDeviceId);
+  const labelsMissing = sincronizarDispositivo(devices, activeDeviceId);
+  lojaCamera.definir(snapshot);
 
-  const busy = state === 'requesting';
   const hasDevices = devices.length > 0;
-
-  el.btnStart.disabled = busy || state === 'active' || !hasDevices;
-  el.btnStop.disabled = busy || state !== 'active';
-  el.btnReload.disabled = busy || !hasDevices;
-  el.select.disabled = busy || !hasDevices;
 
   if (error) {
     showMessage(error.message, 'error');
-    el.btnPermission.hidden = error.code !== 'permission-denied';
+    lojaPermissao.definir(error.code === 'permission-denied');
   } else if (state === 'active') {
     const taxa = avaliarTaxaDeQuadros(track?.getSettings?.());
     if (taxa?.abaixo) showMessage(avisoTaxaBaixa(taxa.fps), 'warn');
     else clearMessage();
-    el.btnPermission.hidden = true;
+    lojaPermissao.definir(false);
   } else if (!hasDevices) {
     showMessage('Nenhuma câmera encontrada. Conecte um dispositivo e clique em Recarregar.', 'warn');
   } else if (labelsMissing) {
     showMessage('Autorize o acesso à câmera para ver os nomes dos dispositivos.', 'warn');
-    el.btnPermission.hidden = false;
+    lojaPermissao.definir(true);
   } else {
     clearMessage();
   }
@@ -171,11 +156,11 @@ function render(snapshot) {
  * Chrome exige uma aba de topo. A página permission/request.html cumpre esse
  * papel e a permissão fica gravada para a origem chrome-extension:// inteira.
  */
-function openPermissionTab() {
+export function abrirAbaPermissao() {
   chrome.tabs.create({ url: chrome.runtime.getURL('permission/request.html') });
 }
 
-async function startSelected() {
+export async function iniciarCamera() {
   clearMessage();
 
   // Em estado "prompt" o painel lateral não consegue exibir o diálogo nativo;
@@ -183,26 +168,24 @@ async function startSelected() {
   const permission = await CameraController.permissionState();
   if (permission === 'prompt') {
     showMessage('Abrindo a aba de autorização da câmera…', 'info');
-    openPermissionTab();
+    abrirAbaPermissao();
     return;
   }
 
-  const deviceId = el.select.value || undefined;
+  const deviceId = lojaDispositivo.ler() || undefined;
   const ok = await controller.start(deviceId);
   if (ok) savePreferredDeviceId(controller.activeDeviceId);
 }
 
-el.btnStart.addEventListener('click', startSelected);
-
-el.btnStop.addEventListener('click', () => {
+export function pararCamera() {
   controller.stop();
   showMessage('Transmissão encerrada. A câmera foi liberada.', 'info');
-});
+}
 
-el.btnReload.addEventListener('click', async () => {
+export async function recarregar() {
   clearMessage();
   const wasStreaming = controller.state === 'active';
-  const streaming = await controller.reload(el.select.value || undefined);
+  const streaming = await controller.reload(lojaDispositivo.ler() || undefined);
 
   if (streaming) {
     savePreferredDeviceId(controller.activeDeviceId);
@@ -210,26 +193,25 @@ el.btnReload.addEventListener('click', async () => {
     // Recarregar não liga a câmera: preserva o estado desligado.
     showMessage('Lista de dispositivos atualizada. A câmera continua desligada.', 'info');
   }
-});
+}
 
-el.select.addEventListener('change', async () => {
-  savePreferredDeviceId(el.select.value);
+export async function escolherDispositivo(deviceId) {
+  lojaDispositivo.definir(deviceId);
+  savePreferredDeviceId(deviceId);
   // Troca de dispositivo sem recarregar a extensão: só reabre o stream se já
   // houver transmissão em andamento.
   if (controller.state === 'active') {
-    await controller.start(el.select.value || undefined);
+    await controller.start(deviceId || undefined);
   }
-});
-
-el.btnPermission.addEventListener('click', openPermissionTab);
+}
 
 // A aba de permissão avisa quando o usuário decide, para atualizar os rótulos.
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type !== 'soletra:permission-result') return;
   if (msg.state === 'granted') {
-    el.btnPermission.hidden = true;
+    lojaPermissao.definir(false);
     // ensureDeviceLabels destrava os nomes reais das câmeras; a mensagem vem
-    // depois do refresh porque o render() disparado por ele limpa o aviso.
+    // depois do refresh porque o aoMudarCamera() disparado por ele limpa o aviso.
     controller
       .ensureDeviceLabels()
       .then(() => controller.refreshDevices({ notify: true }))
@@ -295,7 +277,7 @@ async function pesquisar() {
   }
 }
 
-const recognitionView = montarRecognitionView({
+export const acoesReco = {
   async alternarReconhecimento(ligar) {
     if (!ligar) {
       reconhecedor.desligar();
@@ -321,7 +303,7 @@ const recognitionView = montarRecognitionView({
   definirMao: (mao) => reconhecedor.definirMao(mao),
   definirCameraEspelhada: (v) => reconhecedor.definirCameraEspelhada(v),
   pesquisar
-});
+};
 
 /**
  * Instala o modelo pronto por baixo do treino pessoal. Não pede confirmação
@@ -379,7 +361,7 @@ async function avisarTeto(classe) {
   });
 }
 
-const trainingView = montarTrainingView({
+export const acoesTreino = {
   async treinar(classe) {
     if (controller.state !== 'active') {
       showMessage('Inicie a câmera antes de treinar um sinal.', 'warn');
@@ -419,7 +401,6 @@ const trainingView = montarTrainingView({
 
     // Valida antes de perguntar: não faz sentido oferecer substituir o modelo
     // do usuário por um arquivo que já se sabe inválido.
-    const { SignModelStore } = await import('../src/sign-model-store.js');
     const v = SignModelStore.validarArquivo(objeto);
     if (!v.ok) {
       showMessage(v.erro, 'error');
@@ -512,9 +493,10 @@ const trainingView = montarTrainingView({
       'info'
     );
   }
-});
+};
 
-montarJanela({
+/** Ganchos dos botões de janela (ver janela.js). */
+export const ganchosJanela = {
   estado: () => ({
     camera: controller.state === 'active',
     reco: reconhecedor.estado !== 'desligado'
@@ -524,14 +506,14 @@ montarJanela({
     controller.stop();
   },
   avisar: showMessage
-});
+};
 
 window.addEventListener('pagehide', () => {
   controller.dispose();
   reconhecedor.dispose();
 });
 
-(async function init() {
+export async function iniciar() {
   // Antes de qualquer leitura: o produto se chamava "RVL Libras" e prefixava as
   // chaves com `rvl.`. Sem esta passada, o modelo treinado continuaria no disco
   // sob nomes que ninguém mais lê.
@@ -542,9 +524,9 @@ window.addEventListener('pagehide', () => {
 
   await controller.ensureDeviceLabels();
   if (preferred && controller.devices.some((d) => d.deviceId === preferred)) {
-    el.select.value = preferred;
+    lojaDispositivo.definir(preferred);
   }
-  render({
+  aoMudarCamera({
     state: 'idle',
     error: null,
     devices: controller.devices,
@@ -557,10 +539,10 @@ window.addEventListener('pagehide', () => {
       'O acesso à câmera está bloqueado para esta extensão. Libere em Configurações do navegador → Privacidade e segurança → Câmera.',
       'error'
     );
-    el.btnPermission.hidden = false;
+    lojaPermissao.definir(true);
   } else if (permission !== 'granted') {
     showMessage('Clique em Iniciar câmera para autorizar o acesso.', 'info');
-    el.btnPermission.hidden = false;
+    lojaPermissao.definir(true);
   }
 
   // Carrega preferências e modelo do storage. Não toca no WASM: o detector só
@@ -571,7 +553,7 @@ window.addEventListener('pagehide', () => {
   // lado. O consentimento é conferido de novo, mas já foi dado lá.
   const retomar = await lerRetomada();
   if (retomar?.camera) {
-    await startSelected();
+    await iniciarCamera();
     if (retomar.reco && controller.state === 'active' && (await consentimentoConcedido())) {
       await reconhecedor.ligar();
     }
@@ -584,4 +566,4 @@ window.addEventListener('pagehide', () => {
       'warn'
     );
   }
-})();
+}

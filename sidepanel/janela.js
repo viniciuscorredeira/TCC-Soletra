@@ -25,13 +25,16 @@ export const MODO = new URLSearchParams(location.search).get('modo') === 'aba' ?
  * @param {() => {camera: boolean, reco: boolean}} ganchos.estado o que religar do outro lado
  * @param {() => void} ganchos.soltarCamera para a câmera e o reconhecimento
  * @param {(texto: string, tipo?: string) => void} ganchos.avisar
+ * @param {object} botoes os três botões do semáforo, já no DOM
+ * @param {HTMLButtonElement} botoes.fechar
+ * @param {HTMLButtonElement} botoes.minimizar
+ * @param {HTMLButtonElement} botoes.maximizar
  */
-export function montarJanela({ estado, soltarCamera, avisar }) {
+export function montarJanela(
+  { estado, soltarCamera, avisar },
+  { fechar: btnFechar, minimizar: btnMinimizar, maximizar: btnMaximizar }
+) {
   document.body.dataset.modo = MODO;
-
-  const btnFechar = document.getElementById('btnJanelaFechar');
-  const btnMinimizar = document.getElementById('btnJanelaMinimizar');
-  const btnMaximizar = document.getElementById('btnJanelaMaximizar');
 
   // sidePanel.open só funciona no gesto do usuário, sem nenhum await antes.
   // Por isso a janela desta aba é lida já na abertura, e não no clique.

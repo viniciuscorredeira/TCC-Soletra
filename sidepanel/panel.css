@@ -1,36 +1,12 @@
-:root {
-  --bg: #0f1115;
-  --surface: #171a21;
-  --surface-2: #1f242e;
-  --border: #2c3240;
-  --text: #e8eaf0;
-  --text-dim: #99a1b3;
-  --accent: #5b6cff;
-  --accent-hover: #7280ff;
-  --ok: #3ddc97;
-  --warn: #ffb340;
-  --err: #ff6b6b;
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f5f6f9;
-    --surface: #ffffff;
-    --surface-2: #eef0f5;
-    --border: #d8dce6;
-    --text: #1a1d24;
-    --text-dim: #5b6273;
-    --accent: #4453e8;
-    --accent-hover: #3341d6;
-    --ok: #10996a;
-    --warn: #b26a00;
-    --err: #d43a3a;
-    color-scheme: light;
-  }
-}
-
-* { box-sizing: border-box; }
+/*
+ * Soletra — estilos próprios do painel.
+ *
+ * O grosso da aparência vem do Radix Themes (botões, campos, diálogos, cores
+ * claras e escuras). Aqui fica só o que o Radix não tem — o semáforo, o palco
+ * do vídeo, o anel de confirmação, a grade de classes, as seções recolhíveis e
+ * o seletor de plataforma —, sempre com as variáveis do tema, para que tudo
+ * troque junto entre claro e escuro.
+ */
 
 /* O atributo `hidden` só vale display:none na folha do navegador, e QUALQUER
    regra de autor com `display` o anula em silêncio — o elemento continua na
@@ -40,27 +16,72 @@
    regra global encerra a categoria; por isso o !important. */
 [hidden] { display: none !important; }
 
-body {
-  margin: 0;
-  min-width: 300px;
-  min-height: 100vh;
+body { min-width: 300px; }
+
+.app {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
-  background: var(--bg);
-  color: var(--text);
-  font: 13px/1.45 system-ui, "Segoe UI", Roboto, sans-serif;
+  gap: var(--space-3);
+  min-height: 100vh;
+  padding: var(--space-3);
+  background: var(--marca-fundo);
 }
 
-.topbar {
+.app__principal {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1;
 }
 
-.topbar__esq { display: flex; align-items: center; gap: 10px; }
+/* Modo aba (o navegador inteiro): a mesma coluna do painel, só que centrada e
+   larga, para a câmera ficar grande. */
+body[data-modo="aba"] .app { width: 100%; max-width: 760px; margin-inline: auto; }
+
+.largura-total { grid-column: 1 / -1; width: 100%; }
+.numeros { font-variant-numeric: tabular-nums; }
+
+/* --- Topo ----------------------------------------------------------------- */
+
+/* Faixa da marca: o degradê da logo, do azul profundo ao azul-céu da lupa.
+   Igual nos dois temas — é a assinatura visual do produto. */
+.topo {
+  padding: 10px 12px;
+  border-radius: var(--radius-4);
+  background: var(--marca-degrade-faixa);
+  box-shadow: var(--marca-brilho);
+  color: #fff;
+}
+
+.topo__titulo { letter-spacing: -0.01em; color: #fff; }
+
+.topo__selo {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgb(0 20 80 / 25%);
+}
+.topo__selo img { display: block; }
+
+/* Sobre a faixa, o selo de estado e o botão de tema viram brancos; só o ponto
+   do selo guarda a cor do estado, em tons claros que se leem sobre o azul. */
+.topo .status {
+  color: #fff;
+  background: rgb(255 255 255 / 16%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 30%);
+}
+.topo .status__ponto { background: rgb(255 255 255 / 75%); }
+.topo .status[data-estado="active"] .status__ponto { background: #5ef0a0; }
+.topo .status[data-estado="requesting"] .status__ponto { background: #ffd166; }
+.topo .status[data-estado="error"] .status__ponto { background: #ff8a8a; }
+
+.topo .rt-IconButton { color: #fff; }
+.topo .rt-IconButton:hover { background: rgb(255 255 255 / 16%); }
+.topo .semaforo__btn { border-color: rgb(0 0 0 / 25%); }
 
 /* Botões de janela no estilo do macOS. Os ícones só aparecem ao passar o mouse
    sobre o grupo (ou com foco de teclado), como lá. As cores são fixas, e não
@@ -80,7 +101,7 @@ body {
 .semaforo__btn--fechar { background: #ff5f57; }
 .semaforo__btn--minimizar { background: #febc2e; }
 .semaforo__btn--maximizar { background: #28c840; }
-.semaforo__btn:disabled { background: var(--border); cursor: default; }
+.semaforo__btn:disabled { background: var(--gray-6); cursor: default; }
 
 .semaforo__btn svg {
   width: 8px;
@@ -94,69 +115,37 @@ body {
 .semaforo__btn--maximizar svg { fill: rgb(0 0 0 / 55%); stroke: none; }
 .semaforo:hover .semaforo__btn:not(:disabled) svg,
 .semaforo__btn:focus-visible svg { opacity: 1; }
-.semaforo__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.semaforo__btn:focus-visible { outline: 2px solid var(--focus-8); outline-offset: 2px; }
 
-/* Modo aba (o navegador inteiro): a mesma coluna do painel, só que centrada e larga,
-   para a câmera ficar grande. */
-body[data-modo="aba"] { width: 100%; max-width: 760px; margin-inline: auto; font-size: 14px; }
+.status { gap: 6px; }
 
-.title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 650;
-  letter-spacing: 0.2px;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 9px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.dot {
-  width: 7px;
-  height: 7px;
+.status__ponto {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--text-dim);
-  flex: none;
+  background: currentColor;
 }
+.status[data-estado="active"] .status__ponto { animation: pulso 1.6s ease-in-out infinite; }
+.status[data-estado="requesting"] .status__ponto { animation: pulso 1s linear infinite; }
 
-.badge--active { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); }
-.badge--active .dot { background: var(--ok); animation: pulse 1.6s ease-in-out infinite; }
-.badge--busy { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); }
-.badge--busy .dot { background: var(--warn); animation: pulse 1s linear infinite; }
-.badge--error { color: var(--err); border-color: color-mix(in srgb, var(--err) 45%, var(--border)); }
-.badge--error .dot { background: var(--err); }
-.badge--idle { color: var(--text-dim); }
-
-@keyframes pulse {
+@keyframes pulso {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
 }
 
-main {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-}
+/* --- Palco (vídeo) -------------------------------------------------------- */
 
-.stage {
+.palco {
   position: relative;
   aspect-ratio: 4 / 3;
   width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-4);
   background: #000;
   overflow: hidden;
+  box-shadow: 0 0 0 1px var(--gray-a5), var(--shadow-2);
 }
+
+.palco__video { position: absolute; inset: 0; }
 
 #preview {
   width: 100%;
@@ -168,341 +157,209 @@ main {
 }
 
 /* A câmera já espelha na origem: o vídeo chega como um espelho. */
-#preview.preview--origem-espelhada { transform: none; }
+.palco[data-espelhada="true"] #preview { transform: none; }
+.palco[data-ativo="true"] #preview { display: block; }
 
-body[data-state="active"] #preview { display: block; }
-body[data-state="active"] .placeholder { display: none; }
-
-.placeholder {
+.palco__vazio {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: var(--text-dim);
-  background: var(--surface-2);
+  gap: var(--space-2);
+  padding: var(--space-3);
   text-align: center;
-  padding: 12px;
+  color: var(--accent-11);
+  background:
+    radial-gradient(circle at 30% 30%, var(--blue-a4), transparent 60%),
+    radial-gradient(circle at 75% 75%, var(--cyan-a4), transparent 55%),
+    var(--gray-3);
 }
 
-.placeholder p { margin: 0; font-size: 12px; }
-
-.placeholder__icon {
-  width: 34px;
-  height: 34px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linejoin: round;
-  opacity: 0.7;
-}
-
-.live-tag {
+.palco__ao-vivo {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: rgba(255, 60, 60, 0.9);
-  color: #fff;
-  font-size: 10px;
+  top: var(--space-2);
+  left: var(--space-2);
+  letter-spacing: 0.06em;
   font-weight: 700;
-  letter-spacing: 0.6px;
 }
 
-.message {
-  margin: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-left-width: 3px;
-  border-radius: 6px;
-  background: var(--surface);
-  font-size: 12px;
-  color: var(--text-dim);
-}
+/* --- Reconhecimento ------------------------------------------------------- */
 
-.message--error { border-left-color: var(--err); color: var(--err); }
-.message--warn { border-left-color: var(--warn); color: var(--warn); }
-.message--info { border-left-color: var(--accent); }
-
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.field { display: flex; flex-direction: column; gap: 4px; }
-
-.field__label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-select {
-  width: 100%;
-  padding: 7px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-}
-
-select:disabled { opacity: 0.55; }
-
-.buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-weight: 600;
-  line-height: 1.2;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
-}
-
-.btn:hover:not(:disabled) { background: var(--surface-2); }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.btn--primary {
-  grid-column: 1 / -1;
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.btn--primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
-
-.btn--ghost {
-  background: transparent;
-  border-style: dashed;
-  color: var(--accent);
-}
-
-.footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.footer__note { opacity: 0.8; }
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* --- Reconhecimento de Libras --------------------------------------------- */
-
-.reco {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-}
-
-.reco__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.switch input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
-
-.segmented {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.seg {
-  font: inherit;
-  padding: 5px 11px;
-  border: 0;
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-/* Fatias iguais: com largura pelo conteúdo, "Tolerante" fica muito maior que
-   "Normal" e o controle parece desalinhado. flex-basis 0 ignora o texto. */
-.segmented--cheio { display: flex; width: 100%; }
-.segmented--cheio .seg { flex: 1 1 0; padding-inline: 4px; text-align: center; }
-
-.seg + .seg { border-left: 1px solid var(--border); }
-.seg--on { background: var(--accent); color: #fff; }
-.seg:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.reco__body { display: flex; flex-direction: column; gap: 10px; }
-
-.reco__leitura { display: flex; align-items: center; gap: 12px; }
+.reco__medidas { flex: 1 1 auto; min-width: 0; }
+.reco__desempenho { opacity: 0.85; }
 
 /* O anel preenche em T_PERMANENCIA: é o feedback que diz ao usuário que o
    sinal foi entendido e está sendo confirmado, não ignorado. */
-.ring {
+/* O progresso corre do azul ao azul-céu da logo; travado e bloqueado usam uma
+   cor só, porque aí o que importa é o estado, não a marca. */
+.anel {
+  --cor-anel: var(--blue-9);
+  --cor-anel-fim: var(--cyan-9);
   position: relative;
   flex: 0 0 auto;
-  width: 62px;
-  height: 62px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   background:
-    conic-gradient(var(--cor-anel, var(--accent)) calc(var(--p) * 360deg), transparent 0),
-    radial-gradient(closest-side, var(--surface) 78%, transparent 79%);
-  border: 1px solid var(--border);
+    radial-gradient(closest-side, var(--color-panel-solid) 80%, transparent 81%),
+    conic-gradient(
+      var(--cor-anel) 0deg,
+      var(--cor-anel-fim) calc(var(--p) * 360deg),
+      var(--gray-a4) calc(var(--p) * 360deg)
+    );
   transition: background 90ms linear;
 }
 
-.ring__char {
+.anel__caractere {
+  grid-area: 1 / 1;
   font-size: 26px;
   font-weight: 700;
   line-height: 1;
-  color: var(--text);
+  color: var(--gray-12);
 }
 
-.ring__lock { width: 22px; height: 22px; fill: none; stroke: var(--warn); stroke-width: 2; }
+.anel__cadeado {
+  position: absolute;
+  bottom: 9px;
+  width: 12px;
+  height: 12px;
+  color: var(--amber-11);
+}
 
-.ring--travado { border-color: var(--warn); --cor-anel: var(--warn); }
-.ring--travado .ring__char { color: var(--warn); font-size: 18px; }
-.ring--vazio .ring__char { color: var(--text-dim); }
-.ring--bloqueado { border-color: var(--err); --cor-anel: var(--err); }
-.ring--bloqueado .ring__char { color: var(--err); }
+.anel[data-travado="true"] { --cor-anel: var(--amber-9); --cor-anel-fim: var(--amber-9); }
+.anel[data-travado="true"] .anel__caractere { color: var(--amber-11); font-size: 20px; margin-top: -6px; }
+.anel[data-vazio="true"] .anel__caractere { color: var(--gray-9); }
+.anel[data-bloqueado="true"] { --cor-anel: var(--red-9); --cor-anel-fim: var(--red-9); }
+.anel[data-bloqueado="true"] .anel__caractere { color: var(--red-11); }
 
-.trava-mao { display: flex; flex-direction: column; gap: 8px; }
-.trava-mao p { margin: 0; }
+/* Flash verde a cada confirmação; o elemento é remontado a cada uma. */
+.anel__flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: confirmado 0.4s ease-out forwards;
+}
 
-.ring--confirmado { animation: flash 0.35s ease-out; }
-
-@keyframes flash {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 70%, transparent); }
+@keyframes confirmado {
+  0% { box-shadow: 0 0 0 0 var(--green-a9); }
   100% { box-shadow: 0 0 0 14px transparent; }
 }
 
-.reco__medidas { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.reco__dica { margin: 0; font-size: 12px; color: var(--text-dim); }
-.reco__perf { font-size: 11px; color: var(--text-dim); opacity: 0.85; }
-
-.bar { height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--ok); transition: width 90ms linear; }
-
-textarea {
-  font: 15px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
-  letter-spacing: 1px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  resize: vertical;
+.saida textarea {
+  font-family: var(--code-font-family);
+  font-size: 15px;
+  letter-spacing: 0.06em;
 }
 
-textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* O monoespaçado é para o texto reconhecido, letra a letra; a instrução de
+   placeholder volta à fonte normal, senão quebra em três linhas no painel. */
+.saida textarea::placeholder {
+  font-family: var(--default-font-family);
+  font-size: var(--font-size-2);
+  letter-spacing: normal;
+}
 
-.reco__aviso {
+.aviso-linha {
   margin: 0;
-  font-size: 11px;
-  color: var(--warn);
-  border-left: 2px solid var(--warn);
-  padding-left: 8px;
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--amber-8);
 }
 
-.btn--perigo { color: var(--err); border-color: color-mix(in srgb, var(--err) 45%, var(--border)); }
+/* --- Seções recolhíveis --------------------------------------------------- */
+
+.secao { border-top: 1px solid var(--gray-a5); }
+.secao__cabecalho { margin: 0; }
+
+.secao__titulo {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap; /* sem espaço, a pílula do resumo desce inteira para a linha de baixo */
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  width: 100%;
+  padding: var(--space-3) 0 var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-size-2);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-12);
+}
+
+.secao__titulo:focus-visible { outline: 2px solid var(--focus-8); outline-offset: 2px; border-radius: var(--radius-2); }
+
+.secao__seta { color: var(--accent-11); transition: transform 150ms ease; }
+.secao__titulo[data-state="open"] .secao__seta { transform: rotate(90deg); }
+
+/* O resumo da seção numa pílula do azul-céu, a cor secundária da logo. */
+.secao__contador {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: var(--radius-full, 999px);
+  background: var(--cyan-a3);
+  color: var(--cyan-11);
+  font-size: var(--font-size-1);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.secao__corpo { overflow: hidden; }
+.secao__corpo[data-state="open"] { animation: abrir 180ms ease-out; }
+.secao__corpo[data-state="closed"] { animation: fechar 150ms ease-in; }
+
+.secao__conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+@keyframes abrir {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-accordion-content-height); opacity: 1; }
+}
+
+@keyframes fechar {
+  from { height: var(--radix-accordion-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
 
 /* --- Treino --------------------------------------------------------------- */
 
-/* Uma única aparência para toda seção recolhível do painel. */
-.secao { border-top: 1px solid var(--border); padding-top: 8px; }
-
-.secao__titulo {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  list-style: none;
+/* O × de cada classe sai 5px para fora do canto do botão; o respiro à direita
+   e no alto mantém o da última coluna dentro do cartão. */
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 8px;
+  padding: 5px 5px 0 0;
 }
-
-.secao__titulo::-webkit-details-marker { display: none; }
-
-.secao__titulo::before {
-  content: "";
-  width: 0;
-  height: 0;
-  border-left: 4px solid currentColor;
-  border-top: 3.5px solid transparent;
-  border-bottom: 3.5px solid transparent;
-  transition: transform 120ms ease;
-  opacity: 0.7;
-}
-
-.secao[open] > .secao__titulo::before { transform: rotate(90deg); }
-
-.secao__contador {
-  margin-left: auto;
-  font-weight: 400;
-  font-size: 11px;
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-.secao__corpo { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; }
-
-.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 5px; }
 
 .classe-wrap { position: relative; display: flex; }
 
 .classe {
-  font: inherit;
+  all: unset;
+  box-sizing: border-box;
   position: relative;
   flex: 1;
-  padding: 6px 0 22px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--surface-2);
-  color: var(--text-dim);
+  padding: 7px 0 23px;
+  text-align: center;
+  font-size: var(--font-size-2);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-3);
+  background: var(--gray-a3);
+  box-shadow: inset 0 0 0 1px var(--gray-a5);
+  color: var(--gray-11);
   cursor: pointer;
   /* Recorta a barra de uso nos cantos arredondados. O × é irmão, não filho,
      então não é cortado. */
   overflow: hidden;
+  transition: background 120ms ease, box-shadow 120ms ease;
 }
 
 /* Barra de uso da classe: a largura é a % do teto de amostras ocupada. */
@@ -513,14 +370,37 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
   bottom: 0;
   height: 3px;
   width: calc(var(--uso, 0) * 1%);
-  background: var(--ok);
-  opacity: 0.75;
+  background: var(--green-9);
 }
 
-.classe:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.classe:hover:not(:disabled) { background: var(--accent-a3); box-shadow: inset 0 0 0 1px var(--accent-a7); color: var(--gray-12); }
+.classe:focus-visible { outline: 2px solid var(--focus-8); outline-offset: 2px; }
 .classe:disabled { opacity: 0.5; cursor: not-allowed; }
-.classe--treinada { color: var(--text); border-color: color-mix(in srgb, var(--ok) 40%, var(--border)); }
-.classe--ativa { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.classe[data-situacao="treinada"] { color: var(--gray-12); box-shadow: inset 0 0 0 1px var(--green-a7); }
+.classe[data-situacao="parcial"] { color: var(--gray-12); box-shadow: inset 0 0 0 1px var(--amber-a7); }
+.classe[data-situacao="parcial"]::after { background: var(--amber-9); }
+
+/* Classe no teto de amostras: gravar mais substitui as antigas. Tracejado em
+   vez de outra cor para não competir com o verde de "treinada" nem com o
+   laranja de "parcial" — cheia também é treinada. */
+.classe[data-situacao="cheia"] {
+  color: var(--gray-12);
+  box-shadow: none;
+  outline: 1px dashed var(--green-9);
+  outline-offset: -1px;
+}
+.classe[data-situacao="cheia"] .classe__n { opacity: 1; font-weight: 700; }
+
+.classe[data-ativa="true"],
+.classe[data-ativa="true"]:disabled {
+  opacity: 1;
+  background: var(--accent-9);
+  box-shadow: none;
+  outline: none;
+  color: var(--accent-contrast);
+}
+.classe[data-ativa="true"]::after { background: var(--accent-contrast); }
 
 .classe__n {
   position: absolute;
@@ -528,8 +408,13 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
   right: 0;
   bottom: 13px;
   font-size: 9px;
-  opacity: 0.75;
+  font-weight: var(--font-weight-regular);
+  opacity: 0.8;
 }
+
+/* Badge "20+8": o número pessoal em destaque, porque é o que o usuário controla. */
+.classe__n b { font-weight: 700; color: var(--accent-11); }
+.classe[data-ativa="true"] .classe__n b { color: inherit; }
 
 .classe__pct {
   position: absolute;
@@ -537,230 +422,56 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
   right: 0;
   bottom: 4px;
   font-size: 8.5px;
-  opacity: 0.6;
+  font-weight: var(--font-weight-regular);
+  opacity: 0.65;
   font-variant-numeric: tabular-nums;
 }
-
-.classe--parcial::after { background: var(--warn); }
-.classe--ativa::after { background: #fff; }
-
-.uso-armazenamento { margin: 0; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
-.uso-armazenamento--alerta { color: var(--warn); }
-
-.captura {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
-  font-size: 12px;
-}
-
-/* Modal de confirmação.
-   window.confirm() não é confiável no painel lateral, e as confirmações deste
-   projeto são de conformidade ou destrutivas — "aceitar em silêncio" seria o
-   pior resultado possível. Daí um modal próprio, centralizado e bloqueante. */
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: color-mix(in srgb, var(--bg) 60%, transparent);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  animation: modal-fundo 130ms ease-out;
-}
-
-.modal__caixa {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  max-width: 320px;
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 0.38);
-  animation: modal-caixa 150ms cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-.modal__titulo { font-size: 13px; line-height: 1.35; }
-.modal__texto { margin: 0; font-size: 12px; color: var(--text-dim); }
-
-/* Confirmar à direita: o polegar e o olho terminam o texto ali, e a ação
-   destrutiva não fica no caminho de um clique apressado. */
-/* Duas colunas iguais em vez de largura pelo conteúdo: "Sim" e "Não" têm
-   tamanhos muito diferentes, e encostados à direita deixavam a caixa torta. */
-.modal__acoes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding-top: 2px;
-}
-
-/* A regra de .btn--primary só faz sentido dentro do grid .buttons. */
-.modal__acoes .btn--primary { grid-column: auto; }
-
-.modal__acoes .btn--destrutivo {
-  background: var(--err);
-  border-color: var(--err);
-  color: #fff;
-}
-
-.modal__acoes .btn--destrutivo:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--err) 82%, #000);
-  border-color: color-mix(in srgb, var(--err) 82%, #000);
-}
-
-@keyframes modal-fundo {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modal-caixa {
-  from { opacity: 0; transform: translateY(8px) scale(0.97); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .modal, .modal__caixa { animation: none; }
-}
-
 
 /* Exclusão por classe: fica fora do botão de treino porque um <button> não
    pode conter outro, e só aparece quando há o que apagar. */
 .classe__x {
+  all: unset;
+  box-sizing: border-box;
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: -5px;
+  right: -5px;
   width: 16px;
   height: 16px;
-  padding: 0;
-  line-height: 14px;
-  font-size: 13px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-dim);
-  cursor: pointer;
-}
-
-.classe__x:hover { background: var(--err); border-color: var(--err); color: #fff; }
-
-.classe--parcial { color: var(--text); border-color: color-mix(in srgb, var(--warn) 40%, var(--border)); }
-
-.dica-grade { margin: 0; font-size: 11px; color: var(--text-dim); }
-
-/* Exportar e Importar juntos; Apagar modelo empurrado para o lado oposto,
-   porque é destrutivo e não deve ficar encostado nos outros dois. */
-/* Três colunas iguais. Com flex e margin-left:auto o layout mudava conforme a
-   largura do painel: às vezes em linha, às vezes com o destrutivo sozinho
-   embaixo. A ação destrutiva continua no extremo oposto, agora previsivelmente. */
-.acoes-modelo {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.acoes-modelo .btn { padding-inline: 4px; font-size: 12px; }
-
-/* Badge "20+8": padrão + pessoais. O número pessoal em destaque, porque é o
-   que o usuário controla. */
-.classe__n b { font-weight: 700; color: var(--accent); }
-
-/* Classe no teto de amostras: gravar mais substitui as antigas. Tracejado em
-   vez de outra cor para não competir com o verde de "treinada" nem com o
-   laranja de "parcial" — cheia também é treinada. */
-.classe--cheia:not(.classe--ativa) {
-  color: var(--text);
-  border-style: dashed;
-  border-color: color-mix(in srgb, var(--ok) 70%, var(--border));
-}
-.classe--cheia .classe__n { opacity: 1; font-weight: 700; }
-
-/* Barra de gravação no teto: cada amostra nova empurra uma antiga para fora. */
-.captura--teto { background: color-mix(in srgb, var(--warn) 22%, var(--surface-2)); }
-
-/* --- Boas-vindas (modelo vazio) ------------------------------------------- */
-
-.boas-vindas {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
-  border-radius: 8px;
-  background: var(--surface-2);
-}
-
-.boas-vindas__titulo { margin: 0; font-size: 13px; font-weight: 600; color: var(--text); }
-
-/* --- Seletor de plataforma de busca --------------------------------------- */
-
-.modal__caixa--largo { max-width: 340px; gap: 12px; }
-
-.modal__cabecalho { display: flex; align-items: flex-start; gap: 8px; }
-.modal__cabecalho .modal__titulo { flex: 1; font-size: 14px; }
-
-.modal__fechar {
-  flex: 0 0 auto;
-  width: 26px;
-  height: 26px;
-  margin: -5px -5px 0 0;
-  padding: 0;
-  font: inherit;
-  font-size: 18px;
-  line-height: 1;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-dim);
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-panel-solid);
+  box-shadow: 0 0 0 1px var(--gray-a6);
+  color: var(--gray-11);
   cursor: pointer;
 }
+.classe__x:hover { background: var(--red-9); box-shadow: none; color: #fff; }
+.classe__x:focus-visible { outline: 2px solid var(--focus-8); outline-offset: 1px; }
 
-.modal__fechar:hover { background: var(--surface-2); color: var(--text); }
+.captura { width: 100%; }
 
-/* O termo é o protagonista: o usuário precisa conferir o que vai ser enviado
-   antes de escolher para onde. */
-.termo-caixa {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 9px 11px;
-  border-radius: 9px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
+.boas-vindas { box-shadow: inset 0 0 0 1px var(--accent-a6); background: var(--accent-a2); }
+
+/* --- Seletor de plataforma ------------------------------------------------ */
+
+.termo {
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-3);
+  background: var(--gray-a3);
 }
 
-.termo-caixa__rotulo {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
-  color: var(--text-dim);
+.termo__valor {
+  font-family: var(--code-font-family);
+  letter-spacing: 0.04em;
+  word-break: break-word;
 }
 
-.termo-caixa__valor {
-  font: 600 15px/1.3 ui-monospace, "Cascadia Code", Consolas, monospace;
-  letter-spacing: 1.5px;
-  color: var(--text);
-  overflow-wrap: anywhere;
-}
-
-/* Flex em vez de grid: com 5 marcas, a última linha fica incompleta, e o flex
-   centraliza a sobra em vez de deixá-la encostada à esquerda. */
-.plataformas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  justify-content: center;
-}
+.plataformas { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
 
 .plataforma {
+  all: unset;
+  box-sizing: border-box;
   flex: 1 1 84px;
   max-width: 120px;
   display: flex;
@@ -768,107 +479,74 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
   align-items: center;
   gap: 7px;
   padding: 11px 6px 9px;
-  font: inherit;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: var(--surface-2);
-  color: var(--text);
+  border-radius: var(--radius-4);
+  background: var(--gray-a2);
+  box-shadow: inset 0 0 0 1px var(--gray-a5);
+  color: var(--gray-12);
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+  transition: background 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
 
 .plataforma:hover {
-  background: var(--surface);
-  border-color: var(--accent);
+  background: var(--accent-a3);
+  box-shadow: inset 0 0 0 1px var(--accent-a7);
   transform: translateY(-2px);
 }
 
 .plataforma:active { transform: none; }
-.plataforma:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.plataforma:focus-visible { outline: 2px solid var(--focus-8); outline-offset: 2px; }
 
 /* Ladrilho branco em ambos os temas: logotipos de marca são desenhados para
    fundo claro, e o "a" da Amazon é preto — sobre o tema escuro, sumiria. */
-.plataforma__tile {
+.plataforma__ladrilho {
   display: grid;
   place-items: center;
   width: 42px;
   height: 42px;
-  border-radius: 11px;
+  border-radius: var(--radius-4);
   background: #fff;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
 }
 
-.plataforma__tile img { width: 30px; height: 30px; display: block; }
-.plataforma__tile svg { width: 26px; height: 26px; display: block; }
+.plataforma__ladrilho img { width: 30px; height: 30px; display: block; }
+.plataforma__ladrilho svg { width: 26px; height: 26px; display: block; }
 
 .plataforma__nome {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--font-size-1);
+  font-weight: var(--font-weight-medium);
   line-height: 1.2;
   text-align: center;
-}
-
-.divisor {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-dim);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.divisor::before,
-.divisor::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border);
 }
 
 /* O destino genérico não é uma marca: em card, ficaria como um logotipo
    faltando. Vira uma linha larga, com forma própria. */
 .plataforma--generica {
-  display: flex;
   flex-direction: row;
-  align-items: center;
   gap: 10px;
   width: 100%;
   max-width: none;
   padding: 10px 12px;
-  text-align: left;
 }
 
 .plataforma--generica:hover { transform: none; }
 
-.plataforma--generica .plataforma__tile {
+.plataforma--generica .plataforma__ladrilho {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  background: var(--accent-a3);
   box-shadow: none;
-  color: var(--accent);
+  color: var(--accent-11);
 }
 
-.plataforma--generica .plataforma__tile svg { width: 17px; height: 17px; }
+.plataforma--generica .plataforma__ladrilho svg { width: 17px; height: 17px; }
 
 .plataforma__texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.plataforma--generica .plataforma__nome { font-size: 12px; text-align: left; }
-.plataforma__desc { font-size: 10px; color: var(--text-dim); line-height: 1.25; }
-
-.plataforma__seta { flex: 0 0 auto; color: var(--text-dim); font-size: 14px; line-height: 1; }
-
-.modal__nota {
-  margin: 0;
-  font-size: 10.5px;
-  line-height: 1.4;
-  color: var(--text-dim);
-  border-left: 2px solid var(--border);
-  padding-left: 8px;
-}
-
-.modal__acoes--unica { grid-template-columns: 1fr; }
+.plataforma--generica .plataforma__nome { font-size: var(--font-size-2); text-align: left; }
+.plataforma__desc { font-size: var(--font-size-1); color: var(--gray-11); line-height: 1.25; }
+.plataforma__seta { flex: 0 0 auto; color: var(--gray-10); }
 
 @media (prefers-reduced-motion: reduce) {
   .plataforma, .plataforma:hover { transform: none; }
+  .status__ponto, .anel__flash, .secao__corpo[data-state] { animation: none !important; }
 }
