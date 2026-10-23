@@ -11,7 +11,7 @@
 
 /** Caminhos dos binários vendorizados; conferidos por tools/verificar-vendor.mjs. */
 const ASSETS = {
-  bundle: '../vendor/mediapipe/vision_bundle.mjs',
+  bundle: 'vendor/mediapipe/vision_bundle.mjs',
   wasmLoader: 'vendor/mediapipe/wasm/vision_wasm_internal.js',
   wasmBinary: 'vendor/mediapipe/wasm/vision_wasm_internal.wasm',
   modelo: 'vendor/mediapipe/hand_landmarker.task'
@@ -41,7 +41,9 @@ export class HandLandmarkerAdapter {
   static async criar({ delegate = DELEGATE_PADRAO, canvas } = {}) {
     // Import dinâmico: o bundle são 155 KB que só fazem sentido depois que o
     // usuário liga o reconhecimento. Abrir o painel não deve pagar por isso.
-    const { HandLandmarker } = await import(ASSETS.bundle);
+    // URL absoluta e fora do bundler: depois do build este módulo não mora mais
+    // em src/, e um caminho relativo apontaria para o lugar errado.
+    const { HandLandmarker } = await import(/* @vite-ignore */ chrome.runtime.getURL(ASSETS.bundle));
 
     // O WasmFileset é uma interface de objeto simples. Montá-lo à mão em vez de
     // usar FilesetResolver.forVisionTasks() evita a sonda SIMD em runtime — que

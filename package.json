@@ -1,0 +1,24 @@
+{
+  "name": "soletra",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Extensão de navegador que reconhece o alfabeto manual de Libras pela câmera.",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "test": "node tests/todos.mjs",
+    "verificar-vendor": "node tools/verificar-vendor.mjs"
+  },
+  "dependencies": {
+    "@radix-ui/react-icons": "^1.3.2",
+    "@radix-ui/themes": "^3.3.0",
+    "radix-ui": "^1.8.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.5"
+  }
+}
