@@ -4,31 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Soletra — autorizar câmera</title>
-    <link rel="stylesheet" href="request.css" />
   </head>
   <body>
-    <main class="card">
-      <h1>Autorizar acesso à câmera</h1>
-      <p>
-        O Soletra precisa da sua permissão para exibir o vídeo da câmera no painel lateral.
-        O navegador vai mostrar um aviso no topo desta aba — escolha <strong>Permitir</strong>.
-      </p>
-      <p class="note">
-        O vídeo é exibido apenas neste navegador. Nenhuma imagem é gravada ou enviada para servidores.
-      </p>
-
-      <button id="btnGrant" type="button" class="btn">Solicitar permissão</button>
-      <p id="result" class="result" role="status" aria-live="polite" hidden></p>
-
-      <details class="help">
-        <summary>Já neguei antes. E agora?</summary>
-        <ol>
-          <li>Abra <code>chrome://settings/content/camera</code> (ou <code>edge://settings/content/camera</code>).</li>
-          <li>Procure a entrada <code>chrome-extension://<span id="extId">…</span></code> na lista de bloqueados.</li>
-          <li>Remova o bloqueio e recarregue esta aba.</li>
-        </ol>
-      </details>
-    </main>
-    <script type="module" src="request.js"></script>
+    <div id="raiz"></div>
+    <script type="module" src="./main.jsx"></script>
   </body>
 </html>
