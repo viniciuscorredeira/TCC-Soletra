@@ -18,11 +18,9 @@ export const LETRAS_ESTATICAS = [
 
 /**
  * Letras que envolvem movimento e ficam fora do MVP. O Ç do alfabeto manual
- * brasileiro também é dinâmico (movimento a partir do C) e está fora do escopo
- * A–Z pedido; se entrar no catálogo depois, entra aqui junto com a referência
- * bibliográfica adotada.
+ * brasileiro também é dinâmico (movimento a partir do C).
  */
-export const LETRAS_DINAMICAS = ['H', 'J', 'K', 'X', 'Z'];
+export const LETRAS_DINAMICAS = ['H', 'J', 'K', 'X', 'Z', 'Ç'];
 
 export const NUMEROS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 

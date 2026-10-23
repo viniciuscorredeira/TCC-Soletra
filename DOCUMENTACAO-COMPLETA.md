@@ -484,7 +484,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 #### RF29 — Aviso das letras não reconhecidas ✅
 
-- **Sistema:** mantém visível o aviso "H, J, K, X e Z envolvem movimento e não são reconhecidas
+- **Sistema:** mantém visível o aviso "H, J, K, X, Z e Ç envolvem movimento e não são reconhecidas
   nesta versão." Essas letras podem ser digitadas na caixa de texto (RF34).
 
 #### RF30 — Indicadores de desempenho ✅
