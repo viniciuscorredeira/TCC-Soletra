@@ -229,10 +229,11 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 ## Testes
 
 ```
-node tests/todos.mjs
+npm test             # o mesmo que node tests/todos.mjs
 ```
 
-104 cenários, em Node puro, sem framework e sem dependências. Os módulos de lógica são todos
+104 cenários, em Node puro, sem framework e sem dependências — testam só `src/`, que não
+depende do React nem do build. Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
 (`src/hand-landmarker.js`) é fino de propósito e validado pelo diagnóstico acima.
 
@@ -275,13 +276,54 @@ outro lado (`storage.session`). Voltar ao painel usa `chrome.sidePanel.open`, do
 
 ## Instalação em modo desenvolvedor
 
+A interface é escrita em React e precisa ser compilada antes de carregar a extensão
+(Node 20 ou mais recente):
+
+```
+npm install
+npm run build        # gera dist/
+```
+
 1. Chrome: `chrome://extensions` — Edge: `edge://extensions`
 2. Ative **Modo do desenvolvedor**
-3. **Carregar sem compactação** e selecione a raiz deste repositório
+3. **Carregar sem compactação** e selecione a pasta **`dist/`** (não a raiz do repositório)
 4. Clique no ícone do Soletra na barra de ferramentas para abrir o painel
 
-Depois de alterar o código, clique em ↻ no cartão da extensão em `chrome://extensions` e reabra
-o painel.
+Durante o desenvolvimento, `npm run dev` recompila a cada alteração; depois de cada uma, clique
+em ↻ no cartão da extensão em `chrome://extensions` e reabra o painel.
+
+## Interface
+
+A interface usa **React** com **[Radix Themes](https://www.radix-ui.com/themes)** — botões,
+campos, chaves, controles segmentados, diálogos e avisos vêm do Radix, que já resolve foco,
+teclado e leitores de tela. As seções recolhíveis usam o `Accordion` dos primitivos do Radix,
+e os ícones são do `@radix-ui/react-icons`. Tudo é empacotado pelo Vite dentro da extensão:
+nada é carregado da rede.
+
+O tema tem três opções, no botão ao lado do status: **Sistema** (padrão, segue o claro/escuro
+do sistema operacional), **Claro** e **Escuro**. A escolha fica em `chrome.storage.local` e vale
+para o painel e para a aba de permissão ao mesmo tempo — trocar num lado repinta o outro na
+hora. Um espelho em `localStorage` evita que a página pisque no tema errado ao abrir.
+
+As cores saem da logo. `node tools/gerar-paleta.mjs` gera `ui/paleta.css` a partir do azul
+central da arte (`#0060FF`) e do azul-céu do aro da lupa (`#00B4FC`, a cor secundária):
+redefine as escalas "blue" (acento), "cyan" (secundária) e "slate" (cinzas) do Radix
+mantendo, degrau a degrau, a luminosidade que o Radix calibrou para cada papel (fundo,
+componente, borda, texto) e trocando só o matiz. Assim o escuro é um azul-marinho, não preto,
+e o claro é um branco azulado, não branco puro — e os contrastes de texto continuam os do
+Radix. `ui/marca.css` completa com a faixa do topo e o degradê da logo nas ações principais,
+um fundo que mistura o azul e o azul-céu, cartões com sombra azulada no tema claro, e faz os
+botões quebrarem a linha em vez de vazar o texto num painel estreito.
+
+A regra de negócio não mora nos componentes: `sidepanel/nucleo.js` cria a câmera e o
+reconhecedor uma única vez e expõe o estado em lojas que os componentes leem com
+`useSyncExternalStore`. Os componentes só desenham e chamam ações — a mesma separação que
+o painel tinha antes entre `render(snapshot)` e a lógica.
+
+O build (`vite.config.js`) mantém os caminhos que o `manifest.json` declara e copia sem
+processar o que a extensão lê em tempo de execução — `vendor/` (MediaPipe), `modelos/` e
+`icons/`. Por isso o bundle do MediaPipe é importado por `chrome.runtime.getURL`, e não por
+caminho relativo: depois do build, `src/hand-landmarker.js` não mora mais em `src/`.
 
 ### Vídeo com atraso ou travando
 
@@ -320,15 +362,21 @@ a desconexão física do dispositivo em uso durante a transmissão.
 ```
 manifest.json                 MV3, permissões sidePanel + storage + search, CSP com wasm-unsafe-eval
 background/service-worker.js  abre o painel lateral no clique do ícone (fallback: aba) e executa a pesquisa
-permission/request.html|js    aba de topo para o prompt nativo de câmera
+package.json, vite.config.js build da interface (React + Radix Themes) para dist/
+permission/request.html       aba de topo para o prompt nativo de câmera (Permissao.jsx)
 
-sidepanel/panel.html|css|js   interface principal
-sidepanel/recognition-view.js UI do reconhecimento (anel de progresso, text-box, busca)
-sidepanel/training-view.js    UI do treino (grade com % de uso por classe, uso do armazenamento, modelo pronto, exportar/importar/apagar)
-sidepanel/dialogo.js          modal de confirmação (window.confirm não é confiável no painel)
+ui/tema.js                    tema Sistema / Claro / Escuro, comum às duas páginas
+ui/paleta.css                 escalas de cor da marca (geradas por tools/gerar-paleta.mjs)
+ui/marca.css                  fundos, degradê da logo e ajustes de botão comuns às páginas
+ui/loja.js                    loja mínima de estado lida pelo React (useSyncExternalStore)
+sidepanel/panel.html|css      página do painel e estilos próprios (semáforo, anel, grade)
+sidepanel/nucleo.js           câmera, reconhecedor e todas as ações do painel, sem React
+sidepanel/App.jsx             composição da página
+sidepanel/componentes/        Topo, Palco, Controles, Reconhecimento, Treino, diálogos…
+sidepanel/dialogo.js          pedido de confirmação (window.confirm não é confiável no painel)
+sidepanel/seletor-plataforma.js  pedido de escolha do destino da pesquisa
 sidepanel/janela.js           botões de janela (fechar, voltar ao painel, tela cheia)
 icons/plataformas/            logos das plataformas de busca, empacotadas
-sidepanel/seletor-plataforma.js  modal de escolha do destino da pesquisa
 
 src/camera-controller.js      ciclo de vida do MediaStream, restrições de captura (1280×720 / até 60 fps) e avaliação da taxa
 src/sign-recognizer.js        orquestrador; expõe um onStateChange, como o CameraController

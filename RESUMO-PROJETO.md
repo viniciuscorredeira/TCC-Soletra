@@ -53,7 +53,8 @@ Desenvolver uma extensão de navegador (Chrome e Edge, Manifest V3) que:
   extensão. Nenhum quadro de vídeo é gravado ou transmitido.
 - **Único dado que sai do dispositivo:** o texto que o usuário escolhe pesquisar, e só para a
   plataforma selecionada.
-- **Sem dependências externas:** nenhum servidor, CDN, API de IA ou pacote npm.
+- **Sem dependências externas:** nenhum servidor, CDN ou API de IA. As bibliotecas da interface
+  (React e Radix UI) são empacotadas no build, dentro da extensão.
 
 ### 1.4 Diferencial técnico
 
@@ -667,8 +668,12 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 #### RF74 — Visual adaptado ✅
 
-- **Sistema:** segue o tema claro ou escuro do sistema operacional, cabe na largura estreita do
-  painel lateral e, em tela cheia, usa uma coluna centralizada com vídeo e letra maiores.
+- **Usuário:** escolhe o tema no botão ao lado do selo de estado: **Sistema**, **Claro** ou
+  **Escuro**.
+- **Sistema:** em **Sistema** (o padrão), segue o claro ou escuro do sistema operacional. A
+  escolha fica salva e vale ao mesmo tempo para o painel e para a aba de autorização da câmera.
+  A interface cabe na largura estreita do painel lateral e, em tela cheia, usa uma coluna
+  centralizada com vídeo e letra maiores.
 
 **Total: 74 funcionalidades — 70 plenamente atendidas e 4 com ressalva (RF28, RF56, RF64, RF70).**
 
@@ -796,14 +801,16 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 
 | Interface | Linhas | Responsabilidade |
 |---|---:|---|
-| `sidepanel/panel.html` / `.css` / `.js` | 279 / 874 / 587 | Interface principal: câmera, permissão, consentimento, aviso de taxa abaixo de 60 fps, visibilidade da área de reconhecimento |
-| `sidepanel/recognition-view.js` | 192 | Anel, barra de proximidade, caixa de texto, ajustes, avisos, trava de mão com suas saídas, espelhamento do vídeo |
-| `sidepanel/training-view.js` | 256 | Grade de classes com % de uso por classe, uso total do armazenamento, captura, imagem da câmera (normal/invertida), boas-vindas, exportar/importar/apagar, modelo pronto |
-| `sidepanel/seletor-plataforma.js` | 169 | Modal "Onde pesquisar?" |
-| `sidepanel/dialogo.js` | 104 | Modal de confirmação |
-| `sidepanel/janela.js` | 169 | Botões fechar / painel / tela cheia |
+| `sidepanel/nucleo.js` | 569 | Orquestração sem React: câmera, permissão, consentimento, aviso de taxa abaixo de 60 fps, pesquisa, treino, exportar/importar/apagar |
+| `sidepanel/panel.html` / `.css` | 12 / 488 | Página do painel e estilos próprios (semáforo, palco, anel, grade de classes, seletor de plataforma) |
+| `sidepanel/componentes/Reconhecimento.jsx` | 335 | Anel, barra de proximidade, caixa de texto, ajustes, avisos, trava de mão com suas saídas |
+| `sidepanel/componentes/Treino.jsx` | 318 | Grade de classes com % de uso por classe, uso do armazenamento, captura, imagem da câmera (normal/invertida), boas-vindas, exportar/importar/apagar, modelo pronto |
+| `sidepanel/componentes/` (demais) | 528 | Topo, Palco, Mensagem, Controles, Rodapé, diálogo de confirmação e "Onde pesquisar?" |
+| `sidepanel/dialogo.js` / `seletor-plataforma.js` | 73 / 46 | Pedidos das janelas de confirmação e de plataforma (promessas) |
+| `sidepanel/janela.js` | 172 | Botões fechar / painel / tela cheia |
+| `ui/` | 223 | Tema Sistema / Claro / Escuro, configuração do Radix Themes, loja de estado |
 | `background/service-worker.js` | 97 | Abre o painel e executa a pesquisa |
-| `permission/request.html` / `.js` / `.css` | 34 / 56 / 85 | Aba de autorização da câmera |
+| `permission/` | 200 | Aba de autorização da câmera |
 
 | Apoio | Linhas | Responsabilidade |
 |---|---:|---|
@@ -858,8 +865,9 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | Camada | Tecnologia |
 |---|---|
 | Plataforma | Extensão Chrome/Edge, **Manifest V3**, `minimum_chrome_version: 114` |
-| Linguagem | **JavaScript (ES Modules)** puro, sem TypeScript, bundler ou build |
-| Interface | **HTML + CSS** nativos, sem framework |
+| Linguagem | **JavaScript (ES Modules)**, sem TypeScript; JSX na interface |
+| Interface | **React 19** + **Radix UI** (Radix Themes, `Accordion` dos primitivos, `react-icons`), temas Sistema / Claro / Escuro |
+| Build | **Vite**, gera `dist/`; a lógica em `src/` não depende do build |
 | Painel | `chrome.sidePanel` |
 | Persistência | `chrome.storage.local` e `chrome.storage.session` |
 | Visão computacional | **MediaPipe `@mediapipe/tasks-vision` 1.0.1**, vendorizado, delegate CPU |
@@ -989,18 +997,22 @@ Política completa em [PRIVACY.md](PRIVACY.md). Pendências na seção 5.4.
 
 ### 10.1 Instalação
 
-1. Abrir `chrome://extensions` (Chrome) ou `edge://extensions` (Edge).
-2. Ativar o **Modo do desenvolvedor**.
-3. **Carregar sem compactação** e selecionar a raiz do repositório.
-4. Clicar no ícone do Soletra para abrir o painel.
+1. Compilar a interface (Node 20 ou mais recente): `npm install` e depois `npm run build`,
+   que gera a pasta `dist/`.
+2. Abrir `chrome://extensions` (Chrome) ou `edge://extensions` (Edge).
+3. Ativar o **Modo do desenvolvedor**.
+4. **Carregar sem compactação** e selecionar a pasta **`dist/`** (não a raiz do repositório).
+5. Clicar no ícone do Soletra para abrir o painel.
 
-Depois de alterar o código, clicar em ↻ no cartão da extensão. Se o vídeo estiver com atraso,
+Depois de alterar o código, rodar `npm run build` (ou deixar `npm run dev` aberto) e clicar em ↻
+no cartão da extensão. Se o vídeo estiver com atraso,
 desativar a aceleração de hardware do navegador (seção 5.3).
 
 ### 10.2 Comandos
 
 ```
-node tests/todos.mjs                     # suíte completa — 104 cenários
+npm run build                            # compila a extensão em dist/
+npm test                                 # suíte completa — 104 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 ```

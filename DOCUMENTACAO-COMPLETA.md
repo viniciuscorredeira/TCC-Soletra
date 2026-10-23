@@ -94,7 +94,7 @@ Desenvolver uma extensão de navegador que:
 |---|---|
 | **Processamento 100% local** | Os pontos da mão são extraídos por WebAssembly empacotado na extensão. Nenhum quadro de vídeo é gravado ou transmitido |
 | **Um único dado sai do dispositivo** | O texto que o usuário decide pesquisar, e só para a plataforma que ele escolher, no momento em que escolhe |
-| **Nenhuma dependência externa** | Sem servidor, sem CDN, sem API de IA, sem pacote npm. Tudo o que roda está dentro da extensão |
+| **Nenhuma dependência externa** | Sem servidor, sem CDN, sem API de IA. As bibliotecas da interface (React e Radix UI) são empacotadas no build: tudo o que roda está dentro da extensão |
 | **Funcionar sem treino** | Um modelo pronto empacotado permite reconhecer desde a primeira abertura |
 | **Adaptar-se a quem usa** | O usuário pode treinar do zero ou reforçar as letras que falharem com a sua mão |
 | **Erro honesto em vez de acerto inventado** | O sistema prefere dizer "não reconheci" a escrever uma letra errada |
@@ -195,13 +195,15 @@ primeira vez. Cada passo remete às funcionalidades (RF) descritas na seção 5.
 
 O painel é uma única página (`sidepanel/panel.html`) que funciona em dois modos: **painel
 lateral** (estreito, o modo normal) e **aba** (tela cheia, com coluna centralizada de até 760 px,
-vídeo e letra maiores). O tema segue o claro ou escuro do sistema operacional.
+vídeo e letra maiores). A interface é feita com React e os componentes do **Radix UI** (Radix
+Themes), e tem três temas à escolha do usuário: **Sistema** (padrão, segue o sistema
+operacional), **Claro** e **Escuro**.
 
 | Área | Posição | Conteúdo |
 |---|---|---|
-| **Barra superior** | Topo | Botões redondos 🔴 🟡 🟢 (fechar, minimizar, tela cheia), o nome "Soletra" e o selo de estado da câmera (Parada, Iniciando…, Ativa, Erro) |
+| **Barra superior** | Topo | Botões redondos 🔴 🟡 🟢 (fechar, minimizar, tela cheia), o nome "Soletra", o selo de estado da câmera (Parada, Iniciando…, Ativa, Erro) e o botão de tema (Sistema / Claro / Escuro) |
 | **Palco** | Abaixo do topo | O vídeo espelhado, a etiqueta AO VIVO e, com a câmera parada, um ícone e o texto de estado ("Câmera parada", "Solicitando acesso à câmera…", "Transmissão encerrada") |
-| **Mensagens** | Abaixo do vídeo | Uma linha de aviso com faixa colorida: informação (cor de destaque), alerta (laranja) ou erro (vermelho). É lida por leitores de tela (`aria-live`) |
+| **Mensagens** | Abaixo do vídeo | Um aviso com ícone e cor: informação (azul), alerta (âmbar) ou erro (vermelho). É lido por leitores de tela (`aria-live`) |
 | **Controles da câmera** | Abaixo das mensagens | Campo **Dispositivo**, botões **Iniciar câmera**, **Parar**, **Recarregar** e, quando falta permissão, **Conceder acesso à câmera** |
 | **Reconhecimento** | Só com a câmera ativa | Chave **Reconhecimento** e seletor **Letras / Números** |
 | ↳ **Leitura** | Com o reconhecimento ligado | O anel com a letra candidata e o cadeado, a dica, a barra de nitidez e os indicadores de desempenho |
@@ -810,8 +812,12 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 #### RF74 — Visual adaptado ✅
 
-- **Sistema:** segue o tema claro ou escuro do sistema operacional, cabe na largura estreita do
-  painel lateral e, em tela cheia, usa uma coluna centralizada com vídeo e letra maiores.
+- **Usuário:** escolhe o tema no botão ao lado do selo de estado: **Sistema**, **Claro** ou
+  **Escuro**.
+- **Sistema:** em **Sistema** (o padrão), segue o claro ou escuro do sistema operacional e troca
+  junto com ele. A escolha fica salva e vale ao mesmo tempo para o painel e para a aba de
+  autorização da câmera. A interface cabe na largura estreita do painel lateral e, em tela
+  cheia, usa uma coluna centralizada com vídeo e letra maiores.
 
 **Total: 74 funcionalidades — 70 plenamente atendidas e 4 com ressalva (RF28, RF56, RF64, RF70).**
 
@@ -897,7 +903,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 │                                                                           │
 │  Painel lateral ou aba  (sidepanel/panel.html)                            │
 │  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │ panel.js ── orquestra a página                                      │  │
+│  │ nucleo.js ── orquestra a página (sem React)                         │  │
 │  │   ├─ CameraController ──── getUserMedia ──► <video>                 │  │
 │  │   ├─ SignRecognizer                                                 │  │
 │  │   │    ├─ InferenceLoop (rVFC, 15 Hz)                               │  │
@@ -905,7 +911,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 │  │   │    ├─ extrairFeatures ── SignClassifier ── SignStabilizer       │  │
 │  │   │    ├─ TextComposer                                              │  │
 │  │   │    └─ SignModelStore ── chrome.storage.local                    │  │
-│  │   ├─ recognition-view / training-view  (desenham o estado)          │  │
+│  │   ├─ componentes React + Radix Themes  (desenham o estado)          │  │
 │  │   ├─ dialogo / seletor-plataforma      (janelas sobrepostas)        │  │
 │  │   └─ janela                            (fechar / painel / tela cheia)│  │
 │  └───────────────┬───────────────────────────────▲─────────────────────┘  │
@@ -920,8 +926,11 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 ### 8.2 Princípios de organização
 
 - **Um callback de estado por controlador.** `CameraController` e `SignRecognizer` expõem cada um
-  uma única função de notificação com o estado completo (*snapshot*). As views são funções
-  `renderizar(snapshot)`: não guardam regra de negócio nem escutam eventos espalhados.
+  uma única função de notificação com o estado completo (*snapshot*). `sidepanel/nucleo.js`
+  guarda a última snapshot de cada um em lojas mínimas (`ui/loja.js`), que os componentes React
+  leem com `useSyncExternalStore`. Os componentes só desenham e chamam ações; a regra de
+  negócio continua no núcleo, fora do React. Câmera e reconhecedor nascem com o módulo, não com
+  um componente, para que nenhuma remontagem abra uma segunda câmera ou um segundo detector.
 - **O reconhecedor consome o mesmo estado da câmera.** Não há um segundo canal de eventos: quando
   a câmera muda de estado, o painel repassa a mesma snapshot ao reconhecedor, que liga ou pausa
   o loop.
@@ -929,10 +938,12 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
   `sign-recognizer.js` acessa o ambiente real (relógio, storage, WASM) sem permitir
   substituição. Todo o resto é função pura ou classe com dependências injetadas, testável em
   Node.
-- **Render barato.** A grade de treino é construída uma vez por conjunto e depois só atualizada
-  no lugar: cada botão guarda o último estado desenhado e só escreve no DOM o que mudou. Recriar
-  os 21 botões a cada amostra (cerca de 7 vezes por segundo durante a gravação) saturava a thread
-  do painel e fazia cliques — inclusive o de Cancelar — serem perdidos.
+- **Render barato.** O reconhecedor emite a 15 Hz. Componentes que dependem de um pedaço só do
+  estado leem esse pedaço por seletor, e não redesenham a cada quadro; os botões da grade de
+  treino são memorizados (`React.memo`) com propriedades primitivas, e só a classe que mudou é
+  redesenhada. Recriar os 21 botões a cada amostra (cerca de 7 vezes por segundo durante a
+  gravação) saturava a thread do painel e fazia cliques — inclusive o de Cancelar — serem
+  perdidos.
 
 ### 8.3 Ciclo de vida
 
@@ -1345,7 +1356,9 @@ proveniência.
 | **Consentimento antes da 1ª ativação** | Aviso só na política | Dado biométrico derivado exige consentimento específico e destacado (LGPD) |
 | **Área de reconhecimento só com câmera ativa** | Sempre visível | Sem vídeo não há o que reconhecer nem treinar |
 | **Plataformas em ordem alfabética** | Ordem do catálogo | Previsibilidade; uma plataforma nova entra no lugar certo |
-| **JavaScript puro, sem build** | TypeScript, bundler, framework | Zero dependências, carregável direto do clone, sem etapa de compilação |
+| **React + Radix Themes, com build (Vite)** | JavaScript puro sem build (versão anterior) | Componentes acessíveis prontos (foco, teclado, leitor de tela), tema claro/escuro coerente e um visual único; a lógica em `src/` continua JavaScript puro, sem React, e testável em Node |
+| **Tema Sistema / Claro / Escuro** | Só seguir o sistema operacional | Quem usa o painel numa apresentação ou num ambiente claro precisa poder escolher; "Sistema" continua o padrão |
+| **Paleta gerada a partir da logo** | Uma cor pronta do Radix (blue, indigo) | Nenhuma é o azul da marca (#0060FF). As escalas são geradas mantendo a luminosidade de cada degrau do Radix, o que preserva os contrastes; o escuro vira azul-marinho e o claro, branco azulado. O azul-céu da lupa (#00B4FC) entra como cor secundária, para o tema claro não ficar só branco e azul |
 | **Português no código** | Inglês | Coerência com o domínio (Libras); exceção no código de câmera herdado da v0.1.0 |
 
 ### 16.2 Experimento descartado: detecção num Web Worker
@@ -1516,12 +1529,15 @@ formal antes da publicação.
 
 ### 19.1 Instalação em modo desenvolvedor
 
-1. Abrir `chrome://extensions` (Chrome) ou `edge://extensions` (Edge).
-2. Ativar o **Modo do desenvolvedor**.
-3. **Carregar sem compactação** e selecionar a raiz do repositório.
-4. Clicar no ícone do Soletra para abrir o painel.
+1. Compilar a interface (Node 20 ou mais recente): `npm install` e depois `npm run build`,
+   que gera a pasta `dist/`.
+2. Abrir `chrome://extensions` (Chrome) ou `edge://extensions` (Edge).
+3. Ativar o **Modo do desenvolvedor**.
+4. **Carregar sem compactação** e selecionar a pasta **`dist/`** (não a raiz do repositório).
+5. Clicar no ícone do Soletra para abrir o painel.
 
-Depois de alterar o código, clicar em ↻ no cartão da extensão e reabrir o painel.
+Durante o desenvolvimento, `npm run dev` recompila a cada alteração; depois de cada uma, clicar
+em ↻ no cartão da extensão e reabrir o painel.
 
 > **Windows:** clonar o repositório numa pasta do usuário (ex.: `Documentos`). Pastas como
 > `C:\Program Files (x86)` são protegidas e o Git não consegue escrever nelas sem privilégio de
@@ -1530,11 +1546,15 @@ Depois de alterar o código, clicar em ↻ no cartão da extensão e reabrir o p
 ### 19.2 Comandos
 
 ```
-node tests/todos.mjs                     # suíte completa — 104 cenários
+npm install                              # dependências da interface (React, Radix UI, Vite)
+npm run build                            # compila a extensão em dist/
+npm run dev                              # recompila a cada alteração
+npm test                                 # suíte completa — 104 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 node tools/make-icons.mjs                # regenera os ícones da extensão
+node tools/gerar-paleta.mjs              # regenera ui/paleta.css a partir do azul da logo
 ```
 
 ### 19.3 Solução de problemas
@@ -1562,13 +1582,21 @@ node tools/make-icons.mjs                # regenera os ícones da extensão
 manifest.json                   MV3: permissões sidePanel + storage + search; CSP com wasm-unsafe-eval
 .gitattributes                  impede o Git de alterar os bytes de vendor/ e modelos/
 background/service-worker.js    abre o painel (ou aba) no clique do ícone e executa a pesquisa
-permission/request.html|js|css  aba de autorização da câmera
+package.json, vite.config.js    build da interface (React + Radix Themes) para dist/
+permission/request.html|css     aba de autorização da câmera (Permissao.jsx)
 
-sidepanel/panel.html|css|js     interface principal e orquestração da página
-sidepanel/recognition-view.js   anel, barra de nitidez, texto, ajustes, avisos
-sidepanel/training-view.js      grade de classes com % de uso, armazenamento, modelo pronto, export/import
-sidepanel/seletor-plataforma.js janela "Onde pesquisar?"
-sidepanel/dialogo.js            janela de confirmação
+ui/tema.js, ui/SeletorTema.jsx  tema Sistema / Claro / Escuro, comum às duas páginas
+ui/RaizTema.jsx                 configuração do Radix Themes (acento e cinzas da marca)
+ui/paleta.css                   escalas de cor da logo (azul e azul-céu) — gerado por tools/gerar-paleta.mjs
+ui/marca.css                    fundos, degradê da logo, botões que quebram a linha
+ui/loja.js                      loja mínima de estado lida pelo React
+sidepanel/panel.html|css        página do painel e estilos próprios (semáforo, anel, grade)
+sidepanel/nucleo.js             câmera, reconhecedor e todas as ações do painel, sem React
+sidepanel/App.jsx, main.jsx     composição e montagem da página
+sidepanel/componentes/          Topo, Palco, Mensagem, Controles, Reconhecimento, Treino, Rodape,
+                                DialogoConfirmacao, SeletorPlataforma
+sidepanel/seletor-plataforma.js pedido da janela "Onde pesquisar?"
+sidepanel/dialogo.js            pedido da janela de confirmação
 sidepanel/janela.js             botões fechar / painel / tela cheia
 
 src/camera-controller.js        ciclo de vida da câmera (1280×720 / até 60 fps) e avaliação da taxa
