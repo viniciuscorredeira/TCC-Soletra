@@ -1,0 +1,182 @@
+/*
+ * Paleta da marca Soletra para o Radix Themes — GERADO por
+ * tools/gerar-paleta.mjs a partir das cores da logo (#0060ff e #00b4fc).
+ * Não editar à mão.
+ *
+ * Redefine as escalas "blue" (acento), "cyan" (secundária) e "slate" (cinzas)
+ * do Radix. Precisa ser
+ * importado depois de @radix-ui/themes/styles.css: tem a mesma especificidade,
+ * e vence por vir depois — inclusive dos blocos display-p3 do Radix.
+ */
+
+:root, .light, .light-theme {
+  --blue-1: #fcfdff;
+  --blue-2: #f7f9fe;
+  --blue-3: #ebf2ff;
+  --blue-4: #dfebfe;
+  --blue-5: #cfe0fe;
+  --blue-6: #bad3fe;
+  --blue-7: #a1c1fa;
+  --blue-8: #7fa8f2;
+  --blue-9: #0060ff;
+  --blue-10: #0255e3;
+  --blue-11: #3167cc;
+  --blue-12: #163060;
+  --blue-a1: #0055ff03;
+  --blue-a2: #0040df08;
+  --blue-a3: #0059ff14;
+  --blue-a4: #0060f720;
+  --blue-a5: #005afa30;
+  --blue-a6: #005cfb45;
+  --blue-a7: #0057f15e;
+  --blue-a8: #0052e580;
+  --blue-a9: #0060ffff;
+  --blue-a10: #0054e3fd;
+  --blue-a11: #0043c0ce;
+  --blue-a12: #001c51e9;
+  --blue-surface: #f7f9fecc;
+  --blue-indicator: var(--blue-9);
+  --blue-track: var(--blue-9);
+  --cyan-1: #fbfdfe;
+  --cyan-2: #f3f9fe;
+  --cyan-3: #e5f4fe;
+  --cyan-4: #d3eeff;
+  --cyan-5: #c0e5fc;
+  --cyan-6: #abd8f4;
+  --cyan-7: #8fc8eb;
+  --cyan-8: #62b1df;
+  --cyan-9: #00b4fc;
+  --cyan-10: #02a5e7;
+  --cyan-11: #2276a1;
+  --cyan-12: #183c51;
+  --cyan-a1: #0080bf04;
+  --cyan-a2: #0080ea0c;
+  --cyan-a3: #0093f51a;
+  --cyan-a4: #009cff2c;
+  --cyan-a5: #0096f33f;
+  --cyan-a6: #0089de54;
+  --cyan-a7: #0082d170;
+  --cyan-a8: #0080cb9d;
+  --cyan-a9: #00b4fcff;
+  --cyan-a10: #00a4e7fd;
+  --cyan-a11: #006193dd;
+  --cyan-a12: #00283fe7;
+  --cyan-surface: #f3f9fecc;
+  --cyan-indicator: var(--cyan-9);
+  --cyan-track: var(--cyan-9);
+  --slate-1: #fbfcff;
+  --slate-2: #f6f9ff;
+  --slate-3: #ebf1fa;
+  --slate-4: #e2e9f5;
+  --slate-5: #dae2f0;
+  --slate-6: #d1daea;
+  --slate-7: #c5cfe2;
+  --slate-8: #b0bcd2;
+  --slate-9: #848ea1;
+  --slate-10: #7a8496;
+  --slate-11: #5b6476;
+  --slate-12: #162030;
+  --slate-a1: #0040ff04;
+  --slate-a2: #0055ff09;
+  --slate-a3: #004cbf14;
+  --slate-a4: #003ea71d;
+  --slate-a5: #00379825;
+  --slate-a6: #00328b2e;
+  --slate-a7: #002c803a;
+  --slate-a8: #00276e4f;
+  --slate-a9: #00153c7b;
+  --slate-a10: #00133685;
+  --slate-a11: #000e2aa4;
+  --slate-a12: #000b1ce9;
+  --slate-surface: #f6f9ffcc;
+  --slate-indicator: var(--slate-9);
+  --slate-track: var(--slate-9);
+}
+
+.dark, .dark-theme {
+  --blue-1: #0e1420;
+  --blue-2: #111927;
+  --blue-3: #132648;
+  --blue-4: #153063;
+  --blue-5: #1d3c75;
+  --blue-6: #264886;
+  --blue-7: #30569b;
+  --blue-8: #3a66b8;
+  --blue-9: #0060ff;
+  --blue-10: #2e77ff;
+  --blue-11: #8bb4fe;
+  --blue-12: #d1e2fe;
+  --blue-a1: #0400022b;
+  --blue-a2: #8f97a502;
+  --blue-a3: #2371ff28;
+  --blue-a4: #226dfe48;
+  --blue-a5: #347bff5d;
+  --blue-a6: #4284ff71;
+  --blue-a7: #4b8bfe8a;
+  --blue-a8: #4e8cfeac;
+  --blue-a9: #0060ffff;
+  --blue-a10: #2e77ffff;
+  --blue-a11: #8bb5fffe;
+  --blue-a12: #d2e3fffe;
+  --blue-surface: #13264880;
+  --blue-indicator: var(--blue-9);
+  --blue-track: var(--blue-9);
+  --cyan-1: #0a161c;
+  --cyan-2: #0e1b23;
+  --cyan-3: #0a2a3c;
+  --cyan-4: #05374f;
+  --cyan-5: #0c4460;
+  --cyan-6: #145373;
+  --cyan-7: #1f668b;
+  --cyan-8: #247ca9;
+  --cyan-9: #00b4fc;
+  --cyan-10: #58c3fe;
+  --cyan-11: #72c5f6;
+  --cyan-12: #cbeafe;
+  --cyan-a1: #00130b60;
+  --cyan-a2: #00300e20;
+  --cyan-a3: #00486060;
+  --cyan-a4: #004561b0;
+  --cyan-a5: #01bbfc45;
+  --cyan-a6: #1bbdfe5b;
+  --cyan-a7: #30bffe77;
+  --cyan-a8: #31beff9a;
+  --cyan-a9: #00b4fcff;
+  --cyan-a10: #58c4fffe;
+  --cyan-a11: #76ccfef5;
+  --cyan-a12: #ccebfffe;
+  --cyan-surface: #0a2a3c80;
+  --cyan-indicator: var(--cyan-9);
+  --cyan-track: var(--cyan-9);
+  --slate-1: #101826;
+  --slate-2: #182132;
+  --slate-3: #202b3e;
+  --slate-4: #263248;
+  --slate-5: #2b3950;
+  --slate-6: #32405a;
+  --slate-7: #3e4d68;
+  --slate-8: #536584;
+  --slate-9: #636e83;
+  --slate-10: #707c90;
+  --slate-11: #a9b4c7;
+  --slate-12: #e7effc;
+  --slate-a1: #10182600;
+  --slate-a2: #98b1f20f;
+  --slate-a3: #9dbff91d;
+  --slate-a4: #9cbeff28;
+  --slate-a5: #9ac0fc32;
+  --slate-a6: #9cbdfc3e;
+  --slate-a7: #a6c5fe4e;
+  --slate-a8: #aac9fe6f;
+  --slate-a9: #d0dffe6e;
+  --slate-a10: #d4e4fe7d;
+  --slate-a11: #dde9febe;
+  --slate-a12: #eaf2fffc;
+  --slate-surface: #202b3e80;
+  --slate-indicator: var(--slate-9);
+  --slate-track: var(--slate-9);
+}
+
+:root {
+  --cyan-contrast: #0b1a33;
+}

@@ -1,0 +1,74 @@
+/*
+ * Soletra — identidade visual comum às páginas da extensão.
+ *
+ * As escalas de cor vêm de ui/paleta.css (gerada a partir da logo); aqui ficam
+ * os fundos, o degradê da marca e os ajustes de componente que valem para o
+ * painel e para a aba de permissão. Importado depois do Radix e da paleta.
+ */
+
+/* Claro não é branco puro: a página fica num branco azulado e os cartões, em
+   branco, se destacam dela. No escuro o fundo já é o azul-marinho da paleta. */
+.radix-themes:is(.light, .light-theme) {
+  --color-background: var(--gray-2);
+  --color-panel-solid: #fff;
+}
+
+/* O body acompanha o fundo do tema, para a rolagem elástica não mostrar outra cor. */
+body { margin: 0; background: var(--slate-1); }
+:root.light body { background: var(--slate-2); }
+
+/* Degradê da logo (do azul profundo ao azul-céu), usado com parcimônia: nas
+   ações principais e na faixa do topo, que vai até o azul-céu da lupa. */
+:root {
+  --marca-degrade: linear-gradient(135deg, #0040e0 0%, #0060ff 55%, #0090ff 100%);
+  --marca-degrade-faixa: linear-gradient(120deg, #0036c8 0%, #0060ff 50%, #00b4fc 100%);
+  --marca-brilho: 0 6px 18px -6px rgb(0 96 255 / 55%);
+}
+
+/* Fundo da página: o azul e o azul-céu da logo se espalham do alto e se
+   dissolvem no cinza-azulado. Com as escalas alfa, o mesmo desenho serve aos
+   dois temas — no escuro vira um brilho discreto sobre o azul-marinho. */
+.radix-themes {
+  --marca-fundo:
+    radial-gradient(70% 320px at 0% 0%, var(--blue-a5), transparent 70%),
+    radial-gradient(70% 320px at 100% 40px, var(--cyan-a5), transparent 70%),
+    linear-gradient(180deg, var(--blue-a2), transparent 520px);
+}
+
+/* Cartões: no claro, brancos com uma sombra azulada que os descola do fundo;
+   no escuro, a diferença de tom entre fundo e cartão já basta. */
+.radix-themes:is(.light, .light-theme) .cartao {
+  box-shadow:
+    0 0 0 1px var(--blue-a4),
+    0 1px 2px rgb(16 40 90 / 6%),
+    0 10px 28px -14px rgb(0 60 200 / 28%);
+}
+
+.botao-marca:where(:not(:disabled)) {
+  background-image: var(--marca-degrade);
+  box-shadow: var(--marca-brilho);
+}
+.botao-marca:where(:not(:disabled)):hover { filter: brightness(1.08); }
+
+/* Botões com texto longo quebram a linha e crescem em altura, em vez de o
+   texto vazar para fora do botão num painel estreito. A altura do Radix vira
+   altura mínima: botões de uma linha continuam do tamanho de sempre. */
+.rt-Button:not(.rt-variant-ghost) {
+  height: auto;
+  min-height: var(--base-button-height);
+  padding-block: var(--space-1);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.rt-Button svg { flex-shrink: 0; }
+
+/* Grade de ações que se reorganiza sozinha: lado a lado quando cabe, uma por
+   linha quando não. Todas as células com a mesma largura e a mesma altura. */
+.acoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--acoes-min, 7.5rem)), 1fr));
+  gap: var(--space-2);
+}
+.acoes > * { width: 100%; }
+/* Rótulos de uma palavra: cabem lado a lado mesmo no painel mais estreito. */
+.acoes--estreitas { --acoes-min: 5.5rem; }
