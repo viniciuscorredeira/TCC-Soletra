@@ -576,12 +576,17 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 ### 3.7 Modelo pronto
 
-#### RF63 — Escolha inicial: modelo pronto ou treino do zero ✅
+#### RF63 — Modelo pronto instalado por padrão ✅
 
-- **Usuário:** liga a câmera pela primeira vez, com o modelo ainda vazio.
-- **Sistema:** mostra o cartão "Como você quer começar?":
+- **Usuário:** instala a extensão.
+- **Sistema:** no momento da instalação, antes de o painel abrir pela primeira vez, instala o
+  modelo pronto (1550 amostras em 31 classes) e calibra o limiar de reconhecimento. O
+  reconhecimento funciona sem nenhum treino. Numa atualização, nada é instalado: o modelo de
+  quem já usa a extensão fica como está.
+- **Modelo vazio:** se o modelo ficar vazio (depois de **Apagar tudo**, ou se a instalação
+  automática falhar), o painel mostra o cartão "Como você quer começar?":
   - **Usar modelo pronto** instala o modelo e avisa "Modelo pronto carregado: 1550 amostras em 31
-    classes. Ligue o Reconhecimento para começar." O reconhecimento funciona sem nenhum treino;
+    classes. Ligue o Reconhecimento para começar.";
   - **Treinar do zero** fecha o cartão (que não volta nessa abertura) e abre **Treinar sinais**.
 - **Exceções:** o cartão só aparece se a extensão trouxer o modelo pronto.
 
@@ -745,7 +750,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 108 cenários cobrem a lógica (e o gerador da tinta da troca de tema). Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
+| **Testes de interface** | Não atendido | Os 110 cenários cobrem a lógica (e o gerador da tinta da troca de tema). Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -791,7 +796,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | Lógica (`src/`) | Linhas | Responsabilidade |
 |---|---:|---|
 | `camera-controller.js` | 296 | Ciclo de vida do `MediaStream`, restrições de captura (1280×720 / até 60 fps) e avaliação da taxa entregue |
-| `sign-recognizer.js` | 539 | Orquestrador: amarra detector, loop, trava de mão, classificador, estabilizador e texto; corrige câmeras invertidas; lê e instala o modelo pronto; mede o uso do armazenamento |
+| `sign-recognizer.js` | 515 | Orquestrador: amarra detector, loop, trava de mão, classificador, estabilizador e texto; corrige câmeras invertidas; lê e instala o modelo pronto; mede o uso do armazenamento |
 | `hand-landmarker.js` | 102 | Adaptador do MediaPipe (único módulo dependente de WASM) |
 | `inference-loop.js` | 138 | Agendador rVFC, taxa adaptativa, timestamp monotônico |
 | `sign-features.js` | 134 | Landmarks → 63 números; carrega `VERSAO_FEATURES` |
@@ -803,6 +808,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `text-composer.js` | 75 | Composição do texto e preparo para a busca |
 | `search-targets.js` | 107 | Catálogo de plataformas (marcas em ordem alfabética) e montagem das URLs |
 | `migracao-storage.js` | 64 | Migra as chaves `rvl.*` para `soletra.*` |
+| `modelo-pronto.js` | 55 | Lê, instala e calibra o modelo pronto; usado pelo painel e pelo service worker |
 
 | Interface | Linhas | Responsabilidade |
 |---|---:|---|
@@ -814,7 +820,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `sidepanel/dialogo.js` / `seletor-plataforma.js` | 73 / 46 | Pedidos das janelas de confirmação e de plataforma (promessas) |
 | `sidepanel/janela.js` | 172 | Botões fechar / painel / tela cheia |
 | `ui/` | 390 | Tema Sistema / Claro / Escuro e sua troca animada (tinta), configuração do Radix Themes, loja de estado |
-| `background/service-worker.js` | 97 | Abre o painel e executa a pesquisa |
+| `background/service-worker.js` | 121 | Abre o painel, executa a pesquisa e instala o modelo pronto na instalação |
 | `permission/` | 200 | Aba de autorização da câmera |
 
 | Apoio | Linhas | Responsabilidade |
@@ -927,7 +933,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 
 | Indicador | Resultado (26/10/2026) |
 |---|---|
-| Suíte de testes | **108 cenários em 13 arquivos, todos passando** (`node tests/todos.mjs`) |
+| Suíte de testes | **110 cenários em 14 arquivos, todos passando** (`node tests/todos.mjs`) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
 | Integridade do vendor | **4/4 arquivos íntegros** (`node tools/verificar-vendor.mjs`), inclusive em clone no Windows |
@@ -948,8 +954,9 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | `tests/trava-mao.test.mjs` | 6 |
 | `tests/integracao.test.mjs` | 6 |
 | `tests/montar-modelo-padrao.test.mjs` | 5 |
+| `tests/modelo-pronto.test.mjs` | 2 |
 | `tests/respingo.test.mjs` | 4 |
-| **Total** | **108** |
+| **Total** | **110** |
 
 ### 8.3 Cenários que travam erros silenciosos
 
@@ -1021,7 +1028,7 @@ desativar a aceleração de hardware do navegador (seção 5.3).
 
 ```
 npm run build                            # compila a extensão em dist/
-npm test                                 # suíte completa — 108 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 110 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 ```
@@ -1030,8 +1037,8 @@ node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json 
 
 1. Abrir o painel → a área de reconhecimento **não aparece**.
 2. **Iniciar câmera** → autorizar na aba aberta → voltar e iniciar → a área aparece.
-3. Ligar **Reconhecimento** → aceitar o consentimento → cartão "Como você quer começar?" →
-   **Usar modelo pronto** → soletrar letras sem treinar.
+3. Ligar **Reconhecimento** → aceitar o consentimento → soletrar letras sem treinar (numa
+   instalação nova, o modelo pronto já vem instalado).
 4. Alternar para **Números** e reconhecer dígitos.
 5. Fazer S, relaxar, S → texto `SS`. Testar **Repetir letra**, **Espaço**, **Apagar**,
    **Limpar** e digitação manual.
@@ -1104,6 +1111,8 @@ Em ordem de prioridade para o TCC:
 | 23/10/2026 | `6f2f04e`, `43d2cae` | Painel e aba de permissão reescritos em React com Radix UI |
 | 23/10/2026 | `c31237c` | Documentação da interface em React, do tema e da paleta da marca |
 | 26/10/2026 | `b1a798a` | Faixa do topo em petróleo no tema escuro; troca de tema animada como tinta jogada a partir do botão de tema, sempre que a aparência muda; ícone do tema girando; teste do recorte da tinta |
+| 26/10/2026 | `3c02291` | Versão 0.3.0; tema incluído nas preferências da política de privacidade |
+| 26/10/2026 | `d76db1f` | Modelo pronto instalado e calibrado junto com a extensão, sem depender do cartão de boas-vindas |
 
 ---
 

@@ -158,8 +158,12 @@ previstos na LGPD — ver [PRIVACY.md](PRIVACY.md).
 
 ### Modelo pronto
 
-Quando a extensão traz `modelos/padrao.json`, a primeira abertura oferece **Usar modelo pronto**
-ou **Treinar do zero**. Sem o arquivo, nada muda: o painel funciona só com treino próprio.
+Quando a extensão traz `modelos/padrao.json`, o modelo pronto já vem instalado: o service worker
+o grava e calibra no evento de instalação (`chrome.runtime.onInstalled`, motivo `install`), antes
+de o painel abrir pela primeira vez, e o reconhecimento funciona sem treino nenhum. Numa
+atualização nada é instalado, para não mexer no modelo de quem já usa. Se o modelo estiver
+vazio (depois de **Apagar tudo**, por exemplo), o painel oferece **Usar modelo pronto** ou
+**Treinar do zero**. Sem o arquivo, o painel funciona só com treino próprio.
 
 As amostras do padrão ficam em chaves separadas das pessoais (`soletra.modelo.v1.padrao.*`), e
 o classificador usa as duas juntas. Clicar numa classe que veio do padrão **reforça** a letra
@@ -232,7 +236,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-108 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+110 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
 que é uma função pura. Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
@@ -375,7 +379,7 @@ a desconexão física do dispositivo em uso durante a transmissão.
 
 ```
 manifest.json                 MV3, permissões sidePanel + storage + search, CSP com wasm-unsafe-eval
-background/service-worker.js  abre o painel lateral no clique do ícone (fallback: aba) e executa a pesquisa
+background/service-worker.js  abre o painel lateral no clique do ícone (fallback: aba), executa a pesquisa e instala o modelo pronto na instalação
 package.json, vite.config.js build da interface (React + Radix Themes) para dist/
 permission/request.html       aba de topo para o prompt nativo de câmera (Permissao.jsx)
 
@@ -406,6 +410,7 @@ src/sign-classes.js           catálogo de classes estáticas, dinâmicas e núm
 src/sign-model-store.js       persistência, quota, export/import com validação de esquema
 src/text-composer.js          composição do texto e normalização para a busca
 src/migracao-storage.js       migra as chaves de storage do nome antigo (RVL Libras)
+src/modelo-pronto.js          lê, instala e calibra o modelo pronto (painel e service worker)
 src/search-targets.js         catálogo de plataformas de busca e montagem das URLs
 
 vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
