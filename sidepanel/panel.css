@@ -464,17 +464,46 @@ body[data-modo="aba"] .app { width: 100%; max-width: 760px; margin-inline: auto;
 
 /* --- Seletor de plataforma ------------------------------------------------ */
 
+/* Faixa da marca no alto da janela, a mesma do topo do painel: o degradê da
+   logo no claro e o petróleo no escuro. O conteúdo dela é branco nos dois. */
+.seletor__faixa {
+  padding: var(--dialog-content-padding);
+  background: var(--marca-degrade-faixa);
+  color: #fff;
+}
+:is(.dark, .dark-theme) .seletor__faixa {
+  background: var(--marca-degrade-faixa-escura);
+  box-shadow: inset 0 -1px 0 rgb(120 220 255 / 12%);
+}
+
+.seletor__titulo { color: #fff; }
+
+.seletor__icone {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 18%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 28%);
+}
+
+.seletor__faixa .rt-IconButton { color: #fff; }
+.seletor__faixa .rt-IconButton:hover { background: rgb(255 255 255 / 16%); }
+.seletor__faixa .rt-IconButton:focus-visible { outline-color: #fff; }
+
+/* O termo a conferir, num vidro claro sobre a faixa. */
 .termo {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-3);
-  background: var(--gray-a2);
-  box-shadow: inset 0 0 0 1px var(--gray-a5);
+  background: rgb(255 255 255 / 14%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 26%);
 }
 
-.termo__rotulo { text-transform: uppercase; letter-spacing: 0.06em; }
+.termo__rotulo { text-transform: uppercase; letter-spacing: 0.06em; color: rgb(255 255 255 / 78%); }
 
 .termo__valor {
   font-family: var(--code-font-family);
@@ -505,8 +534,9 @@ body[data-modo="aba"] .app { width: 100%; max-width: 760px; margin-inline: auto;
   transition: background 120ms ease;
 }
 .destino + .destino { border-top: 1px solid var(--gray-a4); }
-.destino:hover { background: var(--accent-a3); }
-.destino:active { background: var(--accent-a4); }
+/* Cada marca acende na própria cor (--realce, do catálogo); sem ela, a do tema. */
+.destino:hover { background: color-mix(in srgb, var(--realce, var(--accent-9)) 9%, transparent); }
+.destino:active { background: color-mix(in srgb, var(--realce, var(--accent-9)) 15%, transparent); }
 .destino:focus-visible { outline: 2px solid var(--focus-8); outline-offset: -2px; }
 
 /* Ladrilho branco nos dois temas: logotipos de marca são desenhados para
@@ -524,12 +554,18 @@ body[data-modo="aba"] .app { width: 100%; max-width: 760px; margin-inline: auto;
 .destino__ladrilho img { width: 22px; height: 22px; display: block; }
 .destino__ladrilho svg { width: 17px; height: 17px; display: block; }
 
-/* O destino genérico não é uma marca: ladrilho redondo, na cor do tema. */
-.destino--generico .destino__ladrilho {
+/* O destino genérico não é uma marca: grupo levemente tingido do azul do
+   tema e ladrilho redondo, cheio, com o degradê da marca. */
+.destinos:has(.destino--generico) {
+  background: var(--accent-a2);
+  box-shadow: inset 0 0 0 1px var(--accent-a5);
+}
+.destino--generico .destino__ladrilho,
+.destino--generico:hover .destino__ladrilho {
   border-radius: 50%;
-  background: var(--accent-a3);
-  box-shadow: none;
-  color: var(--accent-11);
+  background: var(--marca-degrade);
+  box-shadow: var(--marca-brilho);
+  color: #fff;
 }
 
 .destino__texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
@@ -542,7 +578,8 @@ body[data-modo="aba"] .app { width: 100%; max-width: 760px; margin-inline: auto;
 
 .destino__seta { flex: 0 0 auto; color: var(--gray-9); transition: color 120ms ease, transform 120ms ease; }
 .destino:hover .destino__seta,
-.destino:focus-visible .destino__seta { color: var(--accent-11); transform: translateX(2px); }
+.destino:focus-visible .destino__seta { color: var(--realce, var(--accent-11)); transform: translateX(2px); }
+.destino:hover .destino__ladrilho { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%), 0 0 0 2px color-mix(in srgb, var(--realce, var(--accent-9)) 35%, transparent); }
 
 /* O cadeado acompanha o texto, na mesma linha da primeira palavra. */
 .aviso-envio { text-align: center; text-wrap: balance; }

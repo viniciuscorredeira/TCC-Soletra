@@ -1,6 +1,6 @@
 import { useRef } from 'react';
-import { Button, Dialog, Flex, IconButton, Text } from '@radix-ui/themes';
-import { ChevronRightIcon, Cross2Icon, LockClosedIcon } from '@radix-ui/react-icons';
+import { Button, Dialog, Flex, IconButton, Inset, Text } from '@radix-ui/themes';
+import { ChevronRightIcon, Cross2Icon, LockClosedIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { PLATAFORMAS, MARCAS } from '../../src/search-targets.js';
 import { usarLoja } from '../../ui/loja.js';
 import { lojaPlataforma, responderPlataforma } from '../seletor-plataforma.js';
@@ -32,6 +32,7 @@ const Destino = ({ p, rotulo, ref }) => (
     ref={ref}
     type="button"
     className={p.generico ? 'destino destino--generico' : 'destino'}
+    style={p.realce ? { '--realce': p.realce } : undefined}
     aria-label={rotulo}
     onClick={() => responderPlataforma(p.id)}
   >
@@ -74,29 +75,40 @@ export function SeletorPlataforma() {
           }}
         >
           <Flex direction="column" gap="3">
-            <Flex align="center" justify="between" gap="2">
-              <Dialog.Title size="4" mb="0">
-                Onde pesquisar?
-              </Dialog.Title>
-              <IconButton
-                variant="ghost"
-                color="gray"
-                size="2"
-                aria-label="Fechar sem pesquisar"
-                onClick={() => responderPlataforma(null)}
-              >
-                <Cross2Icon />
-              </IconButton>
-            </Flex>
+            {/* A faixa da marca, como no topo do painel: o termo a conferir
+                fica nela, em destaque, antes das opções. */}
+            <Inset side="top" clip="padding-box" className="seletor__faixa">
+              <Flex direction="column" gap="3">
+                <Flex align="center" justify="between" gap="2">
+                  <Flex align="center" gap="2">
+                    <span className="seletor__icone" aria-hidden="true">
+                      <MagnifyingGlassIcon />
+                    </span>
+                    <Dialog.Title size="4" mb="0" className="seletor__titulo">
+                      Onde pesquisar?
+                    </Dialog.Title>
+                  </Flex>
+                  <IconButton
+                    variant="ghost"
+                    color="gray"
+                    size="2"
+                    aria-label="Fechar sem pesquisar"
+                    onClick={() => responderPlataforma(null)}
+                  >
+                    <Cross2Icon />
+                  </IconButton>
+                </Flex>
 
-            <div className="termo">
-              <Text as="div" size="1" color="gray" weight="medium" className="termo__rotulo">
-                Termo reconhecido
-              </Text>
-              <Text as="div" size="5" weight="bold" className="termo__valor">
-                {p.termo}
-              </Text>
-            </div>
+                <div className="termo">
+                  <Text as="div" size="1" weight="medium" className="termo__rotulo">
+                    Termo reconhecido
+                  </Text>
+                  <Text as="div" size="5" weight="bold" className="termo__valor">
+                    {p.termo}
+                  </Text>
+                </div>
+              </Flex>
+            </Inset>
 
             {/* Lista agrupada, e não grade de cartões: cinco marcas não fecham
                 linhas iguais num painel estreito, e a linha deixa espaço para

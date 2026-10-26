@@ -19,6 +19,7 @@
  * @property {string} [icone]      caminho do PNG da marca, relativo à raiz
  * @property {string} [glifo]      SVG inline, para quem não tem logo
  * @property {string} [cor]        cor do ladrilho quando há glifo
+ * @property {string} [realce]     cor da marca, para o destaque da linha no seletor
  * @property {boolean} [generico]  não é marca: recebe tratamento próprio na UI
  * @property {(termo: string) => string} [url]  ausente = resolvido pelo navegador
  */
@@ -30,6 +31,7 @@ export const PLATAFORMAS = [
     nome: 'Google',
     descricao: 'Páginas da web',
     icone: 'icons/plataformas/google.png',
+    realce: '#4285f4',
     url: (q) => `https://www.google.com/search?q=${q}`
   },
   {
@@ -37,6 +39,7 @@ export const PLATAFORMAS = [
     nome: 'YouTube',
     descricao: 'Vídeos',
     icone: 'icons/plataformas/youtube.png',
+    realce: '#ff0033',
     url: (q) => `https://www.youtube.com/results?search_query=${q}`
   },
   {
@@ -44,6 +47,7 @@ export const PLATAFORMAS = [
     nome: 'Maps',
     descricao: 'Lugares e endereços',
     icone: 'icons/plataformas/maps.png',
+    realce: '#34a853',
     url: (q) => `https://www.google.com/maps/search/?api=1&query=${q}`
   },
   {
@@ -51,6 +55,7 @@ export const PLATAFORMAS = [
     nome: 'Amazon',
     descricao: 'Produtos à venda',
     icone: 'icons/plataformas/amazon.png',
+    realce: '#ff9900',
     url: (q) => `https://www.amazon.com.br/s?k=${q}`
   },
   {
@@ -58,6 +63,7 @@ export const PLATAFORMAS = [
     nome: 'Wikipédia',
     descricao: 'Artigos de enciclopédia',
     icone: 'icons/plataformas/wikipedia.png',
+    realce: '#7a7d80',
     url: (q) => `https://pt.wikipedia.org/w/index.php?search=${q}`
   },
   {
