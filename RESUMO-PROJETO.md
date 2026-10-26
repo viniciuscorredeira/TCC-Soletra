@@ -576,18 +576,22 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 ### 3.7 Modelo pronto
 
-#### RF63 — Modelo pronto instalado por padrão ✅
+#### RF63 — Modelo pronto por padrão, com escolha de treinar do zero ✅
 
-- **Usuário:** instala a extensão.
-- **Sistema:** no momento da instalação, antes de o painel abrir pela primeira vez, instala o
-  modelo pronto (1550 amostras em 31 classes) e calibra o limiar de reconhecimento. O
-  reconhecimento funciona sem nenhum treino. Numa atualização, nada é instalado: o modelo de
-  quem já usa a extensão fica como está.
-- **Modelo vazio:** se o modelo ficar vazio (depois de **Apagar tudo**, ou se a instalação
-  automática falhar), o painel mostra o cartão "Como você quer começar?":
-  - **Usar modelo pronto** instala o modelo e avisa "Modelo pronto carregado: 1550 amostras em 31
-    classes. Ligue o Reconhecimento para começar.";
-  - **Treinar do zero** fecha o cartão (que não volta nessa abertura) e abre **Treinar sinais**.
+- **Usuário:** instala a extensão e abre o painel pela primeira vez.
+- **Sistema:** no momento da instalação, antes de o painel abrir, instala o modelo pronto (1550
+  amostras em 31 classes) e calibra o limiar de reconhecimento, então o reconhecimento funciona
+  sem nenhum treino. Na primeira abertura, o cartão "Como você quer começar?" avisa que o modelo
+  pronto já está instalado e oferece:
+  - **Usar modelo pronto**: mantém o modelo e fecha o cartão de vez;
+  - **Treinar do zero**: tira o modelo pronto (o que a pessoa já tiver gravado fica), fecha o
+    cartão de vez e abre **Treinar sinais**. O modelo pronto volta em **Adicionar modelo pronto**.
+  Enquanto a pessoa não escolhe, o cartão continua aparecendo, mas o modelo pronto já funciona.
+- **Atualização:** nada é instalado; o modelo de quem já usa a extensão fica como está.
+- **Modelo vazio:** depois de **Apagar tudo** (ou se a instalação automática falhar), o mesmo
+  cartão oferece **Usar modelo pronto**, que o instala e avisa "Modelo pronto carregado: 1550
+  amostras em 31 classes. Ligue o Reconhecimento para começar.", ou **Treinar do zero**, que fecha
+  o cartão nessa abertura e abre **Treinar sinais**.
 - **Exceções:** o cartão só aparece se a extensão trouxer o modelo pronto.
 
 #### RF64 — Modelo pronto empacotado ⚠️
@@ -750,7 +754,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 110 cenários cobrem a lógica (e o gerador da tinta da troca de tema). Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
+| **Testes de interface** | Não atendido | Os 111 cenários cobrem a lógica (e o gerador da tinta da troca de tema). Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -796,7 +800,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | Lógica (`src/`) | Linhas | Responsabilidade |
 |---|---:|---|
 | `camera-controller.js` | 296 | Ciclo de vida do `MediaStream`, restrições de captura (1280×720 / até 60 fps) e avaliação da taxa entregue |
-| `sign-recognizer.js` | 515 | Orquestrador: amarra detector, loop, trava de mão, classificador, estabilizador e texto; corrige câmeras invertidas; lê e instala o modelo pronto; mede o uso do armazenamento |
+| `sign-recognizer.js` | 540 | Orquestrador: amarra detector, loop, trava de mão, classificador, estabilizador e texto; corrige câmeras invertidas; lê e instala o modelo pronto; mede o uso do armazenamento |
 | `hand-landmarker.js` | 102 | Adaptador do MediaPipe (único módulo dependente de WASM) |
 | `inference-loop.js` | 138 | Agendador rVFC, taxa adaptativa, timestamp monotônico |
 | `sign-features.js` | 134 | Landmarks → 63 números; carrega `VERSAO_FEATURES` |
@@ -804,23 +808,23 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `sign-stabilizer.js` | 234 | Máquina de confirmação e trava anti-repetição |
 | `trava-mao.js` | 70 | Trava de mão diferente da configurada, com histerese |
 | `sign-classes.js` | 51 | Catálogo de letras estáticas, dinâmicas e números |
-| `sign-model-store.js` | 411 | Persistência com origem (padrão × pessoal), teto, quota, export/import validado |
+| `sign-model-store.js` | 423 | Persistência com origem (padrão × pessoal), teto, quota, export/import validado |
 | `text-composer.js` | 75 | Composição do texto e preparo para a busca |
 | `search-targets.js` | 107 | Catálogo de plataformas (marcas em ordem alfabética) e montagem das URLs |
 | `migracao-storage.js` | 64 | Migra as chaves `rvl.*` para `soletra.*` |
-| `modelo-pronto.js` | 55 | Lê, instala e calibra o modelo pronto; usado pelo painel e pelo service worker |
+| `modelo-pronto.js` | 62 | Lê, instala e calibra o modelo pronto; usado pelo painel e pelo service worker |
 
 | Interface | Linhas | Responsabilidade |
 |---|---:|---|
-| `sidepanel/nucleo.js` | 569 | Orquestração sem React: câmera, permissão, consentimento, aviso de taxa abaixo de 60 fps, pesquisa, treino, exportar/importar/apagar |
+| `sidepanel/nucleo.js` | 597 | Orquestração sem React: câmera, permissão, consentimento, aviso de taxa abaixo de 60 fps, pesquisa, treino, exportar/importar/apagar |
 | `sidepanel/panel.html` / `.css` | 12 / 562 | Página do painel e estilos próprios (semáforo, palco, anel, grade de classes, seletor de plataforma) |
-| `sidepanel/componentes/Reconhecimento.jsx` | 335 | Anel, barra de proximidade, caixa de texto, ajustes, avisos, trava de mão com suas saídas |
-| `sidepanel/componentes/Treino.jsx` | 318 | Grade de classes com % de uso por classe, uso do armazenamento, captura, imagem da câmera (normal/invertida), boas-vindas, exportar/importar/apagar, modelo pronto |
+| `sidepanel/componentes/Reconhecimento.jsx` | 341 | Anel, barra de proximidade, caixa de texto, ajustes, avisos, trava de mão com suas saídas |
+| `sidepanel/componentes/Treino.jsx` | 323 | Grade de classes com % de uso por classe, uso do armazenamento, captura, imagem da câmera (normal/invertida), boas-vindas, exportar/importar/apagar, modelo pronto |
 | `sidepanel/componentes/` (demais) | 528 | Topo, Palco, Mensagem, Controles, Rodapé, diálogo de confirmação e "Onde pesquisar?" |
 | `sidepanel/dialogo.js` / `seletor-plataforma.js` | 73 / 46 | Pedidos das janelas de confirmação e de plataforma (promessas) |
 | `sidepanel/janela.js` | 172 | Botões fechar / painel / tela cheia |
 | `ui/` | 390 | Tema Sistema / Claro / Escuro e sua troca animada (tinta), configuração do Radix Themes, loja de estado |
-| `background/service-worker.js` | 121 | Abre o painel, executa a pesquisa e instala o modelo pronto na instalação |
+| `background/service-worker.js` | 124 | Abre o painel, executa a pesquisa e instala o modelo pronto na instalação |
 | `permission/` | 200 | Aba de autorização da câmera |
 
 | Apoio | Linhas | Responsabilidade |
@@ -933,7 +937,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 
 | Indicador | Resultado (26/10/2026) |
 |---|---|
-| Suíte de testes | **110 cenários em 14 arquivos, todos passando** (`node tests/todos.mjs`) |
+| Suíte de testes | **111 cenários em 14 arquivos, todos passando** (`node tests/todos.mjs`) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
 | Integridade do vendor | **4/4 arquivos íntegros** (`node tools/verificar-vendor.mjs`), inclusive em clone no Windows |
@@ -954,9 +958,9 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | `tests/trava-mao.test.mjs` | 6 |
 | `tests/integracao.test.mjs` | 6 |
 | `tests/montar-modelo-padrao.test.mjs` | 5 |
-| `tests/modelo-pronto.test.mjs` | 2 |
+| `tests/modelo-pronto.test.mjs` | 3 |
 | `tests/respingo.test.mjs` | 4 |
-| **Total** | **110** |
+| **Total** | **111** |
 
 ### 8.3 Cenários que travam erros silenciosos
 
@@ -1028,7 +1032,7 @@ desativar a aceleração de hardware do navegador (seção 5.3).
 
 ```
 npm run build                            # compila a extensão em dist/
-npm test                                 # suíte completa — 110 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 111 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 ```
@@ -1037,8 +1041,9 @@ node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json 
 
 1. Abrir o painel → a área de reconhecimento **não aparece**.
 2. **Iniciar câmera** → autorizar na aba aberta → voltar e iniciar → a área aparece.
-3. Ligar **Reconhecimento** → aceitar o consentimento → soletrar letras sem treinar (numa
-   instalação nova, o modelo pronto já vem instalado).
+3. Instalação nova: o cartão "Como você quer começar?" aparece com o modelo pronto já instalado →
+   ligar **Reconhecimento** → aceitar o consentimento → soletrar letras sem treinar → **Usar
+   modelo pronto** fecha o cartão. Em outra instalação, **Treinar do zero** tira o modelo pronto.
 4. Alternar para **Números** e reconhecer dígitos.
 5. Fazer S, relaxar, S → texto `SS`. Testar **Repetir letra**, **Espaço**, **Apagar**,
    **Limpar** e digitação manual.
@@ -1113,6 +1118,7 @@ Em ordem de prioridade para o TCC:
 | 26/10/2026 | `b1a798a` | Faixa do topo em petróleo no tema escuro; troca de tema animada como tinta jogada a partir do botão de tema, sempre que a aparência muda; ícone do tema girando; teste do recorte da tinta |
 | 26/10/2026 | `3c02291` | Versão 0.3.0; tema incluído nas preferências da política de privacidade |
 | 26/10/2026 | `d76db1f` | Modelo pronto instalado e calibrado junto com a extensão, sem depender do cartão de boas-vindas |
+| 26/10/2026 | `1ebb0ab` | Cartão de boas-vindas mantido na primeira abertura: com o modelo pronto já instalado, "Usar modelo pronto" o mantém e "Treinar do zero" tira só o padrão |
 
 ---
 

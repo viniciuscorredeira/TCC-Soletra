@@ -145,8 +145,9 @@ primeira vez. Cada passo remete às funcionalidades (RF) descritas na seção 5.
    O usuário concede o acesso e volta ao painel, que já mostra o nome real das câmeras (RF13).
 3. **Ligar a câmera.** Um novo clique em **Iniciar câmera** liga o vídeo, espelhado como um
    espelho (RF03, RF10). O selo muda para **Ativa** e aparece a área de reconhecimento.
-4. **Modelo pronto já instalado.** O modelo pronto foi instalado junto com a extensão, então o
-   reconhecimento funciona sem treino nenhum (RF63).
+4. **Escolher como começar.** O modelo pronto foi instalado junto com a extensão, então o
+   reconhecimento já funciona sem treino. O cartão "Como você quer começar?" pergunta se a
+   pessoa segue com ele (**Usar modelo pronto**) ou prefere **Treinar do zero** (RF63).
 5. **Consentir.** Ao ligar a chave **Reconhecimento**, o sistema explica o tratamento dos pontos
    da mão e pede consentimento uma única vez (RF15).
 
@@ -213,7 +214,7 @@ azul-marinho a um ciano escuro.
 | ↳ **Texto** | Idem | Caixa **Texto reconhecido** e botões **Espaço**, **Apagar**, **Repetir letra**, **Limpar** e **Pesquisar** |
 | ↳ **Ajustar sensibilidade** | Seção recolhível | **Rigor do reconhecimento** e **Tempo para confirmar**; o título mostra o ajuste atual |
 | ↳ **Avisos** | Idem | Poucas classes treinadas, letras com movimento e a trava de mão diferente da configurada, com os botões **Usar a mão …** e **A câmera inverte a imagem** |
-| **Boas-vindas** | Só com o modelo vazio (ex.: depois de **Apagar tudo**) | Cartão "Como você quer começar?" com **Usar modelo pronto** e **Treinar do zero** |
+| **Boas-vindas** | Na primeira abertura, até a pessoa escolher, e com o modelo vazio | Cartão "Como você quer começar?" com **Usar modelo pronto** e **Treinar do zero** |
 | **Treinar sinais** | Seção recolhível | Mão dominante, imagem desta câmera (**Normal / Invertida**), grade de classes (selo de amostras, % de uso, barra), barra de gravação com **Cancelar**, texto de ajuda, uso do armazenamento, **Adicionar/Restaurar modelo pronto**, **Exportar**, **Importar** e **Apagar tudo** |
 | **Rodapé** | Base | Resolução e taxa da câmera ("1280×720 · 30 fps") e a nota "Vídeo processado localmente" |
 | **Janelas sobrepostas** | Sobre o painel | Confirmação (Sim/Não ou rótulos próprios) e o seletor "Onde pesquisar?" |
@@ -723,18 +724,22 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 ### 5.7 Modelo pronto
 
-#### RF63 — Modelo pronto instalado por padrão ✅
+#### RF63 — Modelo pronto por padrão, com escolha de treinar do zero ✅
 
-- **Usuário:** instala a extensão.
-- **Sistema:** no momento da instalação, antes de o painel abrir pela primeira vez, instala o
-  modelo pronto (1550 amostras em 31 classes) e calibra o limiar de reconhecimento. O
-  reconhecimento funciona sem nenhum treino. Numa atualização, nada é instalado: o modelo de
-  quem já usa a extensão fica como está.
-- **Modelo vazio:** se o modelo ficar vazio (depois de **Apagar tudo**, ou se a instalação
-  automática falhar), o painel mostra o cartão "Como você quer começar?":
-  - **Usar modelo pronto** instala o modelo e avisa "Modelo pronto carregado: 1550 amostras em 31
-    classes. Ligue o Reconhecimento para começar.";
-  - **Treinar do zero** fecha o cartão (que não volta nessa abertura) e abre **Treinar sinais**.
+- **Usuário:** instala a extensão e abre o painel pela primeira vez.
+- **Sistema:** no momento da instalação, antes de o painel abrir, instala o modelo pronto (1550
+  amostras em 31 classes) e calibra o limiar de reconhecimento, então o reconhecimento funciona
+  sem nenhum treino. Na primeira abertura, o cartão "Como você quer começar?" avisa que o modelo
+  pronto já está instalado e oferece:
+  - **Usar modelo pronto**: mantém o modelo e fecha o cartão de vez;
+  - **Treinar do zero**: tira o modelo pronto (o que a pessoa já tiver gravado fica), fecha o
+    cartão de vez e abre **Treinar sinais**. O modelo pronto volta em **Adicionar modelo pronto**.
+  Enquanto a pessoa não escolhe, o cartão continua aparecendo, mas o modelo pronto já funciona.
+- **Atualização:** nada é instalado; o modelo de quem já usa a extensão fica como está.
+- **Modelo vazio:** depois de **Apagar tudo** (ou se a instalação automática falhar), o mesmo
+  cartão oferece **Usar modelo pronto**, que o instala e avisa "Modelo pronto carregado: 1550
+  amostras em 31 classes. Ligue o Reconhecimento para começar.", ou **Treinar do zero**, que fecha
+  o cartão nessa abertura e abre **Treinar sinais**.
 - **Exceções:** o cartão só aparece se a extensão trouxer o modelo pronto.
 
 #### RF64 — Modelo pronto empacotado ⚠️
@@ -900,7 +905,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 110 cenários cobrem a lógica (e o gerador da tinta da troca de tema). Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
+| **Testes de interface** | Não atendido | Os 111 cenários cobrem a lógica (e o gerador da tinta da troca de tema). Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -1411,7 +1416,7 @@ escolha com o usuário.
 node tests/todos.mjs
 ```
 
-**110 cenários em 14 arquivos, todos passando** (26/10/2026), em Node puro, sem framework e sem
+**111 cenários em 14 arquivos, todos passando** (26/10/2026), em Node puro, sem framework e sem
 dependências.
 
 | Arquivo | Cenários | O que cobre |
@@ -1424,7 +1429,7 @@ dependências.
 | `text-composer.test.mjs` | 7 | Espaço, apagar, limite, preparo para busca |
 | `search-targets.test.mjs` | 7 | URLs, codificação, catálogo íntegro, logos presentes, ordem alfabética |
 | `migracao-storage.test.mjs` | 7 | Migração idempotente e sem sobrescrever dado novo |
-| `modelo-pronto.test.mjs` | 2 | Instalação do modelo pronto já calibrada, preservando o treino pessoal |
+| `modelo-pronto.test.mjs` | 3 | Instalação do modelo pronto já calibrada, preservando o treino pessoal; treinar do zero tira só o padrão |
 | `camera-controller.test.mjs` | 7 | Recarregar sem ligar a câmera, limpar erro, reabrir a mesma câmera, ler os nomes sem ligar, não acessar sem permissão, teto de 60 fps e aviso abaixo disso |
 | `trava-mao.test.mjs` | 6 | Trava após quadros seguidos, oscilação ignorada, soltura, confiança baixa, reinício |
 | `integracao.test.mjs` | 6 | Pipeline completo de ponta a ponta |
@@ -1463,8 +1468,10 @@ de custo diferentes (sem rastreamento, o detector de palma roda a cada quadro).
 
 1. Abrir o painel → a área de reconhecimento **não aparece**.
 2. **Iniciar câmera** → autorizar na aba → voltar e iniciar → a área aparece.
-3. Ligar **Reconhecimento** → aceitar o consentimento → soletrar sem treinar (numa instalação
-   nova, o modelo pronto já vem instalado e o cartão "Como você quer começar?" não aparece).
+3. Instalação nova: o cartão "Como você quer começar?" aparece com o modelo pronto já instalado →
+   ligar **Reconhecimento** → aceitar o consentimento → soletrar sem treinar → **Usar modelo
+   pronto** fecha o cartão. Em outra instalação, **Treinar do zero** tira o modelo pronto e abre
+   **Treinar sinais**.
 4. Alternar para **Números** e reconhecer dígitos.
 5. S, relaxar, S → "SS". Testar **Repetir letra**, **Espaço**, **Apagar**, **Limpar** e digitação.
 6. **Pesquisar** → conferir a ordem Amazon, Google, Maps, Wikipédia, YouTube → escolher uma →
@@ -1570,7 +1577,7 @@ em ↻ no cartão da extensão e reabrir o painel.
 npm install                              # dependências da interface (React, Radix UI, Vite)
 npm run build                            # compila a extensão em dist/
 npm run dev                              # recompila a cada alteração
-npm test                                 # suíte completa — 110 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 111 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
@@ -1642,7 +1649,7 @@ modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
 tools/                          montagem do modelo pronto, verificação do vendor, PNG, ícones, logos
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
-tests/                          110 cenários; tests/todos.mjs roda todos
+tests/                          111 cenários; tests/todos.mjs roda todos
 
 README.md                       visão técnica para desenvolvedores
 RESUMO-PROJETO.md               resumo para acompanhamento do TCC
@@ -1734,6 +1741,7 @@ Em ordem de prioridade para o TCC:
 | 26/10/2026 | `b1a798a` | Faixa do topo em petróleo no tema escuro; troca de tema animada como tinta jogada a partir do botão de tema, sempre que a aparência muda; ícone do tema girando; teste do recorte da tinta |
 | 26/10/2026 | `3c02291` | Versão 0.3.0; tema incluído nas preferências da política de privacidade |
 | 26/10/2026 | `d76db1f` | Modelo pronto instalado e calibrado junto com a extensão, sem depender do cartão de boas-vindas |
+| 26/10/2026 | `1ebb0ab` | Cartão de boas-vindas mantido na primeira abertura: com o modelo pronto já instalado, "Usar modelo pronto" o mantém e "Treinar do zero" tira só o padrão |
 
 ---
 

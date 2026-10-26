@@ -160,10 +160,13 @@ previstos na LGPD — ver [PRIVACY.md](PRIVACY.md).
 
 Quando a extensão traz `modelos/padrao.json`, o modelo pronto já vem instalado: o service worker
 o grava e calibra no evento de instalação (`chrome.runtime.onInstalled`, motivo `install`), antes
-de o painel abrir pela primeira vez, e o reconhecimento funciona sem treino nenhum. Numa
-atualização nada é instalado, para não mexer no modelo de quem já usa. Se o modelo estiver
-vazio (depois de **Apagar tudo**, por exemplo), o painel oferece **Usar modelo pronto** ou
-**Treinar do zero**. Sem o arquivo, o painel funciona só com treino próprio.
+de o painel abrir pela primeira vez, e o reconhecimento funciona sem treino nenhum. A escolha
+continua com o usuário: na primeira abertura o painel pergunta se ele segue com o modelo pronto
+ou prefere **Treinar do zero**, que tira as amostras do padrão e mantém as pessoais (a pendência
+fica em `soletra.escolhaInicialPendente` até ele escolher). Numa atualização nada é instalado,
+para não mexer no modelo de quem já usa. Com o modelo vazio (depois de **Apagar tudo**, por
+exemplo), o mesmo cartão oferece **Usar modelo pronto** ou **Treinar do zero**. Sem o arquivo, o
+painel funciona só com treino próprio.
 
 As amostras do padrão ficam em chaves separadas das pessoais (`soletra.modelo.v1.padrao.*`), e
 o classificador usa as duas juntas. Clicar numa classe que veio do padrão **reforça** a letra
@@ -236,7 +239,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-110 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+111 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
 que é uma função pura. Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
