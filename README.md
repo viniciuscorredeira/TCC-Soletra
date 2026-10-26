@@ -232,8 +232,9 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-104 cenários, em Node puro, sem framework e sem dependências — testam só `src/`, que não
-depende do React nem do build. Os módulos de lógica são todos
+108 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
+que é uma função pura. Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
 (`src/hand-landmarker.js`) é fino de propósito e validado pelo diagnóstico acima.
 
@@ -256,6 +257,10 @@ Cenários que merecem destaque por travarem bugs silenciosos:
   dado novo com resíduo antigo.
 - **Trava de mão** — um quadro de handedness errado isolado não pode bloquear a tradução, e um
   quadro de baixa confiança no meio de uma sequência errada não pode adiar a trava.
+- **Tinta da troca de tema** — todos os quadros do recorte precisam ter o mesmo número de pontos,
+  senão o navegador não interpola e a tinta pula em vez de crescer; e o último quadro precisa
+  passar do canto mais longe da janela, senão um pedaço do tema antigo sobra num canto e some de
+  repente no fim.
 
 ## Por que painel lateral e não popup
 
@@ -305,13 +310,22 @@ do sistema operacional), **Claro** e **Escuro**. A escolha fica em `chrome.stora
 para o painel e para a aba de permissão ao mesmo tempo — trocar num lado repinta o outro na
 hora. Um espelho em `localStorage` evita que a página pisque no tema errado ao abrir.
 
+A troca é animada com a View Transitions API (`ui/transicao-tema.js`): ao escolher no botão,
+a página nova é revelada por um recorte em forma de mancha de tinta que nasce no botão e cresce
+até cobrir a tela. O contorno é um polígono de 72 pontos com raio ondulado e algumas gotas
+sorteadas, então cada troca respinga de um jeito, e leva 1,6 s para a mudança ser bem
+perceptível. Quando o tema muda sem clique (modo Sistema, ou a outra página trocou), a tinta sai
+do botão de tema do mesmo jeito; nem "reduzir movimento" a desliga. Só um navegador sem a API
+troca sem animação.
+
 As cores saem da logo. `node tools/gerar-paleta.mjs` gera `ui/paleta.css` a partir do azul
 central da arte (`#0060FF`) e do azul-céu do aro da lupa (`#00B4FC`, a cor secundária):
 redefine as escalas "blue" (acento), "cyan" (secundária) e "slate" (cinzas) do Radix
 mantendo, degrau a degrau, a luminosidade que o Radix calibrou para cada papel (fundo,
 componente, borda, texto) e trocando só o matiz. Assim o escuro é um azul-marinho, não preto,
 e o claro é um branco azulado, não branco puro — e os contrastes de texto continuam os do
-Radix. `ui/marca.css` completa com a faixa do topo e o degradê da logo nas ações principais,
+Radix. `ui/marca.css` completa com a faixa do topo (o degradê da logo no claro, um petróleo
+no escuro) e o degradê da logo nas ações principais,
 um fundo que mistura o azul e o azul-céu, cartões com sombra azulada no tema claro, e faz os
 botões quebrarem a linha em vez de vazar o texto num painel estreito.
 
@@ -366,6 +380,8 @@ package.json, vite.config.js build da interface (React + Radix Themes) para dist
 permission/request.html       aba de topo para o prompt nativo de câmera (Permissao.jsx)
 
 ui/tema.js                    tema Sistema / Claro / Escuro, comum às duas páginas
+ui/transicao-tema.js          troca de tema animada (tinta a partir do botão de tema)
+ui/respingo.js                formato da tinta (polígono com gotas), puro e testado em Node
 ui/paleta.css                 escalas de cor da marca (geradas por tools/gerar-paleta.mjs)
 ui/marca.css                  fundos, degradê da logo e ajustes de botão comuns às páginas
 ui/loja.js                    loja mínima de estado lida pelo React (useSyncExternalStore)

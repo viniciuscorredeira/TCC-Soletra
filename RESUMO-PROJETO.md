@@ -674,6 +674,10 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
   escolha fica salva e vale ao mesmo tempo para o painel e para a aba de autorização da câmera.
   A interface cabe na largura estreita do painel lateral e, em tela cheia, usa uma coluna
   centralizada com vídeo e letra maiores.
+- **Transição:** toda troca que muda a aparência é animada (cerca de 1,6 s): o tema novo se
+  espalha a partir do botão de tema como tinta jogada, numa mancha com gotas diferente a cada
+  troca, inclusive quando o tema muda sozinho pelo modo Sistema. No escuro, a faixa do topo é
+  petróleo (azul-marinho a ciano escuro); no claro, o degradê azul da logo.
 
 **Total: 74 funcionalidades — 70 plenamente atendidas e 4 com ressalva (RF28, RF56, RF64, RF70).**
 
@@ -691,7 +695,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 | RNF06 | **Robustez a câmera e resolução** | Normalização invariante a posição, escala e proporção da imagem; timestamp monotônico na troca de câmera | ✅ |
 | RNF07 | **Armazenamento dentro da quota** | 31 classes × 100 amostras ficam bem abaixo dos 10 MB do `storage.local`; o teto por classe impede o crescimento sem limite, e o uso é exibido por classe e no total, com aviso a partir de 80% (RF61, RF62) | ✅ |
 | RNF08 | **Testabilidade** | Lógica isolada em funções puras e classes com relógio injetado; só um módulo depende de WASM | ✅ |
-| RNF09 | **Zero dependências** | Não há `package.json`; testes em Node puro | ✅ |
+| RNF09 | **Sem dependências externas em execução** | Nada é baixado da rede: React e Radix UI são empacotados no build (Vite). A lógica em `src/` e os testes rodam em Node puro, sem dependências; `npm audit` sem vulnerabilidades (26/10/2026) | ✅ |
 | RNF10 | **Acessibilidade básica** | Rótulos ARIA, região `aria-live` para mensagens, foco gerenciado nos modais, navegação por teclado no seletor | ⚠️ |
 | RNF11 | **Conformidade com a LGPD** | Consentimento, eliminação, portabilidade e política de privacidade (seção 9) | ⚠️ |
 | RNF12 | **Compatibilidade** | Chrome e Edge 114+ (Manifest V3) | ⚠️ |
@@ -726,6 +730,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 | **Atalhos de teclado e comandos por gesto** (espaço, apagar, pesquisar) | Não atendido | — | Essas ações exigem clique ou Tab |
 | **Idiomas além do português** | Não atendido | Textos da interface escritos direto no código | — |
 | **Acessibilidade auditada** | Parcial (RNF10) | Há boas práticas de ARIA e foco, mas não houve auditoria WCAG nem teste com leitor de tela | Conformidade não comprovada |
+| **Preferência "reduzir movimento"** | Não atendida, por decisão (RF74) | A troca de tema precisa ser sempre perceptível | Quem desativa as animações no sistema ainda vê a tinta de 1,6 s |
 
 ### 5.3 Desempenho e ambiente
 
@@ -740,7 +745,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 104 cenários cobrem a lógica. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
+| **Testes de interface** | Não atendido | Os 108 cenários cobrem a lógica (e o gerador da tinta da troca de tema). Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -802,13 +807,13 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | Interface | Linhas | Responsabilidade |
 |---|---:|---|
 | `sidepanel/nucleo.js` | 569 | Orquestração sem React: câmera, permissão, consentimento, aviso de taxa abaixo de 60 fps, pesquisa, treino, exportar/importar/apagar |
-| `sidepanel/panel.html` / `.css` | 12 / 488 | Página do painel e estilos próprios (semáforo, palco, anel, grade de classes, seletor de plataforma) |
+| `sidepanel/panel.html` / `.css` | 12 / 562 | Página do painel e estilos próprios (semáforo, palco, anel, grade de classes, seletor de plataforma) |
 | `sidepanel/componentes/Reconhecimento.jsx` | 335 | Anel, barra de proximidade, caixa de texto, ajustes, avisos, trava de mão com suas saídas |
 | `sidepanel/componentes/Treino.jsx` | 318 | Grade de classes com % de uso por classe, uso do armazenamento, captura, imagem da câmera (normal/invertida), boas-vindas, exportar/importar/apagar, modelo pronto |
 | `sidepanel/componentes/` (demais) | 528 | Topo, Palco, Mensagem, Controles, Rodapé, diálogo de confirmação e "Onde pesquisar?" |
 | `sidepanel/dialogo.js` / `seletor-plataforma.js` | 73 / 46 | Pedidos das janelas de confirmação e de plataforma (promessas) |
 | `sidepanel/janela.js` | 172 | Botões fechar / painel / tela cheia |
-| `ui/` | 223 | Tema Sistema / Claro / Escuro, configuração do Radix Themes, loja de estado |
+| `ui/` | 390 | Tema Sistema / Claro / Escuro e sua troca animada (tinta), configuração do Radix Themes, loja de estado |
 | `background/service-worker.js` | 97 | Abre o painel e executa a pesquisa |
 | `permission/` | 200 | Aba de autorização da câmera |
 
@@ -866,7 +871,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 |---|---|
 | Plataforma | Extensão Chrome/Edge, **Manifest V3**, `minimum_chrome_version: 114` |
 | Linguagem | **JavaScript (ES Modules)**, sem TypeScript; JSX na interface |
-| Interface | **React 19** + **Radix UI** (Radix Themes, `Accordion` dos primitivos, `react-icons`), temas Sistema / Claro / Escuro |
+| Interface | **React 19** + **Radix UI** (Radix Themes, `Accordion` dos primitivos, `react-icons`), temas Sistema / Claro / Escuro com troca animada pela View Transitions API |
 | Build | **Vite**, gera `dist/`; a lógica em `src/` não depende do build |
 | Painel | `chrome.sidePanel` |
 | Persistência | `chrome.storage.local` e `chrome.storage.session` |
@@ -920,11 +925,11 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 
 ### 8.1 Situação
 
-| Indicador | Resultado (22/10/2026) |
+| Indicador | Resultado (26/10/2026) |
 |---|---|
-| Suíte de testes | **104 cenários em 12 arquivos, todos passando** (`node tests/todos.mjs`) |
+| Suíte de testes | **108 cenários em 13 arquivos, todos passando** (`node tests/todos.mjs`) |
 | `TODO` / `FIXME` no código | Nenhum |
-| Dependências vulneráveis | Não se aplica: zero dependências |
+| Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
 | Integridade do vendor | **4/4 arquivos íntegros** (`node tools/verificar-vendor.mjs`), inclusive em clone no Windows |
 
 ### 8.2 Cenários por arquivo
@@ -943,7 +948,8 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | `tests/trava-mao.test.mjs` | 6 |
 | `tests/integracao.test.mjs` | 6 |
 | `tests/montar-modelo-padrao.test.mjs` | 5 |
-| **Total** | **104** |
+| `tests/respingo.test.mjs` | 4 |
+| **Total** | **108** |
 
 ### 8.3 Cenários que travam erros silenciosos
 
@@ -964,6 +970,9 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 - **Montagem balanceada:** quem gravou mais amostras não domina o modelo pronto.
 - **Trava de mão:** um quadro errado isolado não bloqueia a tradução, e um quadro ambíguo no
   meio de uma sequência errada não adia a trava.
+- **Tinta da troca de tema:** todos os quadros do recorte têm o mesmo número de pontos (senão a
+  tinta pularia em vez de crescer) e o último passa do canto mais longe da janela (senão um
+  pedaço do tema antigo sobraria num canto).
 
 ### 8.4 Boas práticas observadas
 
@@ -1012,7 +1021,7 @@ desativar a aceleração de hardware do navegador (seção 5.3).
 
 ```
 npm run build                            # compila a extensão em dist/
-npm test                                 # suíte completa — 104 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 108 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 ```
@@ -1084,9 +1093,17 @@ Em ordem de prioridade para o TCC:
 | 13/10/2026 | `277d283` | Ferramenta de montagem e `modelos/padrao.json` com 50 amostras por classe |
 | 13/10/2026 | `c89af4c` | Boas-vindas, reforço e volta ao padrão por classe, teto de 100 com avisos, botões de janela e tela cheia como aba |
 | 13/10/2026 | `6163dfa` | Documentação do modelo pronto, do teto e dos botões de janela |
-| 21/10/2026 | (a commitar) | Área de reconhecimento só com a câmera ativa; captura a 60 fps; plataformas em ordem alfabética; % de uso por classe e uso total do armazenamento; `.gitattributes` e diagnóstico de quebra de linha no verificador do MediaPipe; data e tabelas do `PRIVACY.md`; README e esta documentação reescritos |
+| 21/10/2026 | `5061dfe` a `6208655` | Área de reconhecimento só com a câmera ativa; captura a 60 fps; plataformas em ordem alfabética; % de uso por classe e uso total do armazenamento; `.gitattributes` e diagnóstico de quebra de linha no verificador do MediaPipe; data e tabelas do `PRIVACY.md`; README e esta documentação reescritos |
 | 22/10/2026 | `3b1dde2` | Captura limitada a 60 fps, com aviso quando a câmera entrega menos |
 | 22/10/2026 | `f5f7cc9` | Mão diferente da configurada trava a tradução e a captura de treino; opção de câmera com imagem invertida, guardada por câmera |
+| 22/10/2026 | `a63add1` | Documentação da trava de mão, da câmera invertida e do teto de 60 fps |
+| 23/10/2026 | `1d595c6` | Ç incluído no aviso de letras com movimento |
+| 23/10/2026 | `645cb27` | Interface compilada com Vite |
+| 23/10/2026 | `4a8e233` | Paleta de cores gerada a partir da logo |
+| 23/10/2026 | `3ba7b4b` | Tema Sistema, Claro e Escuro |
+| 23/10/2026 | `6f2f04e`, `43d2cae` | Painel e aba de permissão reescritos em React com Radix UI |
+| 23/10/2026 | `c31237c` | Documentação da interface em React, do tema e da paleta da marca |
+| 26/10/2026 | `b1a798a` | Faixa do topo em petróleo no tema escuro; troca de tema animada como tinta jogada a partir do botão de tema, sempre que a aparência muda; ícone do tema girando; teste do recorte da tinta |
 
 ---
 
