@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Soletra — Libras",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Reconhece sinais estáticos do alfabeto de Libras pela câmera e compõe texto pesquisável. Processamento 100% local, sem envio de vídeo.",
   "minimum_chrome_version": "114",
   "permissions": [

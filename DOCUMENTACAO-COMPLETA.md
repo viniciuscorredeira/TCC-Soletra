@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Natureza** | Trabalho de Conclusão de Curso |
-| **Versão do produto** | 0.2.0 (`manifest.json`) |
+| **Versão do produto** | 0.3.0 (`manifest.json`) |
 | **Documento atualizado em** | 22/10/2026 |
 | **Repositório** | `github.com/viniciuscorredeira/TCC-Soletra` |
 | **Plataforma** | Extensão para Google Chrome e Microsoft Edge (Manifest V3), versão 114 ou superior |

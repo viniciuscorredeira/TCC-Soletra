@@ -1,7 +1,7 @@
 # Soletra — Documentação do Projeto
 
 **Documento atualizado em:** 22/10/2026
-**Versão do projeto:** 0.2.0 (`manifest.json`)
+**Versão do projeto:** 0.3.0 (`manifest.json`)
 **Repositório:** `github.com/viniciuscorredeira/TCC-Soletra`
 **Natureza:** Trabalho de Conclusão de Curso — extensão de navegador para reconhecimento do
 alfabeto manual de Libras
