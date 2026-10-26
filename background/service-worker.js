@@ -9,7 +9,7 @@
 
 import { urlDaBusca, ID_BUSCADOR_PADRAO } from '../src/search-targets.js';
 import { SignModelStore } from '../src/sign-model-store.js';
-import { lerModeloPadrao, instalarModeloPronto } from '../src/modelo-pronto.js';
+import { lerModeloPadrao, instalarModeloPronto, CHAVE_ESCOLHA_PENDENTE } from '../src/modelo-pronto.js';
 
 const PANEL_PATH = 'sidepanel/panel.html';
 
@@ -29,9 +29,10 @@ async function enableSidePanelOnActionClick() {
 
 /**
  * Numa instalação nova, deixa o modelo pronto instalado antes de o painel
- * abrir pela primeira vez: o reconhecimento funciona sem treino nenhum, e o
- * usuário não precisa saber que existe um modelo para escolher. Só na
- * instalação — numa atualização o modelo do usuário já está lá, e quem apagou
+ * abrir pela primeira vez: o reconhecimento funciona sem treino nenhum. A
+ * escolha entre seguir com ele ou treinar do zero continua com o usuário — fica
+ * marcada como pendente e o painel a oferece no cartão de boas-vindas. Só na
+ * instalação: numa atualização o modelo do usuário já está lá, e quem apagou
  * tudo de propósito não recebe o padrão de volta sem pedir.
  */
 async function instalarModeloInicial() {
@@ -40,7 +41,9 @@ async function instalarModeloInicial() {
     const { indice, incompativel } = await store.carregar();
     if (indice || incompativel) return;
     const objeto = await lerModeloPadrao();
-    if (objeto) await instalarModeloPronto(store, objeto);
+    if (!objeto) return;
+    await instalarModeloPronto(store, objeto);
+    await chrome.storage.local.set({ [CHAVE_ESCOLHA_PENDENTE]: true });
   } catch (error) {
     // O painel ainda oferece o modelo pronto no cartão de boas-vindas.
     console.warn('[Soletra] falha ao instalar o modelo pronto:', error);

@@ -6,7 +6,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { instalarModeloPronto } from '../src/modelo-pronto.js';
-import { SignModelStore, VERSAO_CALIBRACAO, AMOSTRAS_PADRAO } from '../src/sign-model-store.js';
+import {
+  SignModelStore, VERSAO_CALIBRACAO, AMOSTRAS_PADRAO, PREFIXO_PADRAO
+} from '../src/sign-model-store.js';
 import { DIMENSOES } from '../src/sign-features.js';
 
 const PADRAO = JSON.parse(readFileSync(new URL('../modelos/padrao.json', import.meta.url), 'utf8'));
@@ -60,6 +62,25 @@ function areaFalsa() {
   assert.equal(origem.A.padrao, AMOSTRAS_PADRAO);
   assert.ok(Number.isFinite(indice.tauAbs));
   console.log('OK  cenário 2 — preserva o treino pessoal e recalibra sobre o conjunto final');
+}
+
+// --- Cenário 3: "treinar do zero" tira só o modelo pronto ---------------------
+// Na instalação nova o padrão já está lá; escolher treinar do zero não pode
+// levar junto o que a pessoa gravou antes de escolher.
+{
+  const area = areaFalsa();
+  const store = new SignModelStore(area);
+  await instalarModeloPronto(store, PADRAO);
+  const vetor = Array.from({ length: DIMENSOES }, (_, i) => 0.5 + i * 0.002);
+  await store.adicionarAmostra('B', vetor);
+
+  await store.removerPadrao();
+  const { classes, origem } = await store.carregar();
+  assert.deepEqual(Object.keys(classes), ['B'], 'só a classe com treino pessoal');
+  assert.deepEqual(origem.B, { padrao: 0, pessoal: 1 });
+  const sobras = await area.get(Object.keys(PADRAO.classes).map((c) => PREFIXO_PADRAO + c));
+  assert.deepEqual(Object.keys(sobras), [], 'nenhuma chave do padrão sobra no storage');
+  console.log('OK  cenário 3 — treinar do zero tira o padrão e preserva o treino pessoal');
 }
 
 console.log('\ntodos os cenários passaram');

@@ -12,6 +12,13 @@ import { VERSAO_CALIBRACAO } from './sign-model-store.js';
 const CAMINHO_MODELO_PADRAO = 'modelos/padrao.json';
 
 /**
+ * Gravada pelo service worker ao instalar o modelo pronto: o painel ainda
+ * pergunta, uma vez, se a pessoa quer seguir com ele ou treinar do zero. Sai
+ * do storage assim que ela escolhe.
+ */
+export const CHAVE_ESCOLHA_PENDENTE = 'soletra.escolhaInicialPendente';
+
+/**
  * Lê o modelo pronto empacotado. Ausência não é erro: o arquivo só existe
  * depois que alguém o gera com amostras de várias pessoas, e até lá a
  * extensão funciona só com treino próprio.

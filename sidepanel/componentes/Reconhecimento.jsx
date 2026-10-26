@@ -27,7 +27,7 @@ import {
 import { AVISO_DINAMICAS, classesDoConjunto, CONJUNTOS } from '../../src/sign-classes.js';
 import { CLASSES_MINIMAS } from '../../src/sign-classifier.js';
 import { usarLoja } from '../../ui/loja.js';
-import { lojaCamera, lojaReco, acoesReco } from '../nucleo.js';
+import { lojaCamera, lojaReco, acoesReco, acoesTreino } from '../nucleo.js';
 import { Campo } from './Campo.jsx';
 import { Secao } from './Secao.jsx';
 import { BoasVindas, Treino } from './Treino.jsx';
@@ -290,10 +290,14 @@ export function SecaoReconhecimento() {
   if (!s) return null;
 
   const ligado = s.estado !== 'desligado' && s.estado !== 'erro';
+  // Com o modelo vazio, ou numa instalação nova em que o modelo pronto já veio
+  // instalado mas a pessoa ainda não escolheu se fica com ele.
   const mostrarBoasVindas =
-    !boasVindasDispensadas && s.padraoDisponivel && s.modeloVazio && !s.modeloIncompativel && !s.captura;
+    !boasVindasDispensadas && s.padraoDisponivel && (s.modeloVazio || s.escolhaInicialPendente) &&
+    !s.modeloIncompativel && !s.captura;
 
   function treinarDoZero() {
+    acoesTreino.treinarDoZero();
     setBoasVindasDispensadas(true);
     setTreinoAberto(true);
     requestAnimationFrame(() => refTreino.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -323,9 +327,11 @@ export function SecaoReconhecimento() {
 
           {s.estado !== 'desligado' && <CorpoReconhecimento s={s} />}
 
-          {/* Primeira abertura: sem modelo, o reconhecimento não tem o que
-              reconhecer. Só aparece se a extensão traz o modelo padrão. */}
-          {mostrarBoasVindas && <BoasVindas aoTreinarDoZero={treinarDoZero} />}
+          {/* Primeira abertura (ou modelo vazio): modelo pronto ou treino do
+              zero. Só aparece se a extensão traz o modelo padrão. */}
+          {mostrarBoasVindas && (
+            <BoasVindas instalado={!s.modeloVazio} aoTreinarDoZero={treinarDoZero} />
+          )}
 
           <Treino s={s} ref={refTreino} aberto={treinoAberto} aoAlternar={setTreinoAberto} />
         </Flex>

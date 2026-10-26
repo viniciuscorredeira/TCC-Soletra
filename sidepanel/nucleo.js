@@ -425,8 +425,36 @@ export const acoesTreino = {
     }
   },
 
-  // Primeira abertura: o próprio clique em "Usar modelo pronto" é a escolha.
-  usarPadrao: carregarModeloPronto,
+  // Cartão de boas-vindas: o próprio clique é a escolha, sem confirmação. Numa
+  // instalação nova o modelo pronto já está instalado, e "usar" só o mantém.
+  async usarPadrao() {
+    if (reconhecedor.classificador.vazio) {
+      await carregarModeloPronto();
+    } else {
+      showMessage('Modelo pronto em uso. Ligue o Reconhecimento para começar.', 'info');
+    }
+    await reconhecedor.concluirEscolhaInicial();
+  },
+
+  // Tira só o modelo pronto: o que a pessoa já gravou fica. Não pede
+  // confirmação porque nada se perde — "Adicionar modelo pronto" o traz de volta.
+  async treinarDoZero() {
+    const temPadrao = Object.values(reconhecedor.origemPorClasse).some((o) => o.padrao > 0);
+    if (temPadrao) {
+      try {
+        await reconhecedor.removerModeloPadrao();
+        showMessage(
+          'Modelo pronto removido. Grave suas letras em "Treinar sinais"; ' +
+            'ele pode voltar em "Adicionar modelo pronto".',
+          'info'
+        );
+      } catch (err) {
+        showMessage(err?.message || 'Falha ao remover o modelo pronto.', 'error');
+        return;
+      }
+    }
+    await reconhecedor.concluirEscolhaInicial();
+  },
 
   async instalarPadrao() {
     // Com o modelo vazio não há treino a preservar nem nada a perder: o clique

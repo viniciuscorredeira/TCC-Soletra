@@ -18,7 +18,9 @@ import { TextComposer } from './text-composer.js';
 import { SignModelStore, AMOSTRAS_RECOMENDADAS, VERSAO_CALIBRACAO } from './sign-model-store.js';
 import { CONJUNTO_PADRAO, classesDoConjunto } from './sign-classes.js';
 import { TravaMao } from './trava-mao.js';
-import { lerModeloPadrao, calibrarModelo, instalarModeloPronto } from './modelo-pronto.js';
+import {
+  lerModeloPadrao, calibrarModelo, instalarModeloPronto, CHAVE_ESCOLHA_PENDENTE
+} from './modelo-pronto.js';
 
 /** @typedef {'desligado'|'carregando'|'pronto'|'reconhecendo'|'treinando'|'erro'} EstadoReconhecimento */
 
@@ -75,6 +77,8 @@ export class SignRecognizer {
     /** @type {Record<string, {padrao: number, pessoal: number}>} */
     this.origemPorClasse = {};
     this.padraoDisponivel = false;
+    /** Instalação nova com o modelo pronto: falta perguntar se fica com ele ou treina do zero. */
+    this.escolhaInicialPendente = false;
     /** @type {{usados: number, quota: number, alerta: boolean}|null} */
     this.usoArmazenamento = null;
     this.modeloIncompativel = null;
@@ -104,6 +108,11 @@ export class SignRecognizer {
       const sessao = await chrome.storage.session?.get(CHAVE_TEXTO);
       if (sessao?.[CHAVE_TEXTO]) this.composer.definir(sessao[CHAVE_TEXTO]);
     } catch { /* idem */ }
+
+    try {
+      const g = await chrome.storage.local.get(CHAVE_ESCOLHA_PENDENTE);
+      this.escolhaInicialPendente = g?.[CHAVE_ESCOLHA_PENDENTE] === true;
+    } catch { /* sem a marca, o cartão só aparece com o modelo vazio */ }
 
     this.padraoDisponivel = Boolean(await lerModeloPadrao());
     await this.recarregarModelo();
@@ -368,6 +377,21 @@ export class SignRecognizer {
     await this._recalibrar();
   }
 
+  /** Tira o modelo pronto e fica só com o que o usuário gravou. */
+  async removerModeloPadrao() {
+    await this.store.removerPadrao();
+    await this._recalibrar();
+  }
+
+  /** O usuário escolheu no cartão de boas-vindas; ele não volta a aparecer por isso. */
+  async concluirEscolhaInicial() {
+    this.escolhaInicialPendente = false;
+    try {
+      await chrome.storage.local.remove(CHAVE_ESCOLHA_PENDENTE);
+    } catch { /* na pior hipótese, o cartão aparece de novo na próxima abertura */ }
+    this._emitir();
+  }
+
   /**
    * Instala o modelo padrão por baixo das amostras pessoais (ver
    * src/modelo-pronto.js, que o service worker também usa na instalação).
@@ -502,6 +526,7 @@ export class SignRecognizer {
       amostrasPorClasse: this.amostrasPorClasse,
       origemPorClasse: this.origemPorClasse,
       padraoDisponivel: this.padraoDisponivel,
+      escolhaInicialPendente: this.escolhaInicialPendente,
       armazenamento: this.usoArmazenamento,
       modeloVazio: this.classificador.vazio,
       modeloIncompativel: this.modeloIncompativel,

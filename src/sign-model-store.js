@@ -229,6 +229,18 @@ export class SignModelStore {
   }
 
   /**
+   * Tira as amostras do padrão de todas as classes e mantém as pessoais — o
+   * "treinar do zero" de quem começou com o modelo pronto já instalado.
+   */
+  async removerPadrao() {
+    const indice = await this._lerIndice();
+    const chaves = Object.keys(indice.contagemPadrao || {}).map((c) => PREFIXO_PADRAO + c);
+    if (chaves.length > 0) await this.area.remove(chaves);
+    indice.contagemPadrao = {};
+    await this._gravarIndice(indice);
+  }
+
+  /**
    * Instala (ou reinstala) o modelo padrão. Substitui as amostras padrão que
    * existirem, mas não toca nas pessoais: reinstalar o padrão não pode custar o
    * treino que o usuário fez por cima dele.

@@ -150,7 +150,14 @@ function StatusCaptura({ s }) {
   );
 }
 
-export function BoasVindas({ aoTreinarDoZero }) {
+/**
+ * A escolha entre o modelo pronto e o treino do zero. Numa instalação nova o
+ * modelo pronto já vem instalado (o reconhecimento funciona mesmo que o cartão
+ * seja ignorado) e "Treinar do zero" o tira; com o modelo vazio, "Usar modelo
+ * pronto" o instala.
+ * @param {{instalado: boolean, aoTreinarDoZero: () => void}} props
+ */
+export function BoasVindas({ instalado, aoTreinarDoZero }) {
   return (
     <Card size="2" className="boas-vindas">
       <Flex direction="column" gap="2">
@@ -158,8 +165,11 @@ export function BoasVindas({ aoTreinarDoZero }) {
           Como você quer começar?
         </Text>
         <Text as="p" size="1" color="gray">
-          O modelo pronto reconhece as letras sem treino. Se alguma letra falhar com a sua mão, você
-          pode reforçá-la depois em "Treinar sinais".
+          {instalado
+            ? 'O modelo pronto já está instalado e reconhece as letras sem treino. Se preferir, ' +
+              'treine do zero só com a sua mão; o modelo pronto pode voltar depois.'
+            : 'O modelo pronto reconhece as letras sem treino. Se alguma letra falhar com a sua ' +
+              'mão, você pode reforçá-la depois em "Treinar sinais".'}
         </Text>
         <div className="acoes">
           <Button className="botao-marca" onClick={acoesTreino.usarPadrao}>
