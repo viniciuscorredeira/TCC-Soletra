@@ -15,7 +15,7 @@
  * @typedef {object} Plataforma
  * @property {string} id
  * @property {string} nome
- * @property {string} [descricao]  linha de apoio, só no destino genérico
+ * @property {string} [descricao]  o que se encontra lá, em poucas palavras
  * @property {string} [icone]      caminho do PNG da marca, relativo à raiz
  * @property {string} [glifo]      SVG inline, para quem não tem logo
  * @property {string} [cor]        cor do ladrilho quando há glifo
@@ -28,30 +28,35 @@ export const PLATAFORMAS = [
   {
     id: 'google',
     nome: 'Google',
+    descricao: 'Páginas da web',
     icone: 'icons/plataformas/google.png',
     url: (q) => `https://www.google.com/search?q=${q}`
   },
   {
     id: 'youtube',
     nome: 'YouTube',
+    descricao: 'Vídeos',
     icone: 'icons/plataformas/youtube.png',
     url: (q) => `https://www.youtube.com/results?search_query=${q}`
   },
   {
     id: 'maps',
     nome: 'Maps',
+    descricao: 'Lugares e endereços',
     icone: 'icons/plataformas/maps.png',
     url: (q) => `https://www.google.com/maps/search/?api=1&query=${q}`
   },
   {
     id: 'amazon',
     nome: 'Amazon',
+    descricao: 'Produtos à venda',
     icone: 'icons/plataformas/amazon.png',
     url: (q) => `https://www.amazon.com.br/s?k=${q}`
   },
   {
     id: 'wikipedia',
     nome: 'Wikipédia',
+    descricao: 'Artigos de enciclopédia',
     icone: 'icons/plataformas/wikipedia.png',
     url: (q) => `https://pt.wikipedia.org/w/index.php?search=${q}`
   },
