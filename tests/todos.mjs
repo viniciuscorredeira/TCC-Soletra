@@ -16,6 +16,7 @@ const SUITES = [
   'montar-modelo-padrao.test.mjs',
   'search-targets.test.mjs',
   'migracao-storage.test.mjs',
+  'respingo.test.mjs',
   'integracao.test.mjs'
 ];
 

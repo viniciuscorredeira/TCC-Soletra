@@ -10,7 +10,8 @@
  * cache: se o navegador o apagar ou bloquear, a página abre no tema do sistema e
  * corrige assim que o chrome.storage responder.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { trocarComTinta } from './transicao-tema.js';
 
 const CHAVE = 'soletra.tema';
 
@@ -63,6 +64,9 @@ export function aplicarTemaInicial() {
 export function useTema() {
   const [tema, setTema] = useState(lerEspelho);
   const [sistemaEscuro, setSistemaEscuro] = useState(midiaEscura.matches);
+  // Os ouvintes abaixo são registrados uma vez; leem o tema atual por aqui.
+  const temaAtual = useRef(tema);
+  temaAtual.current = tema;
 
   useEffect(() => {
     let vivo = true;
@@ -78,14 +82,19 @@ export function useTema() {
 
     const aoMudarStorage = (mudancas, area) => {
       const novo = mudancas[CHAVE]?.newValue;
-      if (area === 'local' && valido(novo)) {
-        setTema(novo);
+      // A página que fez a troca também recebe o aviso, e lá a tinta já está
+      // correndo: outra transição agora a interromperia.
+      if (area === 'local' && valido(novo) && novo !== temaAtual.current) {
+        trocarComTinta(() => setTema(novo));
         espelhar(novo);
       }
     };
     chrome.storage.onChanged.addListener(aoMudarStorage);
 
-    const aoMudarSistema = (e) => setSistemaEscuro(e.matches);
+    const aoMudarSistema = (e) => {
+      if (temaAtual.current === 'sistema') trocarComTinta(() => setSistemaEscuro(e.matches));
+      else setSistemaEscuro(e.matches);
+    };
     midiaEscura.addEventListener('change', aoMudarSistema);
 
     return () => {
@@ -96,12 +105,18 @@ export function useTema() {
   }, []);
 
   const aparencia = resolver(tema, sistemaEscuro);
-  useEffect(() => aplicarNaRaiz(aparencia), [aparencia]);
+  // De layout, e não comum: a transição de tema fotografa a página nova logo
+  // depois do flushSync, e a classe da raiz já precisa estar trocada.
+  useLayoutEffect(() => aplicarNaRaiz(aparencia), [aparencia]);
 
-  /** @param {Tema} novo */
-  function definir(novo) {
-    if (!valido(novo)) return;
-    setTema(novo);
+  /**
+   * @param {Tema} novo
+   * @param {Element | null} [origem] o botão de tema, de onde a tinta parte
+   */
+  function definir(novo, origem = null) {
+    if (!valido(novo) || novo === tema) return;
+    if (resolver(novo, sistemaEscuro) === aparencia) setTema(novo);
+    else trocarComTinta(() => setTema(novo), origem);
     espelhar(novo);
     chrome.storage.local.set({ [CHAVE]: novo }).catch(() => {});
   }

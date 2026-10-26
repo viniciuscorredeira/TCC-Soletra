@@ -44,14 +44,22 @@ body[data-modo="aba"] .app { width: 100%; max-width: 760px; margin-inline: auto;
 
 /* --- Topo ----------------------------------------------------------------- */
 
-/* Faixa da marca: o degradê da logo, do azul profundo ao azul-céu da lupa.
-   Igual nos dois temas — é a assinatura visual do produto. */
+/* Faixa da marca: no claro, o degradê da logo, do azul profundo ao azul-céu
+   da lupa; no escuro, o petróleo de ui/marca.css. O conteúdo é branco nos dois. */
 .topo {
   padding: 10px 12px;
   border-radius: var(--radius-4);
   background: var(--marca-degrade-faixa);
   box-shadow: var(--marca-brilho);
   color: #fff;
+}
+/* No escuro, a sombra azul longa virava uma mancha clara sobre o fundo: fica
+   curta, e um fio claro por dentro descola a faixa do fundo quase do mesmo tom. */
+.radix-themes:is(.dark, .dark-theme) .topo {
+  background: var(--marca-degrade-faixa-escura);
+  box-shadow:
+    0 8px 20px -10px rgb(0 130 170 / 45%),
+    inset 0 0 0 1px rgb(120 220 255 / 10%);
 }
 
 .topo__titulo { letter-spacing: -0.01em; color: #fff; }
@@ -66,6 +74,8 @@ body[data-modo="aba"] .app { width: 100%; max-width: 760px; margin-inline: auto;
   box-shadow: 0 2px 6px rgb(0 20 80 / 25%);
 }
 .topo__selo img { display: block; }
+/* Branco puro acendia demais ao lado da faixa escura; o azulado mantém as mãos legíveis. */
+.radix-themes:is(.dark, .dark-theme) .topo__selo { background: #e6f6ff; }
 
 /* Sobre a faixa, o selo de estado e o botão de tema viram brancos; só o ponto
    do selo guarda a cor do estado, em tons claros que se leem sobre o azul. */

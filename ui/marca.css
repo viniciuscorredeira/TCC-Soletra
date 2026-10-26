@@ -23,6 +23,9 @@ body { margin: 0; background: var(--slate-1); }
   --marca-degrade: linear-gradient(135deg, #0040e0 0%, #0060ff 55%, #0090ff 100%);
   --marca-degrade-faixa: linear-gradient(120deg, #0036c8 0%, #0060ff 50%, #00b4fc 100%);
   --marca-brilho: 0 6px 18px -6px rgb(0 96 255 / 55%);
+  /* No escuro, o azul-vivo da faixa gritava sobre o azul-marinho: lá ela vira
+     petróleo, do marinho fechado a um ciano escuro, no peso do fundo. */
+  --marca-degrade-faixa-escura: linear-gradient(120deg, #06172c 0%, #0a2f4f 50%, #0b5566 100%);
 }
 
 /* Fundo da página: o azul e o azul-céu da logo se espalham do alto e se
@@ -42,6 +45,22 @@ body { margin: 0; background: var(--slate-1); }
     0 0 0 1px var(--blue-a4),
     0 1px 2px rgb(16 40 90 / 6%),
     0 10px 28px -14px rgb(0 60 200 / 28%);
+}
+
+/* Troca de tema (ui/transicao-tema.js). O script anima o recorte da página
+   nova e a antiga fica parada embaixo: o esmaecer padrão do navegador
+   desbotaria as duas no meio do caminho. */
+:root[data-troca="tinta"]::view-transition-old(root),
+:root[data-troca="tinta"]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Ícone do botão de tema: o novo entra girando, para a troca não depender só da cor. */
+.icone-tema--girar { animation: icone-tema-girar 0.8s cubic-bezier(.25, .8, .25, 1); }
+@keyframes icone-tema-girar {
+  from { transform: rotate(-180deg) scale(0.3); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 
 .botao-marca:where(:not(:disabled)) {
