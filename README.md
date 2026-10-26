@@ -53,9 +53,9 @@ Câmera → MediaPipe HandLandmarker → 21 pontos (x,y,z)
        → text-box → Pesquisar → escolha da plataforma
 ```
 
-O botão **Pesquisar** abre um seletor com seis destinos: uma grade com as cinco marcas, em
-**ordem alfabética** (Amazon, Google, Maps, Wikipédia e YouTube), e, separado abaixo dela, o
-buscador padrão do navegador. A ordem é aplicada em `MARCAS`, não no catálogo, para que uma
+O botão **Pesquisar** abre um seletor com seis destinos: uma lista com as cinco marcas, em
+**ordem alfabética** (Amazon, Google, Maps, Wikipédia e YouTube), cada uma com a logo e o que se
+encontra lá, e, num grupo à parte abaixo dela, o buscador padrão do navegador. A ordem é aplicada em `MARCAS`, não no catálogo, para que uma
 plataforma nova já entre no lugar certo. Nas cinco marcas o termo vai embutido na URL
 de busca; no buscador padrão ele é entregue a `chrome.search.query`, porque só o navegador sabe
 qual é esse buscador. Nada é enviado antes da escolha: fechar o seletor não dispara pesquisa nenhuma.

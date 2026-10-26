@@ -549,12 +549,13 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 #### RF39 — Plataformas em ordem alfabética ✅
 
-- **Sistema:** a grade mostra as marcas em ordem alfabética: **Amazon, Google, Maps, Wikipédia e
-  YouTube**. Uma plataforma acrescentada no futuro entra automaticamente na posição certa.
+- **Sistema:** uma lista mostra as marcas em ordem alfabética: **Amazon, Google, Maps, Wikipédia e
+  YouTube**, cada uma com a logo e o que se encontra lá (ex.: "YouTube — Vídeos"). Uma plataforma
+  acrescentada no futuro entra automaticamente na posição certa.
 
 #### RF40 — Buscador padrão do navegador ✅
 
-- **Usuário:** escolhe **Buscador padrão**, abaixo da grade.
+- **Usuário:** escolhe **Buscador padrão**, num grupo à parte abaixo da lista.
 - **Sistema:** pesquisa no buscador configurado no navegador (Google, Bing, DuckDuckGo etc.),
   que só o próprio navegador conhece.
 
@@ -1742,6 +1743,7 @@ Em ordem de prioridade para o TCC:
 | 26/10/2026 | `3c02291` | Versão 0.3.0; tema incluído nas preferências da política de privacidade |
 | 26/10/2026 | `d76db1f` | Modelo pronto instalado e calibrado junto com a extensão, sem depender do cartão de boas-vindas |
 | 26/10/2026 | `1ebb0ab` | Cartão de boas-vindas mantido na primeira abertura: com o modelo pronto já instalado, "Usar modelo pronto" o mantém e "Treinar do zero" tira só o padrão |
+| 26/10/2026 | `c6dcfa3` | Seletor "Onde pesquisar?" redesenhado como lista agrupada no padrão do Radix, com o que se encontra em cada plataforma |
 
 ---
 
