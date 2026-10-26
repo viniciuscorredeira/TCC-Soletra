@@ -18,14 +18,12 @@ import { TextComposer } from './text-composer.js';
 import { SignModelStore, AMOSTRAS_RECOMENDADAS, VERSAO_CALIBRACAO } from './sign-model-store.js';
 import { CONJUNTO_PADRAO, classesDoConjunto } from './sign-classes.js';
 import { TravaMao } from './trava-mao.js';
+import { lerModeloPadrao, calibrarModelo, instalarModeloPronto } from './modelo-pronto.js';
 
 /** @typedef {'desligado'|'carregando'|'pronto'|'reconhecendo'|'treinando'|'erro'} EstadoReconhecimento */
 
 const CHAVE_TEXTO = 'soletra.texto';
 const CHAVE_PREFS = 'soletra.reconhecimento.prefs';
-
-/** Modelo padrão empacotado na extensão — gerado por tools/montar-modelo-padrao.mjs. */
-const CAMINHO_MODELO_PADRAO = 'modelos/padrao.json';
 
 /** Intervalo entre amostras na captura de treino: amostras coladas no tempo
  *  são quase idênticas e inflam o modelo sem acrescentar variabilidade. */
@@ -107,7 +105,7 @@ export class SignRecognizer {
       if (sessao?.[CHAVE_TEXTO]) this.composer.definir(sessao[CHAVE_TEXTO]);
     } catch { /* idem */ }
 
-    this.padraoDisponivel = Boolean(await this._lerModeloPadrao());
+    this.padraoDisponivel = Boolean(await lerModeloPadrao());
     await this.recarregarModelo();
     this._emitir();
   }
@@ -342,12 +340,7 @@ export class SignRecognizer {
    * sobreviveria à troca de câmera ou de usuário.
    */
   async _recalibrar() {
-    const { classes } = await this.store.carregar();
-    const tauAbs = calibrarTauAbs(classes);
-    await this.store.atualizarParametros({
-      tauAbs: Number.isFinite(tauAbs) ? tauAbs : null,
-      versaoCalibracao: VERSAO_CALIBRACAO
-    });
+    await calibrarModelo(this.store);
     await this.recarregarModelo();
   }
 
@@ -376,31 +369,14 @@ export class SignRecognizer {
   }
 
   /**
-   * Lê o modelo padrão empacotado. Ausência não é erro: o arquivo só existe
-   * depois que alguém o gera com amostras de várias pessoas, e até lá a
-   * extensão funciona só com treino próprio, como antes.
-   * @returns {Promise<object|null>}
-   */
-  async _lerModeloPadrao() {
-    try {
-      const resposta = await fetch(chrome.runtime.getURL(CAMINHO_MODELO_PADRAO));
-      if (!resposta.ok) return null;
-      return await resposta.json();
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Instala o modelo padrão por baixo das amostras pessoais. τ_abs é sempre
-   * recalibrado sobre o conjunto final, e não lido do arquivo: o limiar
-   * depende da dispersão interna, que muda quando o treino pessoal se soma.
+   * Instala o modelo padrão por baixo das amostras pessoais (ver
+   * src/modelo-pronto.js, que o service worker também usa na instalação).
    */
   async instalarModeloPadrao() {
-    const objeto = await this._lerModeloPadrao();
+    const objeto = await lerModeloPadrao();
     if (!objeto) throw new Error('O modelo padrão não está disponível nesta versão da extensão.');
-    const r = await this.store.instalarPadrao(objeto);
-    await this._recalibrar();
+    const r = await instalarModeloPronto(this.store, objeto);
+    await this.recarregarModelo();
     return r;
   }
 
