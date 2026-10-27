@@ -237,11 +237,12 @@ body[data-modo="aba"] .app { width: 100%; max-width: 760px; margin-inline: auto;
   bottom: 9px;
   width: 12px;
   height: 12px;
-  color: var(--amber-11);
+  color: var(--green-11);
 }
 
-.anel[data-travado="true"] { --cor-anel: var(--amber-9); --cor-anel-fim: var(--amber-9); }
-.anel[data-travado="true"] .anel__caractere { color: var(--amber-11); font-size: 20px; margin-top: -6px; }
+/* Travado é a letra já confirmada: fica no verde do flash de confirmação. */
+.anel[data-travado="true"] { --cor-anel: var(--green-9); --cor-anel-fim: var(--green-9); }
+.anel[data-travado="true"] .anel__caractere { color: var(--green-11); font-size: 20px; margin-top: -6px; }
 .anel[data-vazio="true"] .anel__caractere { color: var(--gray-9); }
 .anel[data-bloqueado="true"] { --cor-anel: var(--red-9); --cor-anel-fim: var(--red-9); }
 .anel[data-bloqueado="true"] .anel__caractere { color: var(--red-11); }
