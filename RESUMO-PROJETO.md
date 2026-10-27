@@ -276,14 +276,14 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 - **Usuário:** mantém o sinal parado.
 - **Sistema:** a letra só é escrita quando vence a maioria dos quadros dos últimos 400 ms (pelo
   menos 55% deles e no mínimo 3) e se mantém por 700 ms. Ao confirmar, a letra entra no texto e o
-  anel pisca em verde.
+  anel pisca e fica verde.
 - **Exceções:** se a análise ficar parada por mais de meio segundo (painel escondido, câmera
   pausada), a votação recomeça do zero, para não confirmar um sinal feito antes da pausa.
 
 #### RF22 — Sem repetição acidental ✅
 
 - **Usuário:** continua segurando o mesmo sinal depois da confirmação.
-- **Sistema:** mostra um cadeado no anel e não escreve a letra de novo: segurar o M por três
+- **Sistema:** mantém o anel verde, com um cadeado, e não escreve a letra de novo: segurar o M por três
   segundos escreve "M", não "MMMM". A dica muda para "Relaxe a mão para repetir a mesma letra."
   Passar direto para **outra** letra confirma normalmente, sem pausa.
 
