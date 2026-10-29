@@ -42,8 +42,12 @@ async function instalarModeloInicial() {
     if (indice || incompativel) return;
     const objeto = await lerModeloPadrao();
     if (!objeto) return;
-    await instalarModeloPronto(store, objeto);
+    // A marca vem antes do modelo: um painel aberto durante a instalação leria
+    // "sem escolha pendente" e, logo depois, o modelo já cheio — e o cartão de
+    // boas-vindas não apareceria. Se a instalação falhar, a marca com o modelo
+    // vazio só mostra o cartão que apareceria de qualquer jeito.
     await chrome.storage.local.set({ [CHAVE_ESCOLHA_PENDENTE]: true });
+    await instalarModeloPronto(store, objeto);
   } catch (error) {
     // O painel ainda oferece o modelo pronto no cartão de boas-vindas.
     console.warn('[Soletra] falha ao instalar o modelo pronto:', error);
