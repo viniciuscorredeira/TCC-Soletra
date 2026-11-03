@@ -907,7 +907,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 111 cenários cobrem a lógica (e o gerador da tinta da troca de tema). Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
+| **Testes de interface** | Não atendido | Os 118 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -1380,6 +1380,7 @@ proveniência.
 | **Área de reconhecimento só com câmera ativa** | Sempre visível | Sem vídeo não há o que reconhecer nem treinar |
 | **Plataformas em ordem alfabética** | Ordem do catálogo | Previsibilidade; uma plataforma nova entra no lugar certo |
 | **React + Radix Themes, com build (Vite)** | JavaScript puro sem build (versão anterior) | Componentes acessíveis prontos (foco, teclado, leitor de tela), tema claro/escuro coerente e um visual único; a lógica em `src/` continua JavaScript puro, sem React, e testável em Node |
+| **Modo dev como segundo build do mesmo código** (`dist-dev/`) | Branch permanente ou projeto separado | Um código só: o que o modo dev mede é exatamente o que a produção roda. O código dele fica em `dev/` e só anda num sentido (dev/ importa o núcleo, nunca o contrário), o que dois testes conferem; apagar `dev/` não afeta a produção |
 | **Tema Sistema / Claro / Escuro** | Só seguir o sistema operacional | Quem usa o painel numa apresentação ou num ambiente claro precisa poder escolher; "Sistema" continua o padrão |
 | **Paleta gerada a partir da logo** | Uma cor pronta do Radix (blue, indigo) | Nenhuma é o azul da marca (#0060FF). As escalas são geradas mantendo a luminosidade de cada degrau do Radix, o que preserva os contrastes; o escuro vira azul-marinho e o claro, branco azulado. O azul-céu da lupa (#00B4FC) entra como cor secundária, para o tema claro não ficar só branco e azul |
 | **Português no código** | Inglês | Coerência com o domínio (Libras); exceção no código de câmera herdado da v0.1.0 |
@@ -1418,8 +1419,9 @@ escolha com o usuário.
 node tests/todos.mjs
 ```
 
-**111 cenários em 14 arquivos, todos passando** (26/10/2026), em Node puro, sem framework e sem
-dependências.
+**118 cenários em 16 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
+dependências. A exceção é `builds.test.mjs`, que usa o Vite (já instalado para o build) para
+gerar as duas versões numa pasta temporária.
 
 | Arquivo | Cenários | O que cobre |
 |---|---:|---|
@@ -1437,6 +1439,8 @@ dependências.
 | `integracao.test.mjs` | 6 | Pipeline completo de ponta a ponta |
 | `montar-modelo-padrao.test.mjs` | 5 | Montagem balanceada, redistribuição, amostras espalhadas, validação |
 | `respingo.test.mjs` | 4 | Tinta da troca de tema: mesmo número de pontos em todos os quadros, começa no botão, termina cobrindo a janela, tempos em ordem |
+| `builds.test.mjs` | 5 | Os dois builds: a produção não resolve módulos de `dev/`, o marcador dev nunca aparece em `dist/`, manifesto de produção intacto e o dev trocando só nome, descrição e título, ícones próprios, páginas nos caminhos do manifesto |
+| `regra-dev.test.mjs` | 2 | Nenhum arquivo do núcleo importa ou referencia `dev/`; o próprio detector acusa cada forma de referência |
 
 ### 17.2 Cenários que protegem contra erros silenciosos
 
@@ -1569,6 +1573,13 @@ formal antes da publicação.
 Durante o desenvolvimento, `npm run dev` recompila a cada alteração; depois de cada uma, clicar
 em ↻ no cartão da extensão e reabrir o painel.
 
+**Modo dev.** `npm run build:dev` gera `dist-dev/`, uma segunda extensão, **Soletra — Libras
+(Dev)**, com as ferramentas de diagnóstico e medição. Tem ícone com faixa laranja "DEV" e um selo
+"DEV" no painel, e pode ficar instalada ao lado da versão normal (carregar `dist/` e `dist-dev/`).
+Cada uma tem o próprio `chrome.storage`; o modelo passa de uma para a outra por **Exportar** e
+**Importar**. Com `npm run dev:all`, as duas recompilam a cada alteração, e a versão dev
+recarrega sozinha: o Chrome fecha o painel nessa hora, e um clique no ícone o reabre.
+
 > **Windows:** clonar o repositório numa pasta do usuário (ex.: `Documentos`). Pastas como
 > `C:\Program Files (x86)` são protegidas e o Git não consegue escrever nelas sem privilégio de
 > administrador.
@@ -1578,12 +1589,15 @@ em ↻ no cartão da extensão e reabrir o painel.
 ```
 npm install                              # dependências da interface (React, Radix UI, Vite)
 npm run build                            # compila a extensão em dist/
-npm run dev                              # recompila a cada alteração
-npm test                                 # suíte completa — 111 cenários (node tests/todos.mjs)
+npm run build:dev                        # compila o modo dev em dist-dev/
+npm run dev                              # recompila dist/ a cada alteração
+npm run dev:all                          # recompila dist/ e dist-dev/ (a dev recarrega sozinha)
+npm test                                 # suíte completa — 118 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 node tools/make-icons.mjs                # regenera os ícones da extensão
+node dev/tools/make-icons-dev.mjs        # regenera os ícones do modo dev (depois do anterior)
 node tools/gerar-paleta.mjs              # regenera ui/paleta.css a partir do azul da logo
 ```
 
@@ -1613,6 +1627,7 @@ manifest.json                   MV3: permissões sidePanel + storage + search; C
 .gitattributes                  impede o Git de alterar os bytes de vendor/ e modelos/
 background/service-worker.js    abre o painel (ou aba) no clique do ícone, executa a pesquisa e instala o modelo pronto na instalação
 package.json, vite.config.js    build da interface (React + Radix Themes) para dist/
+.github/workflows/ci.yml        testes e os dois builds a cada push
 permission/request.html|css     aba de autorização da câmera (Permissao.jsx)
 
 ui/tema.js, ui/SeletorTema.jsx  tema Sistema / Claro / Escuro, comum às duas páginas
@@ -1651,7 +1666,15 @@ modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
 tools/                          montagem do modelo pronto, verificação do vendor, PNG, ícones, logos
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
-tests/                          111 cenários; tests/todos.mjs roda todos
+tests/                          118 cenários; tests/todos.mjs roda todos
+
+dev/vite.config.js              build do modo dev para dist-dev/, a partir da configuração da produção
+dev/main.js, dev/panel.html     painel dev: importa o da produção e acrescenta o que é de dev/
+dev/service-worker.js           service worker dev: o da produção mais a recarga automática
+dev/recarga.js                  recarrega a versão dev depois de cada recompilação (só no --watch)
+dev/manifest.dev.json           nome, descrição e título trocados no manifesto da versão dev
+dev/icons/, dev/tools/          ícones com faixa "DEV" e o gerador deles
+dev/assistir-todos.mjs          npm run dev:all
 
 README.md                       visão técnica para desenvolvedores
 RESUMO-PROJETO.md               resumo para acompanhamento do TCC
@@ -1746,6 +1769,7 @@ Em ordem de prioridade para o TCC:
 | 26/10/2026 | `1ebb0ab` | Cartão de boas-vindas mantido na primeira abertura: com o modelo pronto já instalado, "Usar modelo pronto" o mantém e "Treinar do zero" tira só o padrão |
 | 26/10/2026 | `c6dcfa3` | Seletor "Onde pesquisar?" redesenhado como lista agrupada no padrão do Radix, com o que se encontra em cada plataforma |
 | 26/10/2026 | `8500144` | Seletor "Onde pesquisar?" com a faixa da marca no alto, cada plataforma realçada na própria cor e o buscador padrão em destaque |
+| 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 0: segundo build (`dist-dev/`) do mesmo código, com manifesto e ícones próprios e recarga automática; `npm run dev:all`; testes da separação entre os builds; CI no GitHub Actions |
 
 ---
 

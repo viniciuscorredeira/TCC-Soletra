@@ -239,9 +239,11 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-111 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+118 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
-que é uma função pura. Os módulos de lógica são todos
+que é uma função pura. A exceção é `tests/builds.test.mjs`, que usa o Vite (já instalado
+para o build) para gerar as duas versões numa pasta temporária e conferir a separação entre
+produção e modo dev (seção "Dois builds"). Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
 (`src/hand-landmarker.js`) é fino de propósito e validado pelo diagnóstico acima.
 
