@@ -6,7 +6,7 @@
 |---|---|
 | **Natureza** | Trabalho de Conclusão de Curso |
 | **Versão do produto** | 0.3.0 (`manifest.json`) |
-| **Documento atualizado em** | 22/10/2026 |
+| **Documento atualizado em** | 03/11/2026 |
 | **Repositório** | `github.com/viniciuscorredeira/TCC-Soletra` |
 | **Plataforma** | Extensão para Google Chrome e Microsoft Edge (Manifest V3), versão 114 ou superior |
 
@@ -857,7 +857,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 | RNF06 | **Robustez a câmera e resolução** | Normalização invariante a posição, escala e proporção da imagem; timestamp monotônico na troca de câmera | ✅ |
 | RNF07 | **Armazenamento dentro da quota** | 31 classes × 100 amostras ficam bem abaixo dos 10 MB do `storage.local`; o teto por classe impede o crescimento sem limite, e o uso é exibido por classe e no total, com aviso a partir de 80% (RF61, RF62) | ✅ |
 | RNF08 | **Testabilidade** | Lógica isolada em funções puras e classes com relógio injetado; só um módulo depende de WASM | ✅ |
-| RNF09 | **Sem dependências externas em execução** | Nada é baixado da rede: React e Radix UI são empacotados no build (Vite). A lógica em `src/` e os testes rodam em Node puro, sem dependências; `npm audit` sem vulnerabilidades (26/10/2026) | ✅ |
+| RNF09 | **Sem dependências externas em execução** | Nada é baixado da rede: React e Radix UI são empacotados no build (Vite). A lógica em `src/` e os testes rodam em Node puro, sem dependências; `npm audit` sem vulnerabilidades (03/11/2026) | ✅ |
 | RNF10 | **Acessibilidade básica** | Rótulos ARIA, região `aria-live` para mensagens, foco gerenciado nos modais, navegação por teclado no seletor | ⚠️ |
 | RNF11 | **Conformidade com a LGPD** | Consentimento, eliminação, portabilidade e política de privacidade (seção 18) | ⚠️ |
 | RNF12 | **Compatibilidade** | Chrome e Edge 114+ (Manifest V3) | ⚠️ |
@@ -876,8 +876,8 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 | **Sinais de palavras e frases da Libras** | Fora do escopo | O projeto trata da datilologia, não da língua completa, que tem sinais com movimento, expressão facial e duas mãos | O Soletra soletra; não traduz Libras | Trabalho de outra ordem de grandeza |
 | **Sinais com as duas mãos** | Não atendido | O detector é configurado para uma mão (`numHands: 1`) | Nenhum para o alfabeto manual, que usa uma mão | — |
 | **Detecção da mão dominante** | Atendido parcialmente (RF28) | A indicação de mão do MediaPipe pressupõe imagem espelhada, e webcams virtuais (Iriun, OBS, DroidCam) às vezes espelham na origem, sem como detectar | A mão errada trava a tradução; a inversão da câmera é marcada pelo usuário, uma vez por câmera (RF46) | Perguntar a marcação na primeira vez que cada câmera nova é usada: uma imagem espelhada é geometricamente idêntica à da outra mão, então não há como inferi-la do quadro |
-| **Avaliação formal de acurácia** | Não atendido | Não há matriz de confusão nem avaliação leave-one-out | O TCC **não tem números de acurácia** medidos; os pares que colidem (O≡0, V≡2, W≡3) são supostos, não medidos | `src/sign-eval.js` (previsto, não implementado) |
-| **Generalização do modelo pronto** | Não validado (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`) | Pode falhar com mãos diferentes da do autor, sem erro aparente | Coletar exports de colegas e voluntários e regenerar com a ferramenta de montagem |
+| **Avaliação de acurácia** | Atendido para o modelo parado | Validação em blocos com matriz de confusão, razão, corte e rigor (`tools/medir-modelo.mjs` e "Medir o modelo" no modo dev): letras 93,4%, números 92,0% e juntos 87,5% com blocos de 17 | As confusões entre letras e números medidas são O→0 (26) e 8→S (20). O uso ao vivo ainda não foi medido com participantes | Rodar o teste de sinais do modo dev com participantes e registrar os resultados no TCC |
+| **Generalização do modelo pronto** | Não validado (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`) | Pode falhar com mãos diferentes da do autor, sem erro aparente | Medir com a mão de outra pessoa: o treino pessoal dela comparado com o modelo pronto, em "Medir o modelo" (modo dev). Depois, coletar exports com consentimento e regenerar com a ferramenta de montagem |
 | **Velocidade de soletração** | Limitação de projeto | Cada letra exige ~700 ms de permanência mais a votação, para evitar letras falsas a cada tremor | Soletração mais lenta que a natural | Ajuste "Rápido" (450 ms) já disponível |
 
 ### 7.2 Plataforma e interface
@@ -909,7 +909,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 |---|---|---|
 | **Testes de interface** | Não atendido | Os 144 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
-| **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
+| **Consentimento escrito do autor** | Pendente (RNF11) | O `PRIVACY.md` afirma que o autor que gravou o modelo pronto consentiu com a distribuição das amostras. Esse consentimento precisa ser **registrado por escrito** e anexado ao TCC, assim como o de quem contribuir no futuro |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
 | **Nomenclatura mista** | Menor | O código de câmera herdado da v0.1.0 usa nomes em inglês (`CameraController`, `showMessage`); o resto, português |
 
@@ -1757,7 +1757,9 @@ PRIVACY.md                      política de privacidade
 DOCUMENTACAO-COMPLETA.md        este documento
 ```
 
-Total de código próprio: cerca de **8.690 linhas**, incluindo testes e ferramentas.
+Total de código próprio, sem contar linhas em branco e incluindo testes e ferramentas: cerca de
+**15,3 mil linhas**, das quais 4,5 mil são do modo dev (`dev/`). A extensão descrita no TCC, antes
+do modo dev, tinha **cerca de 9 mil** (8,9 mil no commit `c9ae141`).
 
 ---
 
@@ -1792,9 +1794,10 @@ Total de código próprio: cerca de **8.690 linhas**, incluindo testes e ferrame
 
 Em ordem de prioridade para o TCC:
 
-1. **Avaliação formal de acurácia** (`src/sign-eval.js`): matriz de confusão e validação
-   leave-one-out, incluindo a acurácia do modelo pronto em quem não participou do treino. É o
-   resultado quantitativo que o trabalho ainda não tem.
+1. **Medir a generalização com participantes:** o treino pessoal de quem não gravou o modelo
+   pronto comparado com ele, em "Medir o modelo" (modo dev), e o teste de sinais ao vivo. A
+   avaliação do modelo parado já existe (`tools/medir-modelo.mjs`, seção 11.5); falta a de
+   outras mãos.
 2. **Modelo pronto com várias pessoas**, com consentimento por escrito, regenerado pela
    ferramenta de montagem.
 3. **Opção "Mesclar" na importação**, que o armazenamento já suporta.
@@ -1844,12 +1847,16 @@ Em ordem de prioridade para o TCC:
 | 26/10/2026 | `1ebb0ab` | Cartão de boas-vindas mantido na primeira abertura: com o modelo pronto já instalado, "Usar modelo pronto" o mantém e "Treinar do zero" tira só o padrão |
 | 26/10/2026 | `c6dcfa3` | Seletor "Onde pesquisar?" redesenhado como lista agrupada no padrão do Radix, com o que se encontra em cada plataforma |
 | 26/10/2026 | `8500144` | Seletor "Onde pesquisar?" com a faixa da marca no alto, cada plataforma realçada na própria cor e o buscador padrão em destaque |
-| 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 0: segundo build (`dist-dev/`) do mesmo código, com manifesto e ícones próprios e recarga automática; `npm run dev:all`; testes da separação entre os builds; CI no GitHub Actions |
-| 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 1: canal genérico de observação dos quadros no reconhecedor (sem custo sem assinantes); esqueleto da mão sobre o vídeo e painel de diagnóstico ao vivo na versão dev |
-| 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 2: teste de sinais com relatório unitário (um sinal) e geral (letra por letra, número por número), rodadas de tempo fixo, exportação em JSON com metadados e SHA-256 do modelo; ranking do classificador com todas as classes quando observado |
-| 03/11/2026 | branch `feature/modo-dev` | Teste de sinais: rodada que começa quando o sinal pedido é reconhecido (com tempo máximo de espera e o resultado "não reconhecido"), contagem como opção; exportação em JSON, Excel (.xlsx), PDF (impressão do navegador) e CSV |
-| 03/11/2026 | branch `feature/modo-dev` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
-| 03/11/2026 | branch `feature/modo-dev` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
+| 27/10/2026 | `8807ed0` | Anel verde mantido enquanto a letra confirmada está travada |
+| 29/10/2026 | `c9ae141` | Correção: a escolha inicial ("Como você quer começar?") é marcada antes de instalar o modelo pronto, para o cartão aparecer mesmo com o painel aberto durante a instalação |
+| 03/11/2026 | `fba0c1d` a `68db9b0` | Modo dev, etapa 0: segundo build (`dist-dev/`) do mesmo código, com manifesto e ícones próprios e recarga automática; `npm run dev:all`; testes da separação entre os builds; CI no GitHub Actions |
+| 03/11/2026 | `ea535a6` a `9bb2923` | Modo dev, etapa 1: canal genérico de observação dos quadros no reconhecedor (sem custo sem assinantes); esqueleto da mão sobre o vídeo e painel de diagnóstico ao vivo na versão dev |
+| 03/11/2026 | `12f70e8` a `51d1498` | Modo dev, etapa 2: teste de sinais com relatório unitário (um sinal) e geral (letra por letra, número por número), rodadas de tempo fixo, exportação em JSON com metadados e SHA-256 do modelo; ranking do classificador com todas as classes quando observado |
+| 03/11/2026 | `adb77ee` a `b9fa334` | Teste de sinais: rodada que começa quando o sinal pedido é reconhecido (com tempo máximo de espera e o resultado "não reconhecido"), contagem como opção; exportação em JSON, Excel (.xlsx), PDF (impressão do navegador) e CSV |
+| 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
+| 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
+| 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
+| 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 
 ---
 

@@ -103,8 +103,9 @@ classificador quadro-a-quadro não representa trajetória, e fingir que represen
 confusão sistemática em vez de erro honesto. A extensão avisa isso na interface, e a text-box
 aceita edição manual para completá-las.
 
-Letras e números compartilham configurações de mão (O≡0, V≡2, W≡3), por isso os dois conjuntos
-nunca são classificados juntos — um seletor no painel alterna entre eles.
+Letras e números compartilham configurações de mão (no modelo pronto, O se confunde com 0 e 8
+com S), por isso os dois conjuntos nunca são classificados juntos — um seletor no painel
+alterna entre eles.
 
 ### Como digitar letra dupla
 
@@ -642,8 +643,9 @@ gravação nem transmissão."*
 
 - **Letras dinâmicas (H, J, K, X, Z e o Ç)** — exigem um segundo pipeline com componente
   temporal: buffer de landmarks e classificador de sequência, com dataset próprio.
-- **Matriz de confusão e avaliação leave-one-out** (`src/sign-eval.js`) — para medir quais
-  pares de configurações realmente colidem, em vez de supor que são só O≡0 e V≡2.
+- **Medir com outras mãos** — a matriz de confusão e a validação em blocos já existem
+  (`tools/medir-modelo.mjs`); falta medir o modelo pronto com quem não o gravou, pela comparação
+  em "Medir o modelo" no modo dev.
 - **Ablação da normalização** — rotação ligada versus desligada, peso do eixo z, e o efeito de
   acrescentar as distâncias ponta-de-dedo→punho ao vetor (`VERSAO_FEATURES` 2).
 - Captura em segundo plano via `offscreen` document, para manter o modelo quente entre

@@ -1,6 +1,6 @@
 # Política de Privacidade — Soletra
 
-**Versão 0.3.0 — última atualização: 26/10/2026**
+**Versão 0.3.0 — última atualização: 03/11/2026**
 
 ## Resumo
 
@@ -38,10 +38,10 @@ O reconhecimento e o treino só ficam disponíveis com a câmera **ligada**: a �
 câmera é parada. Em "Treinar sinais", o painel mostra quanto espaço cada letra ou número ocupa
 e o uso total do armazenamento local, para o usuário saber o que está guardado no dispositivo.
 
-O modelo pronto contém amostras de **voluntários**, não do usuário. Elas vêm dentro do pacote da
-extensão e não são baixadas de lugar nenhum. Escolher usá-lo não envia nada do dispositivo. Os
-voluntários consentiram com a distribuição das suas amostras, que não trazem nome nem qualquer
-identificador: cada arquivo de origem só é identificado pela ordem em que foi juntado.
+O modelo pronto contém amostras gravadas por **um dos autores** do projeto, não do usuário. Elas
+vêm dentro do pacote da extensão e não são baixadas de lugar nenhum. Escolher usá-lo não envia
+nada do dispositivo. O autor consentiu com a distribuição das suas amostras, que não trazem nome
+nem qualquer identificador.
 
 Não há coleta de dados de navegação, histórico, credenciais, localização ou áudio. A extensão
 não declara `host_permissions` e não executa content scripts em páginas visitadas.
