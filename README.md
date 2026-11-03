@@ -208,7 +208,7 @@ confusões), a razão vencedora/segunda nos acertos e nos erros, o que os cortes
 0,90, 0,97 e 0,99 fariam, o efeito do rigor (Tolerante, Normal e Exigente, com limiar e razão
 como na extensão), o limiar calculado e os pares de classes mais próximos. Com `--comparar`,
 também treina com um modelo e testa com o outro, para saber o quanto um modelo serve à mão de
-quem não o gravou. Sai uma tabela no terminal, com vírgula decimal, e um JSON em `medicoes/`
+quem não está nas amostras dele. Sai uma tabela no terminal, com vírgula decimal, e um JSON em `medicoes/`
 com data, commit e SHA-256 do modelo (o mesmo dos relatórios do teste de sinais). A mesma
 medição roda no painel da versão dev, sem terminal (seção "Medir o modelo (dev)", abaixo).
 
@@ -233,23 +233,24 @@ decide é o voto e a razão. Os pares mais próximos são S/8, O/0, R/U, F/T, D/
 ### Teste com participantes (`Planilhas de Testes/`)
 
 Em 03/11/2026, três pessoas fizeram o **Teste de sinais (relatório geral)** do modo dev: os 31
-sinais, 3 rodadas cada, com o modelo pronto sem treino pessoal, rigor Normal e confirmação em
-700 ms. As planilhas exportadas, uma por participante e uma com as médias, estão em
+sinais, 3 rodadas cada, todos com o mesmo modelo pronto, sem treino pessoal, rigor Normal e
+confirmação em 700 ms. As planilhas exportadas, uma por participante e uma com as médias, estão em
 `Planilhas de Testes/`.
 
 | Resultado | Vinicius (P1) | Lucas (P2) | Raul (P3) | Os três (279 rodadas) |
 |---|---:|---:|---:|---:|
-| Gravou o modelo pronto | sim | não | não | — |
+| Mão nas amostras do modelo pronto | sim | não | não | — |
 | Acerto por rodada | 94,6% | 95,7% | 93,5% | **94,6%** (264) |
 | Troca · não reconhecido | 4 · 1 | 4 · 0 | 5 · 1 | 13 · 2 |
 | Acerto por quadro | 97,5% | 98,3% | 97,0% | **97,4%** |
 | Tempo até reconhecer (mediana) | 2,76 s | 3,56 s | 2,51 s | 3,00 s |
 
-Quem não gravou o modelo pronto acertou tanto quanto o autor (94,6% das rodadas). As letras
-ficaram em 95,8% e os números em 92,2%, que erram ao passar por outro número até formar o
-pedido. Nenhum quadro foi rejeitado por distância, só por ambiguidade. As condições não foram
-iguais (câmera, luz, distância e duração da rodada), e três pessoas são uma amostra pequena; os
-detalhes e os cuidados ao citar estão na seção 17.6 da `DOCUMENTACAO-COMPLETA.md`.
+Os três usaram o mesmo modelo pronto, cujas amostras são da mão do Vinicius. Lucas e Raul, cuja
+mão não está nele, acertaram tanto quanto o autor (94,6% das rodadas). As letras ficaram em
+95,8% e os números em 92,2%, que erram ao passar por outro número até formar o pedido. Nenhum
+quadro foi rejeitado por distância, só por ambiguidade. As condições não foram iguais (câmera,
+luz, distância e duração da rodada), e três pessoas são uma amostra pequena; os detalhes e os
+cuidados ao citar estão na seção 17.6 da `DOCUMENTACAO-COMPLETA.md`.
 
 ## MediaPipe vendorizado e a CSP do Manifest V3
 

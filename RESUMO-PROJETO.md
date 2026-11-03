@@ -600,9 +600,9 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 - **Sistema:** a extensão traz um modelo com 31 classes (21 letras e 10 números) e 50 amostras
   por classe, que funciona sem treino e sem baixar nada.
-- **Ressalva:** o modelo atual foi gravado por **uma pessoa só**. No teste com participantes,
-  duas pessoas que não o gravaram acertaram 94,6% das rodadas, como o autor (seção 8.5), mas
-  ainda é uma amostra pequena (seção 5.1).
+- **Ressalva:** as amostras do modelo atual são da mão de **uma pessoa só**. No teste com
+  participantes, duas pessoas cuja mão não está no modelo acertaram 94,6% das rodadas, como o
+  autor das amostras (seção 8.5), mas ainda é uma amostra pequena (seção 5.1).
 
 #### RF65 — Reforçar uma letra do modelo pronto ✅
 
@@ -727,7 +727,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 | **Sinais com as duas mãos** | Não atendido | O detector é configurado para uma mão (`numHands: 1`) | Nenhum para o alfabeto manual, que usa uma mão | — |
 | **Detecção da mão dominante** | Atendido parcialmente (RF28) | A indicação de mão do MediaPipe pressupõe imagem espelhada, e webcams virtuais (Iriun, OBS, DroidCam) às vezes espelham na origem, sem como detectar | A mão errada trava a tradução; a inversão da câmera é marcada pelo usuário, uma vez por câmera (RF46) | Perguntar a marcação na primeira vez que cada câmera nova é usada: uma imagem espelhada é geometricamente idêntica à da outra mão, então não há como inferi-la do quadro |
 | **Avaliação de acurácia** | Atendido (modelo parado e teste com 3 participantes) | Validação em blocos com matriz de confusão, razão, corte e rigor (`tools/medir-modelo.mjs` e "Medir o modelo" no modo dev): letras 93,4%, números 92,0% e juntos 87,5% com blocos de 17. Ao vivo, com o teste de sinais: 94,6% das rodadas e 97,4% dos quadros (seção 8.5) | As confusões entre letras e números medidas são O→0 (26) e 8→S (20). O teste ao vivo teve só 3 participantes, em condições diferentes | Ampliar o teste com mais participantes e condições controladas |
-| **Generalização do modelo pronto** | Verificado com 2 pessoas (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`). No teste com participantes, duas pessoas que não o gravaram acertaram 94,6% das rodadas, o mesmo que o autor (seção 8.5) | Duas pessoas ainda são pouco para afirmar que o modelo serve a qualquer mão | Testar com mais pessoas, fora da equipe; coletar exports com consentimento e regenerar com a ferramenta de montagem |
+| **Generalização do modelo pronto** | Verificado com 2 pessoas (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`). No teste com participantes, os três usaram o modelo pronto, e as duas pessoas cuja mão não está nas amostras dele acertaram 94,6% das rodadas, o mesmo que o autor das amostras (seção 8.5) | Duas pessoas ainda são pouco para afirmar que o modelo serve a qualquer mão | Testar com mais pessoas, fora da equipe; coletar exports com consentimento e regenerar com a ferramenta de montagem |
 | **Velocidade de soletração** | Limitação de projeto | Cada letra exige ~700 ms de permanência mais a votação, para evitar letras falsas a cada tremor | Soletração mais lenta que a natural | Ajuste "Rápido" (450 ms) já disponível |
 
 ### 5.2 Plataforma e interface
@@ -759,7 +759,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 |---|---|---|
 | **Testes de interface** | Não atendido | Os 144 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
-| **Consentimento escrito do autor** | Pendente (RNF11) | O `PRIVACY.md` afirma que o autor que gravou o modelo pronto consentiu com a distribuição das amostras. Esse consentimento precisa ser **registrado por escrito** e anexado ao TCC, assim como o de quem contribuir no futuro |
+| **Consentimento escrito do autor** | Pendente (RNF11) | O `PRIVACY.md` afirma que o autor que gravou as amostras do modelo pronto consentiu com a distribuição das amostras. Esse consentimento precisa ser **registrado por escrito** e anexado ao TCC, assim como o de quem contribuir no futuro |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
 | **Nomenclatura mista** | Menor | O código de câmera herdado da v0.1.0 usa nomes em inglês (`CameraController`, `showMessage`); o resto, português |
 
@@ -959,7 +959,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 |---|---|
 | Suíte de testes | **144 cenários em 19 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
 | Medição do modelo pronto | Acerto por validação em blocos de 17 / 25: **letras 93,4% / 93,0%, números 92,0% / 90,2%, juntos 87,5% / 85,8%**; rigor Normal nas letras: 93,0% de acerto, 5,1% de rejeição, 1,8% de erros que passam (`npm run medir-modelo`, `medicoes/medir-modelo-padrao.json`, 03/11/2026) |
-| Teste com participantes | **94,6% das rodadas** (264 de 279) e **97,4% dos quadros**, com 3 participantes e o modelo pronto; quem não o gravou acertou o mesmo que o autor (seção 8.5, `Planilhas de Testes/`) |
+| Teste com participantes | **94,6% das rodadas** (264 de 279) e **97,4% dos quadros**, com 3 participantes e o modelo pronto; quem não tem a mão nas amostras dele acertou o mesmo que o autor delas (seção 8.5, `Planilhas de Testes/`) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
 | Integridade do vendor | **4/4 arquivos íntegros** (`node tools/verificar-vendor.mjs`), inclusive em clone no Windows |
@@ -1023,19 +1023,19 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 ### 8.5 Teste com participantes
 
 Teste de sinais (relatório geral) do modo dev, em 03/11/2026: três participantes, os 31 sinais,
-3 rodadas cada (279 rodadas), com o modelo pronto sem treino pessoal, rigor Normal e confirmação
-em 700 ms. As planilhas estão em `Planilhas de Testes/` (uma por participante e uma de médias).
+3 rodadas cada (279 rodadas), todos com o mesmo modelo pronto, sem treino pessoal, rigor Normal
+e confirmação em 700 ms. As amostras do modelo pronto são da mão do Vinicius. As planilhas estão em `Planilhas de Testes/` (uma por participante e uma de médias).
 
 | Resultado | Vinicius (P1) | Lucas (P2) | Raul (P3) | Os três (279 rodadas) |
 |---|---:|---:|---:|---:|
-| Gravou o modelo pronto | sim | não | não | — |
+| Mão nas amostras do modelo pronto | sim | não | não | — |
 | Acerto por rodada | 94,6% | 95,7% | 93,5% | **94,6%** (264) |
 | Troca · não reconhecido | 4 · 1 | 4 · 0 | 5 · 1 | 13 · 2 |
 | Acerto por quadro | 97,5% | 98,3% | 97,0% | **97,4%** |
 | Tempo até reconhecer (mediana) | 2,76 s | 3,56 s | 2,51 s | 3,00 s |
 
-- **Generalização:** quem não gravou o modelo pronto (Lucas e Raul) acertou 94,6% das rodadas,
-  o mesmo que o autor (Vinicius).
+- **Generalização:** os três usaram o mesmo modelo pronto. Lucas e Raul, cuja mão não está nas
+  amostras dele, acertaram 94,6% das rodadas, o mesmo que o Vinicius, autor das amostras.
 - **Letras e números:** 95,8% e 92,2% das rodadas. Os números erram ao passar por outro número
   até formar o pedido (1→2, 3→2, 7→2…).
 - **Mais difíceis:** o 1 e o T por rodada; U, T, R e S por quadro. Nenhum quadro foi rejeitado por
@@ -1138,7 +1138,7 @@ Em ordem de prioridade para o TCC:
 
 1. **Ampliar o teste com participantes:** mais pessoas, de fora da equipe, com condições
    controladas. O primeiro teste, com 3 pessoas, deu 94,6% das rodadas e o mesmo acerto para
-   quem não gravou o modelo pronto (seção 8.5).
+   quem não tem a mão no modelo pronto (seção 8.5).
 2. **Coletar exports de várias pessoas**, com consentimento por escrito, e regenerar o
    `padrao.json`.
 3. **Opção "Mesclar" na importação**, que o armazenamento já suporta.
@@ -1196,7 +1196,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 | 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
-| 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 8.5): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não gravou o modelo pronto |
+| 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 8.5): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 
 ---
