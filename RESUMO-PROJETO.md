@@ -756,7 +756,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 129 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
+| **Testes de interface** | Não atendido | Os 131 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -939,7 +939,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 
 | Indicador | Resultado (26/10/2026) |
 |---|---|
-| Suíte de testes | **129 cenários em 18 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
+| Suíte de testes | **131 cenários em 18 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
 | Integridade do vendor | **4/4 arquivos íntegros** (`node tools/verificar-vendor.mjs`), inclusive em clone no Windows |
@@ -963,10 +963,10 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | `tests/modelo-pronto.test.mjs` | 3 |
 | `tests/respingo.test.mjs` | 4 |
 | `tests/builds.test.mjs` | 5 |
-| `tests/teste-sinais.test.mjs` | 7 |
+| `tests/teste-sinais.test.mjs` | 9 |
 | `tests/observacao.test.mjs` | 4 |
 | `tests/regra-dev.test.mjs` | 2 |
-| **Total** | **129** |
+| **Total** | **131** |
 
 ### 8.3 Cenários que travam erros silenciosos
 
@@ -1041,7 +1041,8 @@ painel dev, a seção **Diagnóstico (dev)** desenha a mão sobre o vídeo e mos
 classes mais próximas, a razão e o limiar efetivos, o estabilizador, a mão e a latência. A seção
 **Teste de sinais (dev)** gera um relatório unitário (um sinal, N rodadas de tempo fixo) ou geral
 (letra por letra, número por número), com acerto por quadro e por rodada, tempo até confirmar,
-confusões e matriz de confusão, exportado em JSON com os metadados da sessão.
+confusões e matriz de confusão. Cada rodada começa quando o sinal pedido é reconhecido (ou após
+uma contagem), e o resultado é exportado em JSON, Excel, PDF ou CSV, com os metadados da sessão.
 
 Se o vídeo estiver com atraso,
 desativar a aceleração de hardware do navegador (seção 5.3).
@@ -1052,7 +1053,7 @@ desativar a aceleração de hardware do navegador (seção 5.3).
 npm run build                            # compila a extensão em dist/
 npm run build:dev                        # compila o modo dev em dist-dev/
 npm run dev:all                          # recompila as duas a cada alteração
-npm test                                 # suíte completa — 129 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 131 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 ```
@@ -1144,6 +1145,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 0: segundo build (`dist-dev/`) do mesmo código, com manifesto e ícones próprios e recarga automática; `npm run dev:all`; testes da separação entre os builds; CI no GitHub Actions |
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 1: canal genérico de observação dos quadros no reconhecedor (sem custo sem assinantes); esqueleto da mão sobre o vídeo e painel de diagnóstico ao vivo na versão dev |
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 2: teste de sinais com relatório unitário (um sinal) e geral (letra por letra, número por número), rodadas de tempo fixo, exportação em JSON com metadados e SHA-256 do modelo; ranking do classificador com todas as classes quando observado |
+| 03/11/2026 | branch `feature/modo-dev` | Teste de sinais: rodada que começa quando o sinal pedido é reconhecido (com tempo máximo de espera e o resultado "não reconhecido"), contagem como opção; exportação em JSON, Excel (.xlsx), PDF (impressão do navegador) e CSV |
 
 ---
 

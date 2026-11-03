@@ -907,7 +907,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 129 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
+| **Testes de interface** | Não atendido | Os 131 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -1420,7 +1420,7 @@ escolha com o usuário.
 node tests/todos.mjs
 ```
 
-**129 cenários em 18 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
+**131 cenários em 18 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
 dependências. A exceção é `builds.test.mjs`, que usa o Vite (já instalado para o build) para
 gerar as duas versões numa pasta temporária.
 
@@ -1441,7 +1441,7 @@ gerar as duas versões numa pasta temporária.
 | `montar-modelo-padrao.test.mjs` | 5 | Montagem balanceada, redistribuição, amostras espalhadas, validação |
 | `respingo.test.mjs` | 4 | Tinta da troca de tema: mesmo número de pontos em todos os quadros, começa no botão, termina cobrindo a janela, tempos em ordem |
 | `builds.test.mjs` | 5 | Os dois builds: a produção não resolve módulos de `dev/`, o marcador dev nunca aparece em `dist/`, manifesto de produção intacto e o dev trocando só nome, descrição e título, ícones próprios, páginas nos caminhos do manifesto |
-| `teste-sinais.test.mjs` | 7 | Teste de sinais do modo dev: percentis, plano em ordem e sorteado (reproduzível), análise da rodada, sessão com pausar/repetir/pular/encerrar, relatórios unitário e geral, arquivo JSON e identidade do modelo |
+| `teste-sinais.test.mjs` | 9 | Teste de sinais do modo dev: percentis, plano em ordem e sorteado (reproduzível), análise da rodada, sessão com pausar/repetir/pular/encerrar, início ao reconhecer o sinal (espera, troca, não reconhecido), relatórios unitário e geral, arquivo JSON, planilha Excel (ZIP e XML conferidos), CSV e identidade do modelo |
 | `observacao.test.mjs` | 4 | Canal de observação: entrega e isola assinantes que falham; o ranking do classificador não muda a decisão; votos da líder no estabilizador; o reconhecedor só monta o quadro com assinantes |
 | `regra-dev.test.mjs` | 2 | Nenhum arquivo do núcleo importa ou referencia `dev/`; o próprio detector acusa cada forma de referência |
 
@@ -1588,7 +1588,7 @@ sinais (dev)** mede o reconhecimento no uso real: no modo **unitário**, um sina
 rodadas de tempo fixo; no **geral**, letra por letra e número por número. Cada rodada dá o acerto
 por quadro, o resultado pela primeira confirmação (acerto, troca, rejeição ou tempo esgotado), o
 tempo até confirmar, as confusões e a distribuição da razão e da distância; o relatório geral
-traz ainda a tabela por sinal e a matriz de confusão. Tudo é exportado num JSON com metadados
+traz ainda a tabela por sinal e a matriz de confusão. Cada rodada começa, por padrão, quando o sinal pedido é reconhecido (ou após uma contagem, como opção). Tudo é exportado em JSON, Excel, PDF ou CSV, com metadados
 (versão e commit, SHA-256 do modelo, navegador, câmera, ajustes, participante e condições), sem
 imagem nem pontos da mão. Com `npm run dev:all`, as duas recompilam a cada alteração, e a versão dev
 recarrega sozinha: o Chrome fecha o painel nessa hora, e um clique no ícone o reabre.
@@ -1605,7 +1605,7 @@ npm run build                            # compila a extensão em dist/
 npm run build:dev                        # compila o modo dev em dist-dev/
 npm run dev                              # recompila dist/ a cada alteração
 npm run dev:all                          # recompila dist/ e dist-dev/ (a dev recarrega sozinha)
-npm test                                 # suíte completa — 129 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 131 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
@@ -1681,14 +1681,16 @@ modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
 tools/                          montagem do modelo pronto, verificação do vendor, PNG, ícones, logos
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
-tests/                          129 cenários; tests/todos.mjs roda todos
+tests/                          131 cenários; tests/todos.mjs roda todos
 
 dev/vite.config.js              build do modo dev para dist-dev/, a partir da configuração da produção
 dev/main.jsx, dev/panel.html    painel dev: o mesmo montarPainel() da produção, com o diagnóstico no fim
 dev/esqueleto.js                a mão desenhada sobre o vídeo (DrawingUtils do MediaPipe vendorizado)
 dev/diagnostico.js              assina observarQuadros() e agrega os números do diagnóstico
 dev/PainelDev.jsx               seção "Diagnóstico (dev)"; dev/preferencias.js guarda as chaves
-dev/teste/                      teste de sinais: sessão, análise da rodada, relatórios, JSON, telas
+dev/teste/                      teste de sinais: sessão, análise da rodada, relatórios, telas e exportação
+                                (JSON, Excel em xlsx.js, CSV, PDF pela página de impressão)
+dev/relatorio.html              relatório do teste para imprimir ou salvar em PDF
 dev/identidade-modelo.js        SHA-256 do modelo, independente da ordem das amostras
 dev/estatistica.js              percentis por interpolação linear
 dev/service-worker.js           service worker dev: o da produção mais a recarga automática
@@ -1793,6 +1795,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 0: segundo build (`dist-dev/`) do mesmo código, com manifesto e ícones próprios e recarga automática; `npm run dev:all`; testes da separação entre os builds; CI no GitHub Actions |
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 1: canal genérico de observação dos quadros no reconhecedor (sem custo sem assinantes); esqueleto da mão sobre o vídeo e painel de diagnóstico ao vivo na versão dev |
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 2: teste de sinais com relatório unitário (um sinal) e geral (letra por letra, número por número), rodadas de tempo fixo, exportação em JSON com metadados e SHA-256 do modelo; ranking do classificador com todas as classes quando observado |
+| 03/11/2026 | branch `feature/modo-dev` | Teste de sinais: rodada que começa quando o sinal pedido é reconhecido (com tempo máximo de espera e o resultado "não reconhecido"), contagem como opção; exportação em JSON, Excel (.xlsx), PDF (impressão do navegador) e CSV |
 
 ---
 

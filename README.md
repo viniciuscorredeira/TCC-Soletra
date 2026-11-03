@@ -239,7 +239,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-129 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+131 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
 que é uma função pura. A exceção é `tests/builds.test.mjs`, que usa o Vite (já instalado
 para o build) para gerar as duas versões numa pasta temporária e conferir a separação entre
@@ -363,9 +363,17 @@ A seção **Teste de sinais (dev)** mede o reconhecimento no uso real, com dois 
 - **Geral:** a extensão pede letra por letra e depois número por número (ou só um dos dois), N
   rodadas de cada (padrão 1), em ordem ou sorteados. A semente do sorteio vai para o arquivo.
 
-Cada rodada tem tempo fixo (padrão 5 s). Antes dela, o sinal pedido aparece sobre o vídeo, com
-3 s para se preparar com a mão baixa; durante, o tempo que falta. Dá para pausar, repetir ou
-pular a rodada (pausar e repetir descartam a rodada em andamento; a pulada fica fora das taxas).
+Cada rodada grava por um tempo fixo (padrão 5 s), e o **início da rodada** tem duas opções:
+
+- **Ao reconhecer o sinal** (padrão): o sinal pedido aparece sobre o vídeo ("Faça a letra A") e a
+  gravação só começa no quadro em que o reconhecimento o confirma, isto é, quando a letra entraria
+  no texto. Se não vier dentro do tempo máximo (5, 10 ou 20 s, ou sem limite), a rodada fica como
+  **não reconhecido**. Uma outra letra confirmada antes conta como **troca**. Nesse modo a trava não
+  é liberada entre as rodadas: para repetir o mesmo sinal, relaxe a mão, como no uso real.
+- **Após contagem:** 3 s para se preparar com a mão baixa, e a gravação começa no fim deles.
+
+Durante a gravação, o tempo que falta aparece sobre o vídeo. Dá para pausar, repetir ou pular a
+rodada (pausar e repetir descartam a rodada em andamento; a pulada fica fora das taxas).
 O teste usa o rigor e o tempo para confirmar atuais do painel e os registra; troca o painel para
 o conjunto do sinal pedido (Letras ou Números, como no uso real) e devolve no fim o conjunto e o
 texto que estavam antes. A recarga automática fica suspensa enquanto ele roda.
@@ -376,20 +384,28 @@ Em cada rodada, a partir dos quadros que o reconhecimento já processa:
   (o sinal pedido, outra classe ou rejeição). Quadros sem mão e com mão bloqueada são contados à
   parte.
 - **Resultado da rodada**, pela primeira letra confirmada: **acerto** (a pedida), **troca** (outra),
-  **rejeição** (nenhuma, e mais da metade dos quadros com mão foi rejeitada) ou **tempo esgotado**
-  (nenhuma, por outro motivo).
-- Tempo até a primeira confirmação, confusões (com quais classes e em quantos quadros), maior
-  sequência seguida do sinal certo, mudanças de classe, razão e distância até o sinal pedido
-  (mediana e percentis), latência, Hz e mão detectada.
+  e, quando nenhuma é confirmada, **não reconhecido** (início ao reconhecer), **rejeição** (mais da
+  metade dos quadros com mão foi rejeitada) ou **tempo esgotado** (outro motivo).
+- **Tempo até reconhecer:** do momento em que o sinal é pedido até a confirmação dele.
+- Confirmações erradas (antes de reconhecer e durante a gravação), confusões (com quais classes e
+  em quantos quadros), maior sequência seguida do sinal certo, mudanças de classe, razão e
+  distância até o sinal pedido (mediana e percentis), latência, Hz e mão detectada.
 
 O **relatório unitário** mostra esses números e uma linha do tempo de cada rodada (uma faixa por
 quadro, na cor do que o classificador viu). O **geral** traz o resumo da sessão, os piores sinais,
 os pares mais confundidos, a tabela por sinal (clicar num sinal abre o relatório dele) e a matriz
 de confusão por rodada e por quadro. Percentis por interpolação linear, como no NumPy.
 
-**Exportar JSON** baixa um arquivo com tudo: metadados (data, versão e commit, SHA-256 do modelo,
-navegador, câmera, ajustes, participante e condições), a configuração, cada rodada com a linha do
-tempo quadro a quadro, e o relatório. Só números: nenhuma imagem e nenhum ponto da mão. O SHA-256
+**Exportar** oferece quatro formatos, todos só com números (nenhuma imagem e nenhum ponto da mão):
+
+| Formato | O que traz |
+|---|---|
+| **JSON** | Tudo: metadados (data, versão e commit, SHA-256 do modelo, navegador, câmera, ajustes, participante e condições), a configuração, cada rodada com a linha do tempo quadro a quadro, e o relatório |
+| **Excel (.xlsx)** | Abas Resumo, Por sinal, Rodadas, Matriz por rodada, Matriz por quadro, Quadros e Metadados. Gerado sem dependência (`dev/teste/xlsx.js`: um ZIP com os XML do formato) |
+| **PDF** | O relatório formatado para A4 (`dev/relatorio.html`), com tabelas, matrizes e linhas do tempo coloridas. Abre numa aba e chama a impressão do navegador: escolha "Salvar como PDF" |
+| **CSV** | Uma linha por rodada, com vírgula como separador e ponto decimal (pandas, R) |
+
+O SHA-256
 é calculado sobre as amostras do modelo (`dev/identidade-modelo.js`), então o modelo em uso e o
 mesmo modelo exportado têm a mesma identidade. O último teste fica salvo no `chrome.storage` da
 versão dev (inclusive um interrompido) e pode ser reaberto em **Abrir o último teste**.
