@@ -901,6 +901,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 |---|---|---|
 | **Aceleração de hardware do navegador** | Problema conhecido | Com a aceleração gráfica ligada, o vídeo de webcam virtual chegou com atraso e o painel perdeu fluidez. **Desativá-la** (`chrome://settings/system`) resolveu. A extensão não consegue detectar nem contornar isso |
 | **Webcam pelo celular (Iriun) via Wi-Fi** | Limitação externa | A transmissão sem fio acrescenta latência à imagem; por cabo USB ela é menor |
+| **Taxa de inferência abaixo de 15 Hz** | A investigar | No teste com participantes ficou entre 6,4 e 10,7 Hz (seção 17.6), mesmo com câmeras de 30 fps. O acerto não caiu, mas com menos quadros por segundo a votação junta os votos mais devagar |
 | **Detecção na thread do painel** | Limitação de projeto | O `detectForVideo` é síncrono; por isso a taxa é limitada a 15 Hz. Rodar a detecção num Web Worker foi experimentado e revertido, porque o atraso percebido vinha da aceleração de hardware, não daqui |
 | **Modelo "frio" a cada abertura** | Não atendido | O detector é recriado sempre que o painel abre (~84 ms medidos no spike). Um documento `offscreen` o manteria carregado |
 
@@ -1474,6 +1475,9 @@ node tests/todos.mjs
 dependências. A exceção é `builds.test.mjs`, que usa o Vite (já instalado para o build) para
 gerar as duas versões numa pasta temporária.
 
+O GitHub Actions (`.github/workflows/ci.yml`) repete isso a cada push e pull request, no Node 24:
+`npm ci`, a verificação dos binários do MediaPipe, `npm test` e os dois builds.
+
 | Arquivo | Cenários | O que cobre |
 |---|---:|---|
 | `sign-model-store.test.mjs` | 18 | Persistência, teto, origem padrão × pessoal, export/import, validação, eliminação |
@@ -1547,6 +1551,12 @@ de custo diferentes (sem rastreamento, o detector de palma roda a cada quadro).
 11. 🟢 abre em aba com a câmera religada; 🟢 → tela cheia; 🟡 → painel; 🔴 → fecha.
 12. **Parar** → a área some; religar → volta com o texto preservado.
 13. Desconectar a câmera em uso → erro "A câmera em uso foi desconectada."
+14. **Versão dev** (`dist-dev/`): ícone com a faixa "DEV" e selo no painel. Em **Diagnóstico (dev)**,
+    ligar **Desenhar a mão** com a mão na câmera → o esqueleto acompanha a mão e os números mudam a
+    cada quadro.
+15. **Teste de sinais (dev)**, unitário, 1 rodada → a instrução aparece sobre o vídeo, a rodada
+    começa quando o sinal é reconhecido e o relatório sai; **Exportar** em JSON, Excel, PDF e CSV.
+16. **Medir o modelo (dev)** com o modelo pronto → "Confere com a tabela do TCC: 6 de 6".
 
 ### 17.5 Verificações adicionais
 
@@ -1736,6 +1746,12 @@ servidor, backend nem telemetria.
 | Revogação a qualquer momento | Permissão de câmera no navegador; desinstalação | art. 8º, § 5º |
 | Exibição do armazenamento ocupado | Treinar sinais (RF61, RF62) | Transparência sobre o que está guardado |
 
+**Modo dev.** A versão dev é uma ferramenta de desenvolvimento, não distribuída. Ela trata os
+mesmos dados da extensão e acrescenta, só no dispositivo e só quando alguém exporta, os
+relatórios do teste de sinais e da medição: números do classificador, o código do participante
+(P1, P2…), o nome da câmera, o navegador e as condições digitadas. Nenhuma imagem e nenhum ponto
+da mão.
+
 **Relatório de Impacto (RIPD):** considerado não exigível, por não haver tratamento em escala
 pelo controlador, base centralizada nem transferência ao fornecedor. O raciocínio fica registrado
 por transparência. A política completa está em `PRIVACY.md`; ela não substitui parecer jurídico
@@ -1826,6 +1842,8 @@ node tools/gerar-paleta.mjs              # regenera ui/paleta.css a partir do az
 | Aviso "abaixo dos 60 fps suportados" | A câmera não oferece 60 fps nessa resolução | Nada a fazer se o vídeo está bom; acima de 15 fps o reconhecimento não é afetado |
 | Verificador acusa `CRLF` | Clone antigo, anterior ao `.gitattributes` | `git rm --cached -r -q vendor && git checkout HEAD -- vendor` |
 | "O modelo salvo foi gravado com outra versão da normalização" | Modelo de uma versão incompatível | Treinar de novo ou restaurar o modelo pronto |
+| `npm` falha no PowerShell: "a execução de scripts foi desabilitada neste sistema" | Política de execução do Windows bloqueia o `npm.ps1` | Rodar uma vez `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` e reabrir o terminal; ou usar `npm.cmd`, ou o Prompt de Comando |
+| Só existe a pasta `dist-dev/` | Só o build dev foi rodado | `npm run build` gera `dist/`, a versão normal; as duas pastas não vêm do GitHub |
 
 ---
 
@@ -2054,3 +2072,10 @@ tecnicamente superior: modelo de KB em vez de MB e robustez a fundo, iluminaçã
 | **CRLF / LF** | Formas de quebra de linha no Windows e no Unix; a conversão entre elas altera o *hash* |
 | **LGPD** | Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018) |
 | **Spike** | Protótipo descartável feito para provar uma hipótese técnica antes de construir |
+| **Modo dev** | Segunda extensão gerada do mesmo código (`dist-dev/`), com diagnóstico ao vivo, teste de sinais e medição do modelo (seção 17.7) |
+| **Validação em blocos** | Avaliação em que um bloco de amostras seguidas de uma classe sai do modelo e é classificado pelo resto; evita que amostras quase iguais, gravadas em sequência, inflem o acerto |
+| **Rodada** | No teste de sinais, uma tentativa de fazer o sinal pedido, do pedido até o fim da gravação |
+| **Troca** | Rodada em que outra letra foi confirmada antes do sinal pedido |
+| **Acerto por rodada / por quadro** | Fração das rodadas com o sinal pedido confirmado sem troca / fração dos quadros gravados em que o classificador respondeu o sinal pedido |
+| **Matriz de confusão** | Tabela que cruza o sinal pedido com o que o classificador respondeu; a diagonal são os acertos |
+| **Web Worker** | Linha de execução do navegador separada da página; o modo dev mede o modelo nela para não travar o painel |

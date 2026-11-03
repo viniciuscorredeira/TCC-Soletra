@@ -750,6 +750,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 |---|---|---|
 | **Aceleração de hardware do navegador** | Problema conhecido | Com a aceleração gráfica ligada, o vídeo de webcam virtual chegou com atraso e o painel perdeu fluidez. **Desativá-la** (`chrome://settings/system`) resolveu. A extensão não consegue detectar nem contornar isso |
 | **Webcam pelo celular (Iriun) via Wi-Fi** | Limitação externa | A transmissão sem fio acrescenta latência à imagem; por cabo USB ela é menor |
+| **Taxa de inferência abaixo de 15 Hz** | A investigar | No teste com participantes ficou entre 6,4 e 10,7 Hz (seção 8.5), mesmo com câmeras de 30 fps. O acerto não caiu, mas com menos quadros por segundo a votação junta os votos mais devagar |
 | **Detecção na thread do painel** | Limitação de projeto | O `detectForVideo` é síncrono; por isso a taxa é limitada a 15 Hz. Rodar a detecção num Web Worker foi experimentado e revertido, porque o atraso percebido vinha da aceleração de hardware, não daqui |
 | **Modelo "frio" a cada abertura** | Não atendido | O detector é recriado sempre que o painel abre (~84 ms medidos no spike). Um documento `offscreen` o manteria carregado |
 
@@ -1143,6 +1144,12 @@ npm run medir-modelo                     # mede o modelo pronto (node tools/medi
     ser espelhado pelo painel. Com uma câmera abaixo de 60 fps, conferir o aviso de taxa.
 11. 🟢 abre em aba com a câmera religada; 🟢 de novo → tela cheia; 🟡 → painel; 🔴 → fecha.
 12. **Parar** a câmera → a área de reconhecimento some; religar → volta com o texto preservado.
+13. **Versão dev** (`dist-dev/`): ícone com a faixa "DEV" e selo no painel. Em **Diagnóstico (dev)**,
+    ligar **Desenhar a mão** com a mão na câmera → o esqueleto acompanha a mão e os números mudam a
+    cada quadro.
+14. **Teste de sinais (dev)**, unitário, 1 rodada → a instrução aparece sobre o vídeo, a rodada
+    começa quando o sinal é reconhecido e o relatório sai; **Exportar** em JSON, Excel, PDF e CSV.
+15. **Medir o modelo (dev)** com o modelo pronto → "Confere com a tabela do TCC: 6 de 6".
 
 ### 10.4 Diagnóstico
 

@@ -311,6 +311,9 @@ produção e modo dev (seção "Dois builds"). Os módulos de lógica são todos
 funções puras ou classes com relógio injetado; o único arquivo que depende de WASM
 (`src/hand-landmarker.js`) é fino de propósito e validado pelo diagnóstico acima.
 
+O GitHub Actions (`.github/workflows/ci.yml`) repete isso a cada push e pull request, no Node 24:
+`npm ci`, a verificação dos binários do MediaPipe, `npm test` e os dois builds.
+
 Cenários que merecem destaque por travarem bugs silenciosos:
 
 - **Invariância a resolução** — a mesma mão em 640×480 e 1280×720 precisa gerar vetores
@@ -366,6 +369,11 @@ npm run build        # gera dist/
 2. Ative **Modo do desenvolvedor**
 3. **Carregar sem compactação** e selecione a pasta **`dist/`** (não a raiz do repositório)
 4. Clique no ícone do Soletra na barra de ferramentas para abrir o painel
+
+> **Windows / PowerShell:** se o `npm` falhar com "a execução de scripts foi desabilitada neste
+> sistema", rode uma vez `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
+> e reabra o terminal. Sem mudar nada, também dá para usar `npm.cmd` no lugar de `npm` ou o
+> Prompt de Comando.
 
 Durante o desenvolvimento, `npm run dev` recompila a cada alteração; depois de cada uma, clique
 em ↻ no cartão da extensão em `chrome://extensions` e reabra o painel.
