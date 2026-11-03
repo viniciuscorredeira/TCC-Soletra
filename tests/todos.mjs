@@ -18,7 +18,9 @@ const SUITES = [
   'migracao-storage.test.mjs',
   'modelo-pronto.test.mjs',
   'respingo.test.mjs',
-  'integracao.test.mjs'
+  'integracao.test.mjs',
+  'regra-dev.test.mjs',
+  'builds.test.mjs'
 ];
 
 for (const suite of SUITES) {
