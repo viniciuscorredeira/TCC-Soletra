@@ -5,6 +5,7 @@
 | | |
 |---|---|
 | **Natureza** | Trabalho de Conclusão de Curso |
+| **Autoria** | Os integrantes que desenvolvem o projeto, a quem ele pertence |
 | **Versão do produto** | 0.3.0 (`manifest.json`) |
 | **Documento atualizado em** | 03/11/2026 |
 | **Repositório** | `github.com/viniciuscorredeira/TCC-Soletra` |
@@ -2020,6 +2021,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 | 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
+| 03/11/2026 | — | Autoria: o projeto pertence aos integrantes que o desenvolvem; a empresa Integrativa sai da política de privacidade, cujo contato passa a ser o repositório |
 | 03/11/2026 | — | Ferramentas do modo dev descritas por inteiro (seção 17.7): diagnóstico, teste de sinais (com as opções da sessão, os controles e a pausa automática) e medir o modelo |
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 17.6): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |

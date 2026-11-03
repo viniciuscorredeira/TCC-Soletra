@@ -9,7 +9,7 @@ reconhecimento, calcula **no próprio dispositivo** 21 pontos de referência da 
 identificar sinais do alfabeto manual de Libras e compor um texto.
 
 **Nenhum quadro de vídeo é gravado, armazenado ou transmitido.** Nenhuma imagem é enviada a
-servidores, à Integrativa ou a serviços externos de IA. O modelo de reconhecimento é executado
+servidores, aos autores do projeto ou a serviços externos de IA. O modelo de reconhecimento é executado
 localmente, por WebAssembly empacotado dentro da extensão — não há download de código em tempo
 de execução nem chamada a CDN.
 
@@ -63,8 +63,8 @@ alfabética e, separado delas, o buscador padrão), são:
 | YouTube | `youtube.com/results` |
 | Buscador padrão do navegador | definido pelo usuário nas configurações do navegador (`chrome.search`) |
 
-Cada uma é um serviço de terceiro, com política de privacidade própria, fora do controle da
-Integrativa.
+Cada uma é um serviço de terceiro, com política de privacidade própria, fora do controle dos
+autores do Soletra.
 
 Salvaguardas implementadas no código, não apenas neste documento:
 
@@ -92,8 +92,8 @@ precaução o modelo de treino armazenado é tratado aqui como **dado pessoal se
 
 **Não há tratamento por parte do fornecedor.** Todo o processamento — leitura dos quadros,
 extração dos pontos, classificação e armazenamento das amostras — ocorre no dispositivo do
-titular, sob controle exclusivo dele. A Integrativa não recebe, não armazena, não acessa e não
-tem meio técnico de acessar esses dados. A extensão não possui servidor, backend ou telemetria.
+titular, sob controle exclusivo dele. Os autores do Soletra não recebem, não armazenam, não
+acessam e não têm meio técnico de acessar esses dados. A extensão não possui servidor, backend ou telemetria.
 
 Medidas adotadas, correspondentes aos direitos do titular:
 
@@ -136,4 +136,6 @@ estão empacotados no pacote da extensão e têm integridade verificável
 
 ## Contato
 
-Integrativa Tecnologia e Gestão de Negócios Ltda. — projetos@integrativa.com.br
+O Soletra é um Trabalho de Conclusão de Curso, desenvolvido e mantido pelos integrantes do
+projeto, a quem ele pertence. O contato é pelo repositório:
+[github.com/viniciuscorredeira/TCC-Soletra](https://github.com/viniciuscorredeira/TCC-Soletra) (aba *Issues*).

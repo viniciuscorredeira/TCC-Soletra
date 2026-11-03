@@ -701,3 +701,8 @@ estabilização e **não declara licença**, o que reservaria todos os direitos 
 
 A abordagem adotada aqui — classificar sobre landmarks em vez de pixels — é também
 tecnicamente superior: modelo de KB em vez de MB, e robustez a fundo, iluminação e tom de pele.
+
+## Autoria
+
+O Soletra é um Trabalho de Conclusão de Curso. O projeto pertence aos integrantes que o
+desenvolvem.
