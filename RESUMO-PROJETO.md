@@ -1026,7 +1026,7 @@ Teste de sinais (relatório geral) do modo dev, em 03/11/2026: três participant
 3 rodadas cada (279 rodadas), com o modelo pronto sem treino pessoal, rigor Normal e confirmação
 em 700 ms. As planilhas estão em `Planilhas de Testes/` (uma por participante e uma de médias).
 
-| Resultado | Vinicius | Lucas | Raul | Os três (279 rodadas) |
+| Resultado | Vinicius (P1) | Lucas (P2) | Raul (P3) | Os três (279 rodadas) |
 |---|---:|---:|---:|---:|
 | Gravou o modelo pronto | sim | não | não | — |
 | Acerto por rodada | 94,6% | 95,7% | 93,5% | **94,6%** (264) |
@@ -1040,9 +1040,8 @@ em 700 ms. As planilhas estão em `Planilhas de Testes/` (uma por participante e
   até formar o pedido (1→2, 3→2, 7→2…).
 - **Mais difíceis:** o 1 e o T por rodada; U, T, R e S por quadro. Nenhum quadro foi rejeitado por
   distância, só por ambiguidade.
-- **Cuidados:** condições diferentes (câmera, luz, distância, duração da rodada), o Raul marcado
-  como "P2" no arquivo e o teste do Vinicius montado a partir de três exportações. Detalhes na
-  seção 17.6 da documentação completa.
+- **Cuidados:** condições diferentes (câmera, luz, distância, duração da rodada) e o teste do
+  Vinicius montado a partir de três exportações. Detalhes na seção 17.6 da documentação completa.
 
 ---
 
@@ -1138,8 +1137,8 @@ quadros com e sem mão rastreada.
 Em ordem de prioridade para o TCC:
 
 1. **Ampliar o teste com participantes:** mais pessoas, de fora da equipe, com condições
-   controladas e códigos de participante únicos. O primeiro teste, com 3 pessoas, deu 94,6% das
-   rodadas e o mesmo acerto para quem não gravou o modelo pronto (seção 8.5).
+   controladas. O primeiro teste, com 3 pessoas, deu 94,6% das rodadas e o mesmo acerto para
+   quem não gravou o modelo pronto (seção 8.5).
 2. **Coletar exports de várias pessoas**, com consentimento por escrito, e regenerar o
    `padrao.json`.
 3. **Opção "Mesclar" na importação**, que o armazenamento já suporta.

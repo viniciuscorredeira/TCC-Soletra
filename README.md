@@ -237,7 +237,7 @@ sinais, 3 rodadas cada, com o modelo pronto sem treino pessoal, rigor Normal e c
 700 ms. As planilhas exportadas, uma por participante e uma com as médias, estão em
 `Planilhas de Testes/`.
 
-| Resultado | Vinicius | Lucas | Raul | Os três (279 rodadas) |
+| Resultado | Vinicius (P1) | Lucas (P2) | Raul (P3) | Os três (279 rodadas) |
 |---|---:|---:|---:|---:|
 | Gravou o modelo pronto | sim | não | não | — |
 | Acerto por rodada | 94,6% | 95,7% | 93,5% | **94,6%** (264) |

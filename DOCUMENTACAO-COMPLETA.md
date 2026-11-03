@@ -1570,7 +1570,7 @@ entrasse no texto) e então grava os quadros enquanto a mão é mantida. **Troca
 que outra letra foi confirmada antes do sinal pedido; **não reconhecido**, uma em que o sinal
 pedido não veio dentro da espera máxima.
 
-| | Vinicius (P1) | Lucas (P2) | Raul (P2 no arquivo) |
+| | Vinicius (P1) | Lucas (P2) | Raul (P3) |
 |---|---|---|---|
 | Gravou o modelo pronto | sim | não | não |
 | Câmera | Iriun Webcam, 1280×720, 30 fps medidos | webcam USB genérica, 1280×720, 12,5 fps medidos | Iriun Webcam, 1280×960, 30 fps medidos |
@@ -1579,7 +1579,7 @@ pedido não veio dentro da espera máxima.
 | Latência p50 · p95 | 26,4 · 27,6 ms | 43,3 · 51,9 ms | 22,3 · 27,4 ms |
 | Inferência | 7,5 Hz | 6,4 Hz | 10,7 Hz |
 
-| Resultado | Vinicius | Lucas | Raul | Os três (279 rodadas) |
+| Resultado | Vinicius (P1) | Lucas (P2) | Raul (P3) | Os três (279 rodadas) |
 |---|---:|---:|---:|---:|
 | Acerto por rodada | 94,6% (88) | 95,7% (89) | 93,5% (87) | **94,6%** (264) |
 | Troca | 4 | 4 | 5 | 13 (4,7%) |
@@ -1618,7 +1618,6 @@ sozinha, sem estabilizador; aqui conta a letra confirmada, depois da votação e
 
 Cuidados ao citar:
 
-- O Raul está marcado como "P2" no arquivo, o mesmo código do Lucas; aqui ele aparece pelo nome.
 - O arquivo do Vinicius foi montado a partir de três exportações: o teste geral de letras, um
   teste unitário do E (rodadas 13 a 15, no lugar das do geral, que não tinha incluído o E) e um
   teste geral de números (rodadas 64 a 93). As linhas `mescla.*` da aba Metadados registram isso.
@@ -1871,9 +1870,8 @@ do modo dev, tinha **cerca de 9 mil** (8,9 mil no commit `c9ae141`).
 Em ordem de prioridade para o TCC:
 
 1. **Ampliar o teste com participantes:** mais pessoas, de fora da equipe, com condições
-   controladas (mesma câmera, luz e duração de rodada) e códigos de participante únicos. O
-   primeiro teste, com 3 pessoas, deu 94,6% das rodadas e o mesmo acerto para quem não gravou o
-   modelo pronto (seção 17.6).
+   controladas (mesma câmera, luz e duração de rodada). O primeiro teste, com 3 pessoas, deu
+   94,6% das rodadas e o mesmo acerto para quem não gravou o modelo pronto (seção 17.6).
 2. **Modelo pronto com várias pessoas**, com consentimento por escrito, regenerado pela
    ferramenta de montagem.
 3. **Opção "Mesclar" na importação**, que o armazenamento já suporta.
