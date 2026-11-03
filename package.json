@@ -6,6 +6,7 @@
   "description": "Extensão de navegador que reconhece o alfabeto manual de Libras pela câmera.",
   "scripts": {
     "dev": "vite build --watch",
+    "dev:all": "node dev/assistir-todos.mjs",
     "build": "vite build",
     "build:dev": "vite build --config dev/vite.config.js",
     "test": "node tests/todos.mjs",
