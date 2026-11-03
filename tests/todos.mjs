@@ -21,6 +21,7 @@ const SUITES = [
   'integracao.test.mjs',
   'observacao.test.mjs',
   'teste-sinais.test.mjs',
+  'medir-modelo.test.mjs',
   'regra-dev.test.mjs',
   'builds.test.mjs'
 ];

@@ -10,6 +10,7 @@
     "build": "vite build",
     "build:dev": "vite build --config dev/vite.config.js",
     "test": "node tests/todos.mjs",
+    "medir-modelo": "node tools/medir-modelo.mjs",
     "verificar-vendor": "node tools/verificar-vendor.mjs"
   },
   "dependencies": {
