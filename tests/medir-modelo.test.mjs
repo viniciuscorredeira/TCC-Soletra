@@ -15,6 +15,7 @@ import {
   formatarTerminal,
   lerModelo,
   medirCruzado,
+  compararModelos,
   medirModelo,
   montarArquivo,
   porcento,
@@ -186,4 +187,68 @@ const medicao = await medirModelo(daMemoria(modeloDeExemplo()), { blocos: [5] })
   assert.equal(real.modelo.sha256, TABELA_TCC.sha256, 'o modelo pronto mudou: refaça a tabela do TCC');
   assert.ok(real.conferenciaTcc?.bate, `tabela do TCC: ${JSON.stringify(real.conferenciaTcc?.itens)}`);
   console.log('OK  cenário 9 — o modelo pronto reproduz a tabela do TCC (93,4/93,0 · 92,0/90,2 · 87,5/85,8)');
+}
+
+// --- Cenário 10: progresso, avisos de classes pequenas e comparação --------
+{
+  const passos = [];
+  const pequena = modeloDeExemplo({ amostras: 8 });
+  const m = await medirModelo(daMemoria(pequena), { blocos: [4, 8], aoProgresso: (p) => passos.push(p) });
+  const fim = passos.at(-1);
+  assert.ok(fim.total > 0 && fim.feitas === fim.total, 'o progresso termina em 100%');
+  for (let i = 1; i < passos.length; i++) assert.ok(passos[i].feitas >= passos[i - 1].feitas, 'o progresso não volta');
+  assert.equal(m.avisos.length, 1, 'só os blocos de 8 tiram uma classe inteira');
+  assert.match(m.avisos[0], /blocos de 8/);
+  assert.equal(m.conjuntos.letras.validacao[1].acerto, 0, 'sem amostras da classe no treino, nada acerta');
+  assert.equal(conferirTcc(TABELA_TCC.sha256, m.conjuntos), null, 'sem blocos de 17 ou 25, não há o que conferir');
+
+  const cmp = await compararModelos(daMemoria(modeloDeExemplo()), daMemoria(modeloDeExemplo({ semente: 3 })), { rotulo: 'outro.json', blocos: [5] });
+  assert.equal(cmp.arquivo, 'outro.json');
+  assert.equal(cmp.conjuntos.letras.validacao[0].tamanhoBloco, 5);
+  assert.equal(cmp.cruzado.desteParaOutro.letras.acerto, 1);
+  assert.ok(cmp.cruzado.doOutroParaEste.numeros);
+  console.log('OK  cenário 10 — progresso, aviso de classe que sai inteira e comparação entre modelos');
+}
+
+// --- Cenário 11: planilhas e nome do arquivo no modo dev -----------------
+{
+  const { tabelasMedicao } = await import('../dev/medicao/tabelas.js');
+  const { nomeDaMedicao } = await import('../dev/medicao/nome.js');
+  const { gerarXlsx } = await import('../dev/teste/xlsx.js');
+  const comparacao = await compararModelos(daMemoria(modeloDeExemplo()), daMemoria(modeloDeExemplo({ semente: 3 })), { rotulo: 'outro.json', blocos: [5] });
+  const arquivo = montarArquivo({ medicao, comparacao, arquivo: 'Modelo em uso', dataHora: '2026-11-03T12:00:00.000Z', commit: 'abc1234' });
+  const abas = tabelasMedicao(arquivo);
+  assert.deepEqual(abas.map((a) => a.nome), [
+    'Resumo', 'Por classe', 'Confusões', 'Razão', 'Corte da razão', 'Rigor', 'Limiar', 'Pares próximos', 'Comparação', 'Metadados'
+  ]);
+  const porClasse = abas.find((a) => a.nome === 'Por classe').linhas;
+  assert.deepEqual(porClasse[0].slice(0, 3), ['Conjunto', 'Bloco', 'Classe']);
+  assert.equal(porClasse.length, 1 + 3 + 2 + 5, 'uma linha por classe de cada conjunto');
+  const resumo = abas[0].linhas;
+  assert.deepEqual(resumo[1], ['Letras', 5, 3, 30, 30, 100]);
+  assert.equal(tabelasMedicao({ ...arquivo, comparacao: undefined }).some((a) => a.nome === 'Comparação'), false);
+  const bytes = gerarXlsx(abas);
+  assert.equal(String.fromCharCode(bytes[0], bytes[1]), 'PK', 'o .xlsx é um ZIP');
+
+  const nome = nomeDaMedicao(arquivo);
+  assert.match(nome, /^soletra-medicao-modelo-em-uso-comparada-\d{4}-\d{2}-\d{2}-\d{4}\.json$/);
+  assert.match(nomeDaMedicao({ arquivo: 'Modelo pronto (empacotado) — modelos/padrao.json', dataHora: arquivo.dataHora }, null), /^soletra-medicao-modelo-pronto-empacotado-[\d-]+$/);
+  console.log('OK  cenário 11 — planilhas da medição (Excel) e nome do arquivo no modo dev');
+}
+
+// --- Cenário 12: o arquivo não arredonda duas vezes -----------------------
+{
+  const falsa = { modelo: {}, conjuntos: { letras: { validacao: [{ tamanhoBloco: 25, acerto: 977 / 1050 }] } } };
+  const arquivo = montarArquivo({ medicao: falsa, arquivo: 'x', commit: 'abc' });
+  assert.equal(porcento(arquivo.conjuntos.letras.validacao[0].acerto), '93,0%', '0,930476 não pode virar 93,1%');
+  console.log('OK  cenário 12 — o arquivo guarda casas suficientes para a porcentagem não mudar');
+}
+
+// --- Cenário 13: conjuntos sempre em ordem, mesmo vindos do storage -------
+{
+  const { emOrdem } = await import('../tools/medicao-modelo.js');
+  const doStorage = { juntos: 3, letras: 1, numeros: 2 };
+  assert.deepEqual(emOrdem(doStorage).map(([id]) => id), ['letras', 'numeros', 'juntos']);
+  assert.deepEqual(emOrdem({ numeros: 2 }), [['numeros', 2]]);
+  console.log('OK  cenário 13 — letras, números e juntos sempre nessa ordem');
 }

@@ -58,7 +58,7 @@ export function nomeDoArquivo(arquivo, extensao = 'json') {
 }
 
 /** Baixa pelo navegador, como o Exportar do modelo (sem permissão nova). */
-function baixarBlob(blob, nome) {
+export function baixarBlob(blob, nome) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

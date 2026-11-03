@@ -16,7 +16,7 @@ import { identidadeModelo } from '../../src/identidade-modelo.js';
  * identificador, e não uma string, pelo mesmo motivo do carimbo em recarga.js.
  */
 // eslint-disable-next-line no-undef
-const COMMIT = __SOLETRA_COMMIT__;
+export const COMMIT = __SOLETRA_COMMIT__;
 
 async function modelo() {
   try {

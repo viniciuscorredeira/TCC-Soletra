@@ -1,11 +1,11 @@
 /**
- * Soletra (modo dev) — relatório do teste de sinais para imprimir ou salvar em
- * PDF (dev/relatorio.html).
+ * Soletra (modo dev) — relatório do teste de sinais, ou da medição do modelo,
+ * para imprimir ou salvar em PDF (dev/relatorio.html).
  *
- * O painel guarda o arquivo do teste em storage.session e abre esta página,
- * que o desenha em HTML simples, pensado para papel A4 (sem os componentes
- * interativos do painel), e chama a impressão do navegador. O título da página
- * vira o nome sugerido do PDF.
+ * O painel guarda o arquivo (do teste ou da medição) em storage.session e
+ * abre esta página, que o desenha em HTML simples, pensado para papel A4 (sem
+ * os componentes interativos do painel), e chama a impressão do navegador. O
+ * título da página vira o nome sugerido do PDF.
  */
 import './impressao.css';
 import { createRoot } from 'react-dom/client';
@@ -13,6 +13,9 @@ import { ms, num, pct, seg } from '../formato.js';
 import { CHAVE_IMPRESSAO, nomeDoArquivo } from './exportar.js';
 import { RESULTADOS, relatorioGeral, relatorioUnitario } from './relatorio.js';
 import { NOMES_CATEGORIA, NOMES_COLUNA, NOMES_INICIO, NOMES_RESULTADO, nomeSinal } from './rotulos.js';
+import { FORMATO_MEDICAO } from '../../tools/medicao-modelo.js';
+import { RelatorioMedicao } from '../medicao/ImpressaoMedicao.jsx';
+import { nomeDaMedicao } from '../medicao/nome.js';
 
 const faixa = (d, casas = 2) => (d ? `${num(d.mediana, casas)} (p10 ${num(d.p10, casas)} · p25 ${num(d.p25, casas)} · p75 ${num(d.p75, casas)} · p90 ${num(d.p90, casas)})` : '—');
 
@@ -226,14 +229,16 @@ chrome.storage.session
       raiz.render(<Erro texto="Nenhum relatório para imprimir. Volte ao painel e use Exportar → PDF." />);
       return;
     }
-    document.title = nomeDoArquivo(arquivo, null);
+    // A mesma página serve ao teste de sinais e à medição do modelo.
+    const medicao = arquivo.formato === FORMATO_MEDICAO;
+    document.title = medicao ? nomeDaMedicao(arquivo, null) : nomeDoArquivo(arquivo, null);
     raiz.render(
       <>
         <div className="barra">
           <button type="button" onClick={() => window.print()}>Imprimir / Salvar como PDF</button>
           <span>Na janela de impressão, escolha o destino “Salvar como PDF”.</span>
         </div>
-        <Relatorio arquivo={arquivo} />
+        {medicao ? <RelatorioMedicao arquivo={arquivo} /> : <Relatorio arquivo={arquivo} />}
       </>
     );
     // Dois quadros: o primeiro desenha, o segundo garante o layout antes da impressão.

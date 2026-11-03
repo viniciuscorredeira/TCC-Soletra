@@ -15,6 +15,7 @@ import { iniciarEsqueleto } from './esqueleto.js';
 import { PainelDev } from './PainelDev.jsx';
 import { PainelTeste } from './teste/PainelTeste.jsx';
 import { Instrucao } from './teste/Instrucao.jsx';
+import { PainelMedicao } from './medicao/PainelMedicao.jsx';
 
 document.documentElement.dataset.soletraBuild = MARCADOR_DEV;
 
@@ -22,6 +23,7 @@ montarPainel({
   extras: (
     <>
       <PainelTeste />
+      <PainelMedicao />
       <PainelDev />
       <Instrucao />
     </>

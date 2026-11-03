@@ -76,3 +76,7 @@ table { border-collapse: collapse; width: 100%; }
 }
 .barra button { padding: 6px 12px; font: inherit; font-weight: 600; cursor: pointer; }
 @media print { .barra { display: none; } }
+
+/* Medição do modelo. */
+.grade td.esquerda { text-align: left; }
+.confere { padding: 4px 8px; border-left: 3px solid var(--certo); background: #ebfbee; }

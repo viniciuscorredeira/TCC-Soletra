@@ -122,3 +122,30 @@
 .dev-matriz td { background: color-mix(in srgb, var(--amber-9) calc(var(--peso) * 70%), transparent); }
 .dev-matriz td[data-diagonal="true"] { background: color-mix(in srgb, var(--green-9) calc(var(--peso) * 70%), transparent); }
 .dev-matriz td[data-vazio="true"] { background: transparent; }
+
+/* Medir o modelo: uma barra por classe (ou par), com o número ao lado. */
+.dev-barras { display: flex; flex-direction: column; gap: 3px; }
+.dev-barras__linha {
+  display: grid;
+  grid-template-columns: 22px minmax(60px, 1fr) 40px minmax(0, 1.1fr);
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.dev-barras__linha--par { grid-template-columns: 36px minmax(60px, 1fr) 44px; }
+.dev-barras__nome { font-weight: 600; }
+.dev-barras__trilho { height: 10px; border-radius: 4px; background: var(--gray-a3); overflow: hidden; }
+.dev-barras__valor { display: block; height: 100%; border-radius: 4px; background: var(--accent-9); }
+.dev-barras__valor--neutro { background: var(--gray-8); }
+.dev-barras__numero { text-align: right; }
+.dev-barras__extra { color: var(--gray-11); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Caixas da razão (SVG): texto e grade nas cores do tema. */
+.dev-caixas { width: 100%; height: auto; overflow: visible; }
+.dev-caixas__grade { stroke: var(--gray-a4); stroke-width: 1; }
+.dev-caixas__eixo { fill: var(--gray-11); font-size: 9px; }
+.dev-caixas__rotulo { fill: var(--gray-12); font-size: 10px; }
+.dev-caixas__corte { stroke: var(--gray-9); stroke-width: 1; stroke-dasharray: 3 3; }
+.dev-caixas__corte--atual { stroke: var(--accent-10); stroke-dasharray: none; stroke-width: 1.5; }
+
+.dev-cartao { padding: 8px 10px; border-radius: 6px; background: var(--gray-a2); border: 1px solid var(--gray-a4); }
