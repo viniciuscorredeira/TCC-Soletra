@@ -20,6 +20,7 @@ const SUITES = [
   'respingo.test.mjs',
   'integracao.test.mjs',
   'observacao.test.mjs',
+  'teste-sinais.test.mjs',
   'regra-dev.test.mjs',
   'builds.test.mjs'
 ];
