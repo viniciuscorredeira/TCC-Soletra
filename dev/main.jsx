@@ -13,10 +13,20 @@ import { carregarPrefsDev } from './preferencias.js';
 import { iniciarDiagnostico } from './diagnostico.js';
 import { iniciarEsqueleto } from './esqueleto.js';
 import { PainelDev } from './PainelDev.jsx';
+import { PainelTeste } from './teste/PainelTeste.jsx';
+import { Instrucao } from './teste/Instrucao.jsx';
 
 document.documentElement.dataset.soletraBuild = MARCADOR_DEV;
 
-montarPainel({ extras: <PainelDev /> });
+montarPainel({
+  extras: (
+    <>
+      <PainelTeste />
+      <PainelDev />
+      <Instrucao />
+    </>
+  )
+});
 
 // Selo fixo no canto: com as duas extensões abertas, evita testar na errada.
 const selo = document.createElement('div');

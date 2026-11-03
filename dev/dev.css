@@ -32,3 +32,89 @@
 
 /* Com o reconhecimento parado, os últimos números ficam esmaecidos. */
 .dev-diag[data-ativo="false"] { opacity: 0.55; }
+
+/* --- Teste de sinais ------------------------------------------------------ */
+
+/* O pedido por cima do vídeo. Fica fora do espelhamento (só o vídeo e o
+   canvas são espelhados), então o texto sai legível. */
+.dev-instrucao {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  font-family: system-ui, sans-serif;
+}
+.dev-instrucao[data-fase="contagem"],
+.dev-instrucao[data-fase="pausada"] { background: rgba(0, 0, 0, 0.45); }
+.dev-instrucao__topo {
+  align-self: flex-end;
+  margin: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 12px;
+  font-weight: 600;
+}
+.dev-instrucao__centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.dev-instrucao[data-fase="gravando"] .dev-instrucao__centro {
+  align-self: flex-start;
+  margin: 0 0 4px 10px;
+  align-items: flex-start;
+}
+.dev-instrucao__texto { font-size: 14px; font-weight: 600; }
+.dev-instrucao__sinal { font-size: 64px; font-weight: 800; line-height: 1; }
+.dev-instrucao[data-fase="gravando"] .dev-instrucao__sinal { font-size: 40px; }
+.dev-instrucao__barra {
+  height: 5px;
+  background: linear-gradient(to right, #ff7a00 calc(var(--p) * 100%), rgba(255, 255, 255, 0.25) 0);
+}
+.dev-instrucao[data-fase="gravando"] .dev-instrucao__barra {
+  background: linear-gradient(to right, #22c55e calc(var(--p) * 100%), rgba(255, 255, 255, 0.25) 0);
+}
+
+/* Linha do tempo de uma rodada: uma faixa por quadro. */
+.dev-tl {
+  display: flex;
+  height: 14px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--gray-a3);
+}
+.dev-tl > .dev-tl__q { flex: 1 1 0; min-width: 1px; }
+.dev-tl__q[data-c="certo"] { background: var(--green-9); }
+.dev-tl__q[data-c="outra"] { background: var(--red-9); }
+.dev-tl__q[data-c="rejeitado"] { background: var(--amber-9); }
+.dev-tl__q[data-c="sem-mao"] { background: var(--gray-6); }
+.dev-tl__q[data-c="bloqueada"] { background: var(--purple-9); }
+.dev-tl__amostra { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+
+/* Tabelas largas rolam na horizontal: o painel lateral é estreito. */
+.dev-rolagem { overflow-x: auto; max-width: 100%; }
+.dev-linha-clicavel { cursor: pointer; }
+.dev-linha-clicavel:hover { background: var(--gray-a3); }
+
+/* Matriz de confusão: a diagonal em verde, o resto em âmbar, mais forte
+   conforme a fração da linha. */
+.dev-matriz { border-collapse: collapse; font-size: 11px; }
+.dev-matriz th,
+.dev-matriz td {
+  min-width: 22px;
+  padding: 2px 4px;
+  border: 1px solid var(--gray-a5);
+  text-align: center;
+}
+.dev-matriz thead th { position: sticky; top: 0; background: var(--gray-3); }
+.dev-matriz tbody th { background: var(--gray-3); }
+.dev-matriz td { background: color-mix(in srgb, var(--amber-9) calc(var(--peso) * 70%), transparent); }
+.dev-matriz td[data-diagonal="true"] { background: color-mix(in srgb, var(--green-9) calc(var(--peso) * 70%), transparent); }
+.dev-matriz td[data-vazio="true"] { background: transparent; }

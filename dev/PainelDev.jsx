@@ -10,6 +10,7 @@ import { lojaReco } from '../sidepanel/nucleo.js';
 import { Secao } from '../sidepanel/componentes/Secao.jsx';
 import { lojaDiagnostico } from './diagnostico.js';
 import { lojaPrefsDev, definirPrefDev } from './preferencias.js';
+import { num, ms } from './formato.js';
 
 const RIGORES = { 1.25: 'Tolerante', 1: 'Normal', 0.8: 'Exigente' };
 
@@ -23,14 +24,6 @@ const ESTADOS = {
   travado: 'travado',
   'mao-incorreta': 'mão bloqueada'
 };
-
-function num(v, casas = 2) {
-  return Number.isFinite(v)
-    ? v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })
-    : '—';
-}
-
-const ms = (v) => (Number.isFinite(v) ? `${num(v, 1)} ms` : '—');
 
 function ha(evento, agora) {
   if (!evento) return '—';

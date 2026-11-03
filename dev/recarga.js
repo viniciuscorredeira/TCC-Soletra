@@ -27,6 +27,29 @@ const CARIMBO = __SOLETRA_CARIMBO__;
 const ARQUIVO = 'dev/recarga.txt';
 const INTERVALO_MS = 1000;
 
+/**
+ * Suspensão da recarga, em storage.session para valer também no service
+ * worker. Expira sozinha: quem suspende renova a cada poucos segundos, e um
+ * painel fechado no meio de um teste não deixa a recarga desligada para sempre.
+ */
+const CHAVE_SUSPENSAO = 'soletra.dev.recargaSuspensaAte';
+const VALIDADE_SUSPENSAO_MS = 15000;
+
+/** Liga (e renova) ou desliga a suspensão — durante um teste, uma recarga perderia a sessão. */
+export function suspenderRecarga(suspensa) {
+  const ate = suspensa ? Date.now() + VALIDADE_SUSPENSAO_MS : 0;
+  chrome.storage.session?.set({ [CHAVE_SUSPENSAO]: ate }).catch(() => {});
+}
+
+async function suspensa() {
+  try {
+    const g = await chrome.storage.session.get(CHAVE_SUSPENSAO);
+    return (g?.[CHAVE_SUSPENSAO] || 0) > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export function vigiarRecarga() {
   if (!CARIMBO) return; // build sem --watch: não há o que vigiar
   const url = chrome.runtime.getURL(ARQUIVO);
@@ -35,7 +58,7 @@ export function vigiarRecarga() {
       const resposta = await fetch(url, { cache: 'no-store' });
       if (!resposta.ok) return;
       const atual = (await resposta.text()).trim();
-      if (atual && atual !== CARIMBO) chrome.runtime.reload();
+      if (atual && atual !== CARIMBO && !(await suspensa())) chrome.runtime.reload();
     } catch {
       // A pasta pode estar sendo reescrita; a próxima leitura tenta de novo.
     }

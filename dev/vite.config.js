@@ -8,8 +8,11 @@
  *    nos caminhos que o manifesto já declara;
  *  - na cópia, o manifesto recebe dev/manifest.dev.json por cima (nome,
  *    descrição e título) e os ícones são trocados pelos de dev/icons/;
- *  - no --watch, cada recompilação deixa um carimbo para dev/recarga.js.
+ *  - no --watch, cada recompilação deixa um carimbo para dev/recarga.js;
+ *  - o commit do código (git rev-parse) vai para dentro do bundle, para os
+ *    relatórios do teste de sinais dizerem de que versão vieram.
  */
+import { execSync } from 'node:child_process';
 import { cpSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { defineConfig } from 'vite';
@@ -20,6 +23,18 @@ const DEV = resolve(RAIZ, 'dev');
 // Os mesmos textos de dev/recarga.js.
 const MARCA_CARIMBO = '__SOLETRA_CARIMBO__';
 const ARQUIVO_CARIMBO = 'dev/recarga.txt';
+// O de dev/teste/metadados.js.
+const MARCA_COMMIT = '__SOLETRA_COMMIT__';
+
+/** Commit curto, com "-modificado" se havia alterações não commitadas no build. */
+function commitAtual() {
+  try {
+    const git = (args) => execSync(`git ${args}`, { cwd: RAIZ, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    return git('rev-parse --short HEAD') + (git('status --porcelain') ? '-modificado' : '');
+  } catch {
+    return 'desconhecido';
+  }
+}
 
 /** Mescla profunda: objetos se combinam, o resto é substituído. */
 function mesclar(base, extra) {
@@ -33,16 +48,21 @@ function mesclar(base, extra) {
 
 function modoDev() {
   let carimbo = '';
+  let commit = '';
   return {
     name: 'soletra:modo-dev',
 
     buildStart() {
       carimbo = this.meta.watchMode ? String(Date.now()) : '';
+      commit = commitAtual();
     },
 
     renderChunk(codigo) {
-      if (!codigo.includes(MARCA_CARIMBO)) return null;
-      return { code: codigo.replaceAll(MARCA_CARIMBO, JSON.stringify(carimbo)), map: null };
+      if (!codigo.includes(MARCA_CARIMBO) && !codigo.includes(MARCA_COMMIT)) return null;
+      const trocado = codigo
+        .replaceAll(MARCA_CARIMBO, JSON.stringify(carimbo))
+        .replaceAll(MARCA_COMMIT, JSON.stringify(commit));
+      return { code: trocado, map: null };
     },
 
     // O HTML sai do Vite no caminho de origem (dev/panel.html). Os dois ficam a
