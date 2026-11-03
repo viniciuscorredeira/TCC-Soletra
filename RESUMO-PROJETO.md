@@ -248,8 +248,13 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
   reconhecedor…"; o detector não é carregado ao abrir o painel, só quando é pedido. Ligado, exibe
   o anel, o texto e os botões; desligado, para a análise e esconde esse bloco, mas mantém o
   detector carregado para religar rápido.
+- **Mensagens:** com a câmera ligada, ligar o Reconhecimento apaga um pedido para ligá-lo que
+  esteja na tela (deixado por **Usar modelo pronto**, por **Adicionar modelo pronto** ou pelo
+  treino) e, se a câmera estiver abaixo de 60 fps, devolve o aviso de taxa que ele tinha
+  substituído; as outras mensagens ficam. Com a câmera parada, avisa "Reconhecimento pronto.
+  Inicie a câmera para começar."
 - **Exceções:** se o detector não carregar, mostra "Não foi possível carregar o reconhecedor: …"
-  e a chave volta a desligada.
+  e a chave volta a desligada, sem a mensagem de "Reconhecimento pronto".
 
 #### RF18 — Alternar entre Letras e Números ✅
 
@@ -586,15 +591,18 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
   amostras em 31 classes) e calibra o limiar de reconhecimento, então o reconhecimento funciona
   sem nenhum treino. Na primeira abertura, o cartão "Como você quer começar?" avisa que o modelo
   pronto já está instalado e oferece:
-  - **Usar modelo pronto**: mantém o modelo e fecha o cartão de vez;
+  - **Usar modelo pronto**: mantém o modelo, fecha o cartão de vez e, com o Reconhecimento
+    desligado, avisa "Modelo pronto em uso. Ligue o Reconhecimento para começar." O aviso some
+    quando o Reconhecimento é ligado (RF17);
   - **Treinar do zero**: tira o modelo pronto (o que a pessoa já tiver gravado fica), fecha o
     cartão de vez e abre **Treinar sinais**. O modelo pronto volta em **Adicionar modelo pronto**.
   Enquanto a pessoa não escolhe, o cartão continua aparecendo, mas o modelo pronto já funciona.
 - **Atualização:** nada é instalado; o modelo de quem já usa a extensão fica como está.
 - **Modelo vazio:** depois de **Apagar tudo** (ou se a instalação automática falhar), o mesmo
   cartão oferece **Usar modelo pronto**, que o instala e avisa "Modelo pronto carregado: 1550
-  amostras em 31 classes. Ligue o Reconhecimento para começar.", ou **Treinar do zero**, que fecha
-  o cartão nessa abertura e abre **Treinar sinais**.
+  amostras em 31 classes. Ligue o Reconhecimento para começar." (sem o pedido final se ele já
+  estiver ligado), ou **Treinar do zero**, que fecha o cartão nessa abertura e abre **Treinar
+  sinais**.
 - **Exceções:** o cartão só aparece se a extensão trouxer o modelo pronto.
 
 #### RF64 — Modelo pronto empacotado ⚠️
@@ -858,7 +866,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `tests/` | 3.384 | 149 cenários em 20 arquivos |
 
 As linhas das tabelas contam o arquivo inteiro. **Total de código próprio, sem contar linhas em
-branco e incluindo testes e ferramentas: cerca de 15,3 mil linhas**, das quais 4,5 mil são do
+branco e incluindo testes e ferramentas: cerca de 15,4 mil linhas**, das quais 4,5 mil são do
 modo dev. A extensão descrita no TCC, antes do modo dev, tinha **cerca de 9 mil** (8,9 mil no
 commit `c9ae141`).
 
@@ -998,6 +1006,9 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 - **Invariância à resolução:** a mesma mão em 640×480 e 1280×720 gera vetores idênticos. Sem
   isso, o modelo pararia de funcionar ao trocar de webcam, sem erro nenhum.
 - **Letra dupla:** S, pausa de 250 ms, S produz `SS`; com pausa de 100 ms, só `S`.
+- **Mensagem que não saía:** com a câmera ligada, **Usar modelo pronto** deixava "Ligue o
+  Reconhecimento" na tela mesmo depois de ligá-lo. O teste refaz a sequência e garante que a
+  mensagem sai sem levar junto o aviso de câmera abaixo de 60 fps.
 - **Timestamp monotônico:** trocar de câmera reinicia o relógio do vídeo, e um timestamp que
   regride faz o MediaPipe devolver resultado vazio em silêncio.
 - **Versão da normalização:** modelo gravado com outra versão é recusado, não reinterpretado.
@@ -1133,6 +1144,8 @@ npm run medir-modelo                     # mede o modelo pronto (node tools/medi
 3. Instalação nova: o cartão "Como você quer começar?" aparece com o modelo pronto já instalado →
    ligar **Reconhecimento** → aceitar o consentimento → soletrar letras sem treinar → **Usar
    modelo pronto** fecha o cartão. Em outra instalação, **Treinar do zero** tira o modelo pronto.
+   Com a câmera ligada e o Reconhecimento desligado, **Usar modelo pronto** → "Ligue o
+   Reconhecimento"; ligá-lo → a mensagem some (com câmera abaixo de 60 fps, volta o aviso de taxa).
 4. Alternar para **Números** e reconhecer dígitos.
 5. Fazer S, relaxar, S → texto `SS`. Testar **Repetir letra**, **Espaço**, **Apagar**,
    **Limpar** e digitação manual.
