@@ -26,13 +26,24 @@ const ARQUIVO_CARIMBO = 'dev/recarga.txt';
 // O de dev/teste/metadados.js.
 const MARCA_COMMIT = '__SOLETRA_COMMIT__';
 
-/** Commit curto, com "-modificado" se havia alterações não commitadas no build. */
+/**
+ * Commit curto, com "-modificado" se o código rastreado diferia do commit no
+ * build. Compara conteúdo (git diff), e não o status: no Windows, um arquivo que
+ * só trocou a quebra de linha aparece no status sem ter mudado nada.
+ */
 function commitAtual() {
+  const git = (args) => execSync(`git ${args}`, { cwd: RAIZ, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  let commit;
   try {
-    const git = (args) => execSync(`git ${args}`, { cwd: RAIZ, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-    return git('rev-parse --short HEAD') + (git('status --porcelain') ? '-modificado' : '');
+    commit = git('rev-parse --short HEAD');
   } catch {
     return 'desconhecido';
+  }
+  try {
+    git('diff --quiet HEAD');
+    return commit;
+  } catch {
+    return `${commit}-modificado`;
   }
 }
 
