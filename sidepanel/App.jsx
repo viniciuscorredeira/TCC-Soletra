@@ -10,7 +10,12 @@ import { Rodape } from './componentes/Rodape.jsx';
 import { DialogoConfirmacao } from './componentes/DialogoConfirmacao.jsx';
 import { SeletorPlataforma } from './componentes/SeletorPlataforma.jsx';
 
-export function App() {
+/**
+ * @param {{children?: import('react').ReactNode}} props `children` entra no fim
+ *   da coluna principal, depois do reconhecimento. O painel não passa nada; é o
+ *   ponto onde um build pode acrescentar seções sem mexer nesta composição.
+ */
+export function App({ children }) {
   const { tema, aparencia, definir } = useTema();
 
   return (
@@ -30,6 +35,7 @@ export function App() {
           </Card>
           <Mensagem />
           <SecaoReconhecimento />
+          {children}
         </main>
         <Rodape />
       </div>
