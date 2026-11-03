@@ -1631,6 +1631,70 @@ Cuidados ao citar:
   entre participantes mistura pessoa, câmera e ambiente.
 - Três participantes são uma amostra pequena: os resultados indicam, não generalizam.
 
+### 17.7 Ferramentas do modo dev
+
+A versão dev (`npm run build:dev`, pasta `dist-dev/`, seção 19.1) é o mesmo painel da extensão
+normal com três seções a mais no fim e um selo "DEV" no canto. Nenhuma delas grava ou envia
+imagem: só números, e só quando a pessoa exporta.
+
+**Diagnóstico (dev)** mostra, a cada quadro processado:
+
+| Grupo | O que mostra |
+|---|---|
+| Desenhar a mão | O esqueleto da mão sobre o vídeo (conexões em verde e os 21 pontos), com os pontos que o reconhecimento já usa, sem segunda detecção. Respeita o espelhamento, a câmera invertida e o redimensionamento do painel. **Numerar os pontos** mostra o índice de 0 a 20 |
+| Classes mais próximas | As três classes de menor distância ao gesto, a fração do voto dos 5 vizinhos que cada uma levou e a decisão do quadro (aceita, ambígua, distante, sem mão, mão bloqueada) |
+| Classificador | A razão entre a 1ª e a 2ª classe com o limite efetivo, a distância da 1ª com o limiar efetivo (os dois com o rigor aplicado), o rigor e o tempo para confirmar |
+| Estabilizador | O estado, o símbolo do quadro, a votação da janela (vencedor e votos da líder), o candidato, o progresso, a letra travada, a última confirmação e a última rejeição |
+| Mão | A detectada, com a confiança; a configurada; a câmera invertida e a trava de mão |
+| Desempenho | A latência p50 e p95 do laço (as 30 medições que regulam o recuo para 8 Hz) e numa janela de 150 quadros, a inferência em Hz, os fps que a câmera apresenta contra os que declara e o tempo do desenho da mão |
+
+**Teste de sinais (dev)** mede o reconhecimento ao vivo:
+
+- **Relatório:** unitário (um sinal, 1, 3 ou 5 rodadas) ou geral (letras, números ou os dois, em
+  ordem ou sorteados sem o mesmo sinal duas vezes seguidas, com a semente registrada).
+- **Rodada:** começa **ao reconhecer o sinal** (padrão, com espera máxima de 5, 10 ou 20 s, ou sem
+  limite) ou **após uma contagem** de 3 s, e grava 3, 5 ou 8 s.
+- **Sessão:** participante (um código), **Gravou o modelo pronto?** (se a mão dele está nas
+  amostras do modelo pronto), iluminação, distância e observações, que vão para os metadados.
+- **Condições:** exige a câmera e o Reconhecimento ligados e um modelo com sinais. Usa o rigor e o
+  tempo para confirmar atuais, troca o painel para o conjunto do sinal pedido e devolve, no fim,
+  o conjunto e o texto de antes. A recarga automática fica suspensa durante o teste.
+- **Execução:** a instrução aparece sobre o vídeo ("Faça a letra A", a contagem, "Agora!
+  Mantenha" com o tempo que falta). Pausar e Continuar, Repetir rodada, Pular rodada e Encerrar
+  e ver relatório (parcial). Se o reconhecimento parar, a rodada é pausada.
+- **Medidas por rodada:** acerto por quadro; resultado (acerto, troca, não reconhecido, rejeição
+  ou tempo esgotado); tempo até reconhecer; confirmações erradas antes e durante a gravação;
+  confusões; maior sequência; mudanças de classe; razão e distância até o sinal pedido
+  (percentis); latência, Hz e mão detectada.
+- **Relatórios:** o unitário traz uma linha do tempo por rodada (uma faixa por quadro, na cor do
+  que o classificador viu); o geral, o resumo, os piores sinais, os pares mais confundidos, a
+  tabela por sinal (clicar num sinal abre o relatório dele) e a matriz de confusão por rodada ou
+  por quadro.
+- **Exportação:** JSON (tudo, quadro a quadro), Excel (Resumo, Por sinal, Rodadas, as duas
+  matrizes, Quadros e Metadados), PDF (página A4 pela impressão do navegador) e CSV (uma linha por
+  rodada). O último teste fica salvo, inclusive um interrompido, e reabre em **Abrir o último
+  teste**.
+
+**Medir o modelo (dev)** faz no painel a medição da seção 11.5, num Web Worker, com o mesmo código
+e os mesmos números do `tools/medir-modelo.mjs`:
+
+- **Modelo:** o em uso (pronto + treino pessoal), o pronto empacotado, só o treino pessoal ou um
+  arquivo exportado; **Comparar com** outro, medido do mesmo jeito, mais o cruzamento (treinar com
+  um e testar com o outro). Blocos de 17 e 25, como no TCC, ou de 5 e 10, para treinos pequenos.
+- **Execução:** barra de progresso e Cancelar; o painel e a câmera continuam funcionando.
+- **Resultado:** tabela de acerto, conferência com a tabela do TCC quando o modelo é o pronto,
+  avisos de classe pequena demais para o bloco e uma vista por vez para o conjunto e o bloco
+  escolhidos: acerto por classe (barras, pior primeiro), matriz de confusão, caixas da razão nos
+  acertos e nos erros, efeito do corte, efeito do rigor (com o atual marcado), limiar, pares mais
+  próximos e comparação.
+- **Exportação:** JSON (o mesmo formato do terminal), Excel (Resumo, Por classe, Confusões,
+  Razão, Corte da razão, Rigor, Limiar, Pares próximos, Comparação e Metadados) e PDF. A última
+  medição fica salva, e **Abrir medição salva…** abre um JSON exportado antes, do painel ou do
+  terminal.
+
+O README (seção "Dois builds: produção e dev") explica como cada número é calculado, e a seção
+17.6 traz o primeiro teste feito com essas ferramentas.
+
 ---
 
 ## 18. Privacidade e LGPD
@@ -1714,11 +1778,14 @@ distância, a razão e o limiar efetivos, o estado do estabilizador, a mão dete
 confiança, a latência (p50 e p95), a taxa de inferência e os fps da câmera. A seção **Teste de
 sinais (dev)** mede o reconhecimento no uso real: no modo **unitário**, um sinal escolhido em N
 rodadas de tempo fixo; no **geral**, letra por letra e número por número. Cada rodada dá o acerto
-por quadro, o resultado pela primeira confirmação (acerto, troca, rejeição ou tempo esgotado), o
+por quadro, o resultado pela primeira confirmação (acerto, troca, não reconhecido, rejeição ou tempo esgotado), o
 tempo até confirmar, as confusões e a distribuição da razão e da distância; o relatório geral
-traz ainda a tabela por sinal e a matriz de confusão. Cada rodada começa, por padrão, quando o sinal pedido é reconhecido (ou após uma contagem, como opção). Tudo é exportado em JSON, Excel, PDF ou CSV, com metadados
-(versão e commit, SHA-256 do modelo, navegador, câmera, ajustes, participante e condições), sem
-imagem nem pontos da mão. Com `npm run dev:all`, as duas recompilam a cada alteração, e a versão dev
+traz ainda a tabela por sinal e a matriz de confusão. Cada rodada começa, por padrão, quando o
+sinal pedido é reconhecido (ou após uma contagem, como opção). Tudo é exportado em JSON, Excel,
+PDF ou CSV, com metadados (versão e commit, SHA-256 do modelo, navegador, câmera, ajustes,
+participante e condições), sem imagem nem pontos da mão. A seção **Medir o modelo (dev)** faz
+no painel a medição da seção 11.5, com comparação entre modelos, gráficos e exportação em JSON,
+Excel e PDF. A seção 17.7 descreve as três seções em detalhe. Com `npm run dev:all`, as duas recompilam a cada alteração, e a versão dev
 recarrega sozinha: o Chrome fecha o painel nessa hora, e um clique no ícone o reabre.
 
 > **Windows:** clonar o repositório numa pasta do usuário (ex.: `Documentos`). Pastas como
@@ -1935,6 +2002,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 | 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
+| 03/11/2026 | — | Ferramentas do modo dev descritas por inteiro (seção 17.7): diagnóstico, teste de sinais (com as opções da sessão, os controles e a pausa automática) e medir o modelo |
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 17.6): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 

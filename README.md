@@ -425,9 +425,16 @@ A seção **Teste de sinais (dev)** mede o reconhecimento no uso real, com dois 
 - **Unitário:** escolha um sinal (as 21 letras estáticas e os 10 números) e faça N rodadas dele
   (padrão 3).
 - **Geral:** a extensão pede letra por letra e depois número por número (ou só um dos dois), N
-  rodadas de cada (padrão 1), em ordem ou sorteados. A semente do sorteio vai para o arquivo.
+  rodadas de cada (padrão 1), em ordem ou sorteados, sem o mesmo sinal duas vezes seguidas. A
+  semente do sorteio vai para o arquivo.
 
-Cada rodada grava por um tempo fixo (padrão 5 s), e o **início da rodada** tem duas opções:
+Rodadas por sinal: 1, 3 ou 5. A sessão também registra o **participante** (um código, como P1),
+se a mão dele está nas amostras do modelo pronto (o campo **Gravou o modelo pronto?**), a
+iluminação, a distância da câmera e observações; tudo vai para os metadados do relatório. Para
+começar, a câmera e o Reconhecimento precisam estar ligados, com algum sinal no modelo.
+
+Cada rodada grava por um tempo fixo (3, 5 ou 8 s; padrão 5 s), e o **início da rodada** tem duas
+opções:
 
 - **Ao reconhecer o sinal** (padrão): o sinal pedido aparece sobre o vídeo ("Faça a letra A") e a
   gravação só começa no quadro em que o reconhecimento o confirma, isto é, quando a letra entraria
@@ -437,7 +444,9 @@ Cada rodada grava por um tempo fixo (padrão 5 s), e o **início da rodada** tem
 - **Após contagem:** 3 s para se preparar com a mão baixa, e a gravação começa no fim deles.
 
 Durante a gravação, o tempo que falta aparece sobre o vídeo. Dá para pausar, repetir ou pular a
-rodada (pausar e repetir descartam a rodada em andamento; a pulada fica fora das taxas).
+rodada, ou **encerrar e ver o relatório** com as rodadas já feitas, que sai marcado como parcial.
+Pausar e repetir descartam a rodada em andamento; a pulada fica fora das taxas. Se o
+reconhecimento parar no meio, a rodada é pausada até ele ser religado.
 O teste usa o rigor e o tempo para confirmar atuais do painel e os registra; troca o painel para
 o conjunto do sinal pedido (Letras ou Números, como no uso real) e devolve no fim o conjunto e o
 texto que estavam antes. A recarga automática fica suspensa enquanto ele roda.
@@ -458,7 +467,7 @@ Em cada rodada, a partir dos quadros que o reconhecimento já processa:
 O **relatório unitário** mostra esses números e uma linha do tempo de cada rodada (uma faixa por
 quadro, na cor do que o classificador viu). O **geral** traz o resumo da sessão, os piores sinais,
 os pares mais confundidos, a tabela por sinal (clicar num sinal abre o relatório dele) e a matriz
-de confusão por rodada e por quadro. Percentis por interpolação linear, como no NumPy.
+de confusão, que alterna entre por rodada (a primeira letra confirmada) e por quadro. Percentis por interpolação linear, como no NumPy.
 
 **Exportar** oferece quatro formatos, todos só com números (nenhuma imagem e nenhum ponto da mão):
 

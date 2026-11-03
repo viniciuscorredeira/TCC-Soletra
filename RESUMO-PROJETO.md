@@ -1043,6 +1043,23 @@ e confirmação em 700 ms. As amostras do modelo pronto são da mão do Vinicius
 - **Cuidados:** condições diferentes (câmera, luz, distância, duração da rodada) e o teste do
   Vinicius montado a partir de três exportações. Detalhes na seção 17.6 da documentação completa.
 
+### 8.6 Ferramentas do modo dev
+
+A versão dev (`dist-dev/`) é o painel normal com três seções a mais, só com números:
+
+- **Diagnóstico (dev):** a mão desenhada sobre o vídeo (com os 21 pontos numerados, se quiser) e,
+  a cada quadro, as três classes mais próximas, a razão e o limiar efetivos, o estabilizador, a
+  mão detectada e a configurada, a latência, a inferência e os fps da câmera.
+- **Teste de sinais (dev):** relatório unitário ou geral, rodadas que começam ao reconhecer o
+  sinal ou após uma contagem, os dados da sessão (participante, iluminação, distância), pausar,
+  repetir, pular e encerrar; acerto por rodada e por quadro, tempo até reconhecer, confusões e
+  matriz de confusão; exportação em JSON, Excel, PDF e CSV.
+- **Medir o modelo (dev):** a medição do modelo parado no painel (validação em blocos, razão,
+  corte, rigor, limiar, pares próximos), com comparação entre dois modelos e exportação em JSON,
+  Excel e PDF.
+
+A seção 17.7 da documentação completa detalha cada uma.
+
 ---
 
 ## 9. Privacidade e LGPD
@@ -1087,6 +1104,8 @@ classes mais próximas, a razão e o limiar efetivos, o estabilizador, a mão e 
 (letra por letra, número por número), com acerto por quadro e por rodada, tempo até confirmar,
 confusões e matriz de confusão. Cada rodada começa quando o sinal pedido é reconhecido (ou após
 uma contagem), e o resultado é exportado em JSON, Excel, PDF ou CSV, com os metadados da sessão.
+A seção **Medir o modelo (dev)** mede o modelo parado no painel, com comparação entre modelos, e
+exporta em JSON, Excel e PDF (seção 8.6).
 
 Se o vídeo estiver com atraso,
 desativar a aceleração de hardware do navegador (seção 5.3).
@@ -1196,6 +1215,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 | 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
+| 03/11/2026 | — | Ferramentas do modo dev descritas por inteiro (seção 8.6): diagnóstico, teste de sinais (com as opções da sessão, os controles e a pausa automática) e medir o modelo |
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 8.5): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 
