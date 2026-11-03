@@ -9,7 +9,7 @@
  * componente: recriá-los a cada montagem do React abriria uma segunda câmera ou
  * um segundo detector WASM por cima do primeiro.
  */
-import { CameraController, avaliarTaxaDeQuadros, FPS_MAXIMO } from '../src/camera-controller.js';
+import { CameraController } from '../src/camera-controller.js';
 import { SignRecognizer } from '../src/sign-recognizer.js';
 import { migrarChaves } from '../src/migracao-storage.js';
 import { AMOSTRAS_RECOMENDADAS, AMOSTRAS_MAXIMAS, SignModelStore } from '../src/sign-model-store.js';
@@ -17,6 +17,7 @@ import { criarLoja } from '../ui/loja.js';
 import { confirmar } from './dialogo.js';
 import { escolherPlataforma } from './seletor-plataforma.js';
 import { lerRetomada } from './janela.js';
+import { mensagemAoLigar, mensagemDaCameraAtiva, textoModeloPronto } from './mensagens.js';
 
 const PREF_KEY = 'soletra.preferredDeviceId';
 const CHAVE_CONSENTIMENTO = 'soletra.consentimento.reconhecimento';
@@ -114,17 +115,11 @@ export function describeTrack(track) {
   return parts.length ? parts.join(' · ') : 'Transmitindo';
 }
 
-/**
- * Abaixo de 60 fps o vídeo fica menos fluido; só abaixo da taxa do loop de
- * inferência (15 Hz) é que o reconhecimento em si passa a responder mais
- * devagar — e o aviso diz qual dos dois casos é.
- */
-function avisoTaxaBaixa(fps) {
-  const efeito =
-    fps < 15
-      ? 'O reconhecimento vai responder mais devagar.'
-      : 'O reconhecimento continua funcionando, mas o vídeo pode ficar menos fluido.';
-  return `Sua câmera está entregando ${fps} fps, abaixo dos ${FPS_MAXIMO} fps suportados. ${efeito}`;
+/** Mostra a mensagem decidida em sidepanel/mensagens.js: null apaga, undefined não mexe. */
+function aplicarMensagem(mensagem) {
+  if (mensagem === undefined) return;
+  if (mensagem) showMessage(mensagem.texto, mensagem.tipo);
+  else clearMessage();
 }
 
 function aoMudarCamera(snapshot) {
@@ -144,9 +139,7 @@ function aoMudarCamera(snapshot) {
     showMessage(error.message, 'error');
     lojaPermissao.definir(error.code === 'permission-denied');
   } else if (state === 'active') {
-    const taxa = avaliarTaxaDeQuadros(track?.getSettings?.());
-    if (taxa?.abaixo) showMessage(avisoTaxaBaixa(taxa.fps), 'warn');
-    else clearMessage();
+    aplicarMensagem(mensagemDaCameraAtiva(track?.getSettings?.()));
     lojaPermissao.definir(false);
   } else if (!hasDevices) {
     showMessage('Nenhuma câmera encontrada. Conecte um dispositivo e clique em Recarregar.', 'warn');
@@ -298,10 +291,15 @@ export const acoesReco = {
       reconhecedor.desligar();
       return;
     }
-    await reconhecedor.ligar();
-    if (controller.state !== 'active') {
-      showMessage('Reconhecimento pronto. Inicie a câmera para começar.', 'info');
-    }
+    // Se o detector não carregou, o erro já aparece no estado do reconhecimento.
+    if (!(await reconhecedor.ligar())) return;
+    aplicarMensagem(
+      mensagemAoLigar({
+        atual: lojaMensagem.ler(),
+        cameraAtiva: controller.state === 'active',
+        settings: controller.getActiveTrack()?.getSettings?.()
+      })
+    );
   },
   definirConjunto: (id) => reconhecedor.definirConjunto(id),
   espaco: () => reconhecedor.composer.espaco(),
@@ -325,8 +323,7 @@ async function carregarModeloPronto() {
   try {
     const r = await reconhecedor.instalarModeloPadrao();
     showMessage(
-      `Modelo pronto carregado: ${r.amostras} amostras em ${r.classes} classes. ` +
-        'Ligue o Reconhecimento para começar.',
+      textoModeloPronto(`Modelo pronto carregado: ${r.amostras} amostras em ${r.classes} classes.`, reconhecedor.estado),
       'info'
     );
   } catch (err) {
@@ -442,7 +439,7 @@ export const acoesTreino = {
     if (reconhecedor.classificador.vazio) {
       await carregarModeloPronto();
     } else {
-      showMessage('Modelo pronto em uso. Ligue o Reconhecimento para começar.', 'info');
+      showMessage(textoModeloPronto('Modelo pronto em uso.', reconhecedor.estado), 'info');
     }
     await reconhecedor.concluirEscolhaInicial();
   },

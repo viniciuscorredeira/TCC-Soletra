@@ -6,6 +6,7 @@
  */
 const SUITES = [
   'camera-controller.test.mjs',
+  'mensagens.test.mjs',
   'sign-features.test.mjs',
   'sign-classifier.test.mjs',
   'sign-stabilizer.test.mjs',
