@@ -6,8 +6,9 @@
  * quadro-a-quadro não tem como representar trajetória, e fingir que tem produz
  * confusão sistemática em vez de erro honesto.
  *
- * Letras e números compartilham configurações de mão (O≡0, V≡2, W≡3), por isso
- * os dois conjuntos nunca são classificados juntos — a UI alterna entre eles.
+ * Letras e números compartilham configurações de mão (medido no modelo pronto:
+ * O se confunde com 0 e 8 com S), por isso os dois conjuntos nunca são
+ * classificados juntos — a UI alterna entre eles.
  */
 
 /** Letras de configuração estática — as 21 que esta versão reconhece. */
