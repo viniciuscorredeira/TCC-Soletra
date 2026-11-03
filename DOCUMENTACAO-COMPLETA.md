@@ -907,7 +907,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 131 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
+| **Testes de interface** | Não atendido | Os 140 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -1244,6 +1244,52 @@ Gerado a partir do modelo do autor (31 classes × 60 amostras, **uma pessoa**), 
 amostras por classe escolhidas espalhadas pela sessão. A generalização para outras mãos não foi
 medida (seção 7.1).
 
+### 11.5 Medição do modelo (`tools/medir-modelo.mjs`)
+
+```
+npm run medir-modelo                                # mede modelos/padrao.json
+node tools/medir-modelo.mjs modelo.json [--comparar outro.json] [--saida x.json | --sem-json]
+```
+
+Mede o modelo parado, sem câmera, com o próprio `src/sign-classifier.js` (o script só monta os
+conjuntos de treino e teste e conta as respostas). Cada bloco de amostras seguidas de uma classe,
+de 17 ou de 25, sai inteiro do modelo e é classificado pelo resto, com as outras classes
+completas. São blocos, e não amostras soltas, porque amostras vizinhas na gravação são quase
+iguais. Como na extensão, o classificador carrega o modelo inteiro e filtra o conjunto ativo, e o
+limiar é recalibrado sobre o treino de cada bloco.
+
+| Métrica | O que mede |
+|---|---|
+| 1. Acerto | Sem limiar e sem teste de razão, k = 5, voto ponderado: geral, por classe e confusões, para letras, números e juntos |
+| 2. Razão vencedora/segunda | Mínimo, p10, p25, mediana, p75, p90 e máximo, nos acertos e nos erros separadamente |
+| 3. Corte da razão | Para 0,80, 0,90, 0,97 e 0,99: acertos descartados, erros barrados e o acerto que sobra |
+| 4. Rigor | Tolerante (1,25), Normal (1,00) e Exigente (0,80), com limiar e razão multiplicados como no classificador (razão com teto de 0,99): acerto final, rejeição, erros que passam e precisão |
+| 5. Limiar | O limiar calculado (maior entre 1,3 e 5 × o p90 da distância à vizinha da mesma classe) e quantas amostras têm uma de outra classe abaixo dele |
+| 6. Pares próximos | Pares de classes pela mediana da distância de cada amostra à vizinha mais próxima da outra classe |
+| 7. Comparação | Com `--comparar`: as medidas dos dois modelos e o acerto treinando com um e testando com o outro |
+
+A saída é uma tabela no terminal, com vírgula decimal, e um JSON em `medicoes/` com data, commit
+e SHA-256 do modelo (calculado sobre as amostras, o mesmo dos relatórios do teste de sinais).
+Quando o modelo é o pronto, o script confere a tabela do TCC (6 valores), e
+`tests/medir-modelo.test.mjs` falha se ela deixar de ser reproduzida.
+
+Resultado no modelo pronto (`medicoes/medir-modelo-padrao.json`; razão e rigor com blocos de 17):
+
+| | Letras (21) | Números (10) | Juntos (31) |
+|---|---:|---:|---:|
+| Acerto, blocos de 17 / 25 | 93,4% / 93,0% | 92,0% / 90,2% | 87,5% / 85,8% |
+| Razão nos acertos (mediana · p90) | 0,29 · 0,58 | 0,29 · 0,72 | 0,34 · 0,73 |
+| Razão nos erros (mediana) | 1,13 | 1,01 | 0,89 |
+| Acertos descartados com corte 0,80 / 0,97 | 1,8% / 0,4% | 7,2% / 1,1% | 6,9% / 3,7% |
+| Erros barrados com corte 0,80 / 0,97 | 87% / 72% | 83% / 57% | 63% / 38% |
+| Rigor Normal: acerto · rejeição · erro que passa | 93,0% · 5,1% · 1,8% | 88,6% · 8,4% · 3,0% | 84,3% · 8,0% · 7,7% |
+| Rigor Exigente: acerto · rejeição · erro que passa | 91,0% · 8,4% · 0,7% | 84,0% · 14,6% · 1,4% | 80,4% · 15,7% · 3,9% |
+
+O limiar calculado é 6,247 (5 × 1,249). Ele só barra o que está longe de tudo: quase toda amostra
+tem uma de outra classe abaixo dele (98,9% nas letras, no rigor Normal). Entre duas classes
+treinadas, quem decide é o voto e a razão. As confusões mais frequentes juntando letras e
+números são O→0 (26) e 8→S (20); os pares mais próximos, S/8, O/0, R/U, F/T, D/G e U/V.
+
 ---
 
 ## 12. MediaPipe, CSP do Manifest V3 e integridade dos binários
@@ -1420,7 +1466,7 @@ escolha com o usuário.
 node tests/todos.mjs
 ```
 
-**131 cenários em 18 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
+**140 cenários em 19 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
 dependências. A exceção é `builds.test.mjs`, que usa o Vite (já instalado para o build) para
 gerar as duas versões numa pasta temporária.
 
@@ -1443,6 +1489,7 @@ gerar as duas versões numa pasta temporária.
 | `builds.test.mjs` | 5 | Os dois builds: a produção não resolve módulos de `dev/`, o marcador dev nunca aparece em `dist/`, manifesto de produção intacto e o dev trocando só nome, descrição e título, ícones próprios, páginas nos caminhos do manifesto |
 | `teste-sinais.test.mjs` | 9 | Teste de sinais do modo dev: percentis, plano em ordem e sorteado (reproduzível), análise da rodada, sessão com pausar/repetir/pular/encerrar, início ao reconhecer o sinal (espera, troca, não reconhecido), relatórios unitário e geral, arquivo JSON, planilha Excel (ZIP e XML conferidos), CSV e identidade do modelo |
 | `observacao.test.mjs` | 4 | Canal de observação: entrega e isola assinantes que falham; o ranking do classificador não muda a decisão; votos da líder no estabilizador; o reconhecedor só monta o quadro com assinantes |
+| `medir-modelo.test.mjs` | 9 | Medição do modelo parado: blocos, acerto por conjunto e por classe, confusões, corte da razão e rigor consistentes, limiar do modelo inteiro, pares mais próximos, conferência com a tabela do TCC, modelo cruzado, JSON e linha de comando; o modelo pronto ainda reproduz a tabela do TCC |
 | `regra-dev.test.mjs` | 2 | Nenhum arquivo do núcleo importa ou referencia `dev/`; o próprio detector acusa cada forma de referência |
 
 ### 17.2 Cenários que protegem contra erros silenciosos
@@ -1605,10 +1652,11 @@ npm run build                            # compila a extensão em dist/
 npm run build:dev                        # compila o modo dev em dist-dev/
 npm run dev                              # recompila dist/ a cada alteração
 npm run dev:all                          # recompila dist/ e dist-dev/ (a dev recarrega sozinha)
-npm test                                 # suíte completa — 131 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 140 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
+npm run medir-modelo                     # mede o modelo pronto (node tools/medir-modelo.mjs [modelo.json])
 node tools/make-icons.mjs                # regenera os ícones da extensão
 node dev/tools/make-icons-dev.mjs        # regenera os ícones do modo dev (depois do anterior)
 node tools/gerar-paleta.mjs              # regenera ui/paleta.css a partir do azul da logo
@@ -1675,13 +1723,15 @@ src/search-targets.js           catálogo de plataformas (ordem alfabética) e U
 src/migracao-storage.js         migração das chaves rvl.* → soletra.*
 src/modelo-pronto.js            lê, instala e calibra o modelo pronto (painel e service worker)
 src/canal.js                    canal genérico de observação; o reconhecedor publica cada quadro nele
+src/identidade-modelo.js        SHA-256 do modelo, independente da ordem das amostras (modo dev e ferramentas)
 
 vendor/mediapipe/               tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
 modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
-tools/                          montagem do modelo pronto, verificação do vendor, PNG, ícones, logos
+tools/                          montagem e medição do modelo pronto, verificação do vendor, PNG, ícones, logos
+medicoes/                       medição do modelo pronto gravada por tools/medir-modelo.mjs
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
-tests/                          131 cenários; tests/todos.mjs roda todos
+tests/                          140 cenários; tests/todos.mjs roda todos
 
 dev/vite.config.js              build do modo dev para dist-dev/, a partir da configuração da produção
 dev/main.jsx, dev/panel.html    painel dev: o mesmo montarPainel() da produção, com o diagnóstico no fim
@@ -1691,7 +1741,6 @@ dev/PainelDev.jsx               seção "Diagnóstico (dev)"; dev/preferencias.j
 dev/teste/                      teste de sinais: sessão, análise da rodada, relatórios, telas e exportação
                                 (JSON, Excel em xlsx.js, CSV, PDF pela página de impressão)
 dev/relatorio.html              relatório do teste para imprimir ou salvar em PDF
-dev/identidade-modelo.js        SHA-256 do modelo, independente da ordem das amostras
 dev/estatistica.js              percentis por interpolação linear
 dev/service-worker.js           service worker dev: o da produção mais a recarga automática
 dev/recarga.js                  recarrega a versão dev depois de cada recompilação (só no --watch)
@@ -1796,6 +1845,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 1: canal genérico de observação dos quadros no reconhecedor (sem custo sem assinantes); esqueleto da mão sobre o vídeo e painel de diagnóstico ao vivo na versão dev |
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 2: teste de sinais com relatório unitário (um sinal) e geral (letra por letra, número por número), rodadas de tempo fixo, exportação em JSON com metadados e SHA-256 do modelo; ranking do classificador com todas as classes quando observado |
 | 03/11/2026 | branch `feature/modo-dev` | Teste de sinais: rodada que começa quando o sinal pedido é reconhecido (com tempo máximo de espera e o resultado "não reconhecido"), contagem como opção; exportação em JSON, Excel (.xlsx), PDF (impressão do navegador) e CSV |
+| 03/11/2026 | branch `feature/modo-dev` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 
 ---
 

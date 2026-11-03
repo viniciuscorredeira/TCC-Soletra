@@ -188,6 +188,45 @@ Com menos de 3 pessoas, ou com uma classe gravada por uma pessoa só, a ferramen
 padrão de uma mão só reconhece bem apenas essa mão. Como as features espelham a mão esquerda,
 exports das duas mãos podem ser misturados.
 
+### Medir o modelo (`tools/medir-modelo.mjs`)
+
+Mede um modelo parado, sem câmera, de forma reproduzível, com o próprio `src/sign-classifier.js`:
+
+```
+npm run medir-modelo                                   # o modelo pronto (modelos/padrao.json)
+node tools/medir-modelo.mjs meu-modelo.json            # um modelo exportado no painel
+node tools/medir-modelo.mjs --comparar outro.json      # compara com outro modelo
+node tools/medir-modelo.mjs --saida x.json | --sem-json
+```
+
+Cada bloco de amostras seguidas de uma classe (17 ou 25) sai inteiro do modelo e é classificado
+pelo resto. São blocos, e não amostras soltas, porque amostras vizinhas na gravação são quase
+iguais. Para letras, números e os dois juntos, o script mede o acerto (geral, por classe e as
+confusões), a razão vencedora/segunda nos acertos e nos erros, o que os cortes de razão 0,80,
+0,90, 0,97 e 0,99 fariam, o efeito do rigor (Tolerante, Normal e Exigente, com limiar e razão
+como na extensão), o limiar calculado e os pares de classes mais próximos. Com `--comparar`,
+também treina com um modelo e testa com o outro, para saber o quanto um modelo serve à mão de
+quem não o gravou. Sai uma tabela no terminal, com vírgula decimal, e um JSON em `medicoes/`
+com data, commit e SHA-256 do modelo (o mesmo dos relatórios do teste de sinais).
+
+No modelo pronto, a medição gravada em `medicoes/medir-modelo-padrao.json` dá:
+
+| | Letras (21) | Números (10) | Juntos (31) |
+|---|---:|---:|---:|
+| Acerto, blocos de 17 / 25 | 93,4% / 93,0% | 92,0% / 90,2% | 87,5% / 85,8% |
+| Razão nos acertos (mediana · p90) | 0,29 · 0,58 | 0,29 · 0,72 | 0,34 · 0,73 |
+| Razão nos erros (mediana) | 1,13 | 1,01 | 0,89 |
+| Acertos descartados com corte 0,80 / 0,97 | 1,8% / 0,4% | 7,2% / 1,1% | 6,9% / 3,7% |
+| Rigor Normal: acerto · rejeição · erro que passa | 93,0% · 5,1% · 1,8% | 88,6% · 8,4% · 3,0% | 84,3% · 8,0% · 7,7% |
+| Rigor Exigente: acerto · rejeição · erro que passa | 91,0% · 8,4% · 0,7% | 84,0% · 14,6% · 1,4% | 80,4% · 15,7% · 3,9% |
+
+As linhas da razão e do rigor usam blocos de 17. O acerto é o da tabela do TCC: quando o modelo
+medido é o pronto, o script confere que ainda a reproduz, e `tests/medir-modelo.test.mjs` falha
+se deixar de reproduzir. O limiar de distância calculado é 6,247 (5 × 1,249, o percentil 90 da
+distância de cada amostra à vizinha da mesma classe): ele só barra o que está longe de tudo, e
+quase toda amostra tem uma de outra classe abaixo dele. Entre duas classes treinadas, quem
+decide é o voto e a razão. Os pares mais próximos são S/8, O/0, R/U, F/T, D/G e U/V.
+
 ## MediaPipe vendorizado e a CSP do Manifest V3
 
 O Manifest V3 proíbe `'unsafe-eval'`, e é comum ler que isso impede usar MediaPipe em
@@ -239,7 +278,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-131 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+140 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
 que é uma função pura. A exceção é `tests/builds.test.mjs`, que usa o Vite (já instalado
 para o build) para gerar as duas versões numa pasta temporária e conferir a separação entre
@@ -406,7 +445,7 @@ de confusão por rodada e por quadro. Percentis por interpolação linear, como 
 | **CSV** | Uma linha por rodada, com vírgula como separador e ponto decimal (pandas, R) |
 
 O SHA-256
-é calculado sobre as amostras do modelo (`dev/identidade-modelo.js`), então o modelo em uso e o
+é calculado sobre as amostras do modelo (`src/identidade-modelo.js`), então o modelo em uso e o
 mesmo modelo exportado têm a mesma identidade. O último teste fica salvo no `chrome.storage` da
 versão dev (inclusive um interrompido) e pode ser reaberto em **Abrir o último teste**.
 
@@ -547,11 +586,14 @@ src/text-composer.js          composição do texto e normalização para a busc
 src/migracao-storage.js       migra as chaves de storage do nome antigo (RVL Libras)
 src/modelo-pronto.js          lê, instala e calibra o modelo pronto (painel e service worker)
 src/search-targets.js         catálogo de plataformas de busca e montagem das URLs
+src/identidade-modelo.js      SHA-256 do modelo sobre as amostras (usado só pelo modo dev e pelas ferramentas)
 
 vendor/mediapipe/             tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
 modelos/padrao.json           modelo pronto (opcional), gerado por tools/montar-modelo-padrao.mjs
 tools/montar-modelo-padrao.mjs  junta exports de várias pessoas no modelo pronto, balanceado por pessoa
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados e diagnostica CRLF
+tools/medir-modelo.mjs        mede um modelo parado: validação em blocos, razão, corte, rigor e comparação
+medicoes/                     medições gravadas pelo tools/medir-modelo.mjs (a do modelo pronto)
 .gitattributes                impede o Git de converter as quebras de linha dos binários
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
 tools/make-icons.mjs          gera os ícones da extensão a partir de icons/soletra-logo.png
