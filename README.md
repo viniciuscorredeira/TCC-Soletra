@@ -48,7 +48,7 @@ dispositivo. Não há dataset externo, não há etapa de treino em Python, não 
 ```
 Câmera → MediaPipe HandLandmarker → 21 pontos (x,y,z)
        → normalização → vetor de 63 números
-       → KNN sobre as amostras do usuário
+       → KNN sobre as amostras do modelo
        → estabilização temporal → caractere confirmado
        → text-box → Pesquisar → escolha da plataforma
 ```
@@ -98,7 +98,7 @@ alfa pré-multiplicado — de 167 KB de entrada para ~20 KB empacotados.
 ### Cobertura
 
 Reconhece as **21 letras de configuração estática** (A B C D E F G I L M N O P Q R S T U V W Y)
-e os **10 dígitos**. **H, J, K, X e Z envolvem movimento** e ficam fora desta versão: um
+e os **10 dígitos**. **H, J, K, X, Z e Ç envolvem movimento** e ficam fora desta versão: um
 classificador quadro-a-quadro não representa trajetória, e fingir que representa produziria
 confusão sistemática em vez de erro honesto. A extensão avisa isso na interface, e a text-box
 aceita edição manual para completá-las.
