@@ -756,7 +756,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 118 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
+| **Testes de interface** | Não atendido | Os 122 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -939,7 +939,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 
 | Indicador | Resultado (26/10/2026) |
 |---|---|
-| Suíte de testes | **118 cenários em 16 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
+| Suíte de testes | **122 cenários em 17 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
 | Integridade do vendor | **4/4 arquivos íntegros** (`node tools/verificar-vendor.mjs`), inclusive em clone no Windows |
@@ -963,8 +963,9 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | `tests/modelo-pronto.test.mjs` | 3 |
 | `tests/respingo.test.mjs` | 4 |
 | `tests/builds.test.mjs` | 5 |
+| `tests/observacao.test.mjs` | 4 |
 | `tests/regra-dev.test.mjs` | 2 |
-| **Total** | **118** |
+| **Total** | **122** |
 
 ### 8.3 Cenários que travam erros silenciosos
 
@@ -1034,7 +1035,9 @@ no cartão da extensão.
 O modo dev é uma segunda extensão, **Soletra — Libras (Dev)**, gerada do mesmo código por
 `npm run build:dev` em `dist-dev/`, com ícone de faixa laranja "DEV". As duas podem ficar
 instaladas juntas, cada uma com o próprio `chrome.storage` (o modelo passa por Exportar e
-Importar). `npm run dev:all` recompila as duas, e a versão dev recarrega sozinha.
+Importar). `npm run dev:all` recompila as duas, e a versão dev recarrega sozinha. No fim do
+painel dev, a seção **Diagnóstico (dev)** desenha a mão sobre o vídeo e mostra ao vivo as três
+classes mais próximas, a razão e o limiar efetivos, o estabilizador, a mão e a latência.
 
 Se o vídeo estiver com atraso,
 desativar a aceleração de hardware do navegador (seção 5.3).
@@ -1045,7 +1048,7 @@ desativar a aceleração de hardware do navegador (seção 5.3).
 npm run build                            # compila a extensão em dist/
 npm run build:dev                        # compila o modo dev em dist-dev/
 npm run dev:all                          # recompila as duas a cada alteração
-npm test                                 # suíte completa — 118 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 122 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 ```
@@ -1135,6 +1138,7 @@ Em ordem de prioridade para o TCC:
 | 26/10/2026 | `c6dcfa3` | Seletor "Onde pesquisar?" redesenhado como lista agrupada no padrão do Radix, com o que se encontra em cada plataforma |
 | 26/10/2026 | `8500144` | Seletor "Onde pesquisar?" com a faixa da marca no alto, cada plataforma realçada na própria cor e o buscador padrão em destaque |
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 0: segundo build (`dist-dev/`) do mesmo código, com manifesto e ícones próprios e recarga automática; `npm run dev:all`; testes da separação entre os builds; CI no GitHub Actions |
+| 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 1: canal genérico de observação dos quadros no reconhecedor (sem custo sem assinantes); esqueleto da mão sobre o vídeo e painel de diagnóstico ao vivo na versão dev |
 
 ---
 

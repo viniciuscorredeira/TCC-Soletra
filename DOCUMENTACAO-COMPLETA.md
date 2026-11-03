@@ -907,7 +907,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 118 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
+| **Testes de interface** | Não atendido | Os 122 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -1381,6 +1381,7 @@ proveniência.
 | **Plataformas em ordem alfabética** | Ordem do catálogo | Previsibilidade; uma plataforma nova entra no lugar certo |
 | **React + Radix Themes, com build (Vite)** | JavaScript puro sem build (versão anterior) | Componentes acessíveis prontos (foco, teclado, leitor de tela), tema claro/escuro coerente e um visual único; a lógica em `src/` continua JavaScript puro, sem React, e testável em Node |
 | **Modo dev como segundo build do mesmo código** (`dist-dev/`) | Branch permanente ou projeto separado | Um código só: o que o modo dev mede é exatamente o que a produção roda. O código dele fica em `dev/` e só anda num sentido (dev/ importa o núcleo, nunca o contrário), o que dois testes conferem; apagar `dev/` não afeta a produção |
+| **Canal de observação genérico no núcleo** | O núcleo chamar o modo dev, ou o modo dev ler o estado interno por fora | O núcleo publica o que acontece em cada quadro sem saber quem assina, e sem assinantes não monta nada. O modo dev (ou qualquer ferramenta futura) só assina |
 | **Tema Sistema / Claro / Escuro** | Só seguir o sistema operacional | Quem usa o painel numa apresentação ou num ambiente claro precisa poder escolher; "Sistema" continua o padrão |
 | **Paleta gerada a partir da logo** | Uma cor pronta do Radix (blue, indigo) | Nenhuma é o azul da marca (#0060FF). As escalas são geradas mantendo a luminosidade de cada degrau do Radix, o que preserva os contrastes; o escuro vira azul-marinho e o claro, branco azulado. O azul-céu da lupa (#00B4FC) entra como cor secundária, para o tema claro não ficar só branco e azul |
 | **Português no código** | Inglês | Coerência com o domínio (Libras); exceção no código de câmera herdado da v0.1.0 |
@@ -1419,7 +1420,7 @@ escolha com o usuário.
 node tests/todos.mjs
 ```
 
-**118 cenários em 16 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
+**122 cenários em 17 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
 dependências. A exceção é `builds.test.mjs`, que usa o Vite (já instalado para o build) para
 gerar as duas versões numa pasta temporária.
 
@@ -1440,6 +1441,7 @@ gerar as duas versões numa pasta temporária.
 | `montar-modelo-padrao.test.mjs` | 5 | Montagem balanceada, redistribuição, amostras espalhadas, validação |
 | `respingo.test.mjs` | 4 | Tinta da troca de tema: mesmo número de pontos em todos os quadros, começa no botão, termina cobrindo a janela, tempos em ordem |
 | `builds.test.mjs` | 5 | Os dois builds: a produção não resolve módulos de `dev/`, o marcador dev nunca aparece em `dist/`, manifesto de produção intacto e o dev trocando só nome, descrição e título, ícones próprios, páginas nos caminhos do manifesto |
+| `observacao.test.mjs` | 4 | Canal de observação: entrega e isola assinantes que falham; o ranking do classificador não muda a decisão; votos da líder no estabilizador; o reconhecedor só monta o quadro com assinantes |
 | `regra-dev.test.mjs` | 2 | Nenhum arquivo do núcleo importa ou referencia `dev/`; o próprio detector acusa cada forma de referência |
 
 ### 17.2 Cenários que protegem contra erros silenciosos
@@ -1577,7 +1579,10 @@ em ↻ no cartão da extensão e reabrir o painel.
 (Dev)**, com as ferramentas de diagnóstico e medição. Tem ícone com faixa laranja "DEV" e um selo
 "DEV" no painel, e pode ficar instalada ao lado da versão normal (carregar `dist/` e `dist-dev/`).
 Cada uma tem o próprio `chrome.storage`; o modelo passa de uma para a outra por **Exportar** e
-**Importar**. Com `npm run dev:all`, as duas recompilam a cada alteração, e a versão dev
+**Importar**. No fim do painel dev, a seção **Diagnóstico (dev)** desenha a mão sobre o vídeo (com
+opção de numerar os 21 pontos) e mostra, a cada quadro, as três classes mais próximas com a
+distância, a razão e o limiar efetivos, o estado do estabilizador, a mão detectada e a
+confiança, a latência (p50 e p95), a taxa de inferência e os fps da câmera. Com `npm run dev:all`, as duas recompilam a cada alteração, e a versão dev
 recarrega sozinha: o Chrome fecha o painel nessa hora, e um clique no ícone o reabre.
 
 > **Windows:** clonar o repositório numa pasta do usuário (ex.: `Documentos`). Pastas como
@@ -1592,7 +1597,7 @@ npm run build                            # compila a extensão em dist/
 npm run build:dev                        # compila o modo dev em dist-dev/
 npm run dev                              # recompila dist/ a cada alteração
 npm run dev:all                          # recompila dist/ e dist-dev/ (a dev recarrega sozinha)
-npm test                                 # suíte completa — 118 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 122 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
@@ -1640,6 +1645,7 @@ ui/loja.js                      loja mínima de estado lida pelo React
 sidepanel/panel.html|css        página do painel e estilos próprios (semáforo, anel, grade)
 sidepanel/nucleo.js             câmera, reconhecedor e todas as ações do painel, sem React
 sidepanel/App.jsx, main.jsx     composição e montagem da página
+sidepanel/montar.jsx            montarPainel(): monta o painel, com seções extras opcionais no fim
 sidepanel/componentes/          Topo, Palco, Mensagem, Controles, Reconhecimento, Treino, Rodape,
                                 DialogoConfirmacao, SeletorPlataforma
 sidepanel/seletor-plataforma.js pedido da janela "Onde pesquisar?"
@@ -1660,16 +1666,20 @@ src/text-composer.js            composição do texto e preparo para a busca
 src/search-targets.js           catálogo de plataformas (ordem alfabética) e URLs
 src/migracao-storage.js         migração das chaves rvl.* → soletra.*
 src/modelo-pronto.js            lê, instala e calibra o modelo pronto (painel e service worker)
+src/canal.js                    canal genérico de observação; o reconhecedor publica cada quadro nele
 
 vendor/mediapipe/               tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
 modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
 tools/                          montagem do modelo pronto, verificação do vendor, PNG, ícones, logos
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
-tests/                          118 cenários; tests/todos.mjs roda todos
+tests/                          122 cenários; tests/todos.mjs roda todos
 
 dev/vite.config.js              build do modo dev para dist-dev/, a partir da configuração da produção
-dev/main.js, dev/panel.html     painel dev: importa o da produção e acrescenta o que é de dev/
+dev/main.jsx, dev/panel.html    painel dev: o mesmo montarPainel() da produção, com o diagnóstico no fim
+dev/esqueleto.js                a mão desenhada sobre o vídeo (DrawingUtils do MediaPipe vendorizado)
+dev/diagnostico.js              assina observarQuadros() e agrega os números do diagnóstico
+dev/PainelDev.jsx               seção "Diagnóstico (dev)"; dev/preferencias.js guarda as chaves
 dev/service-worker.js           service worker dev: o da produção mais a recarga automática
 dev/recarga.js                  recarrega a versão dev depois de cada recompilação (só no --watch)
 dev/manifest.dev.json           nome, descrição e título trocados no manifesto da versão dev
@@ -1770,6 +1780,7 @@ Em ordem de prioridade para o TCC:
 | 26/10/2026 | `c6dcfa3` | Seletor "Onde pesquisar?" redesenhado como lista agrupada no padrão do Radix, com o que se encontra em cada plataforma |
 | 26/10/2026 | `8500144` | Seletor "Onde pesquisar?" com a faixa da marca no alto, cada plataforma realçada na própria cor e o buscador padrão em destaque |
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 0: segundo build (`dist-dev/`) do mesmo código, com manifesto e ícones próprios e recarga automática; `npm run dev:all`; testes da separação entre os builds; CI no GitHub Actions |
+| 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 1: canal genérico de observação dos quadros no reconhecedor (sem custo sem assinantes); esqueleto da mão sobre o vídeo e painel de diagnóstico ao vivo na versão dev |
 
 ---
 

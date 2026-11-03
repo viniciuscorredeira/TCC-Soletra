@@ -239,7 +239,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-118 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+122 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
 que é uma função pura. A exceção é `tests/builds.test.mjs`, que usa o Vite (já instalado
 para o build) para gerar as duas versões numa pasta temporária e conferir a separação entre
@@ -325,9 +325,49 @@ Com `npm run dev:all`, a versão dev recarrega sozinha depois de cada recompila�
 fecha o painel lateral nessa hora, e um clique no ícone o reabre já com o código novo. A versão
 normal continua pedindo ↻ em `chrome://extensions`.
 
+#### O que a versão dev mostra
+
+No fim do painel, a seção **Diagnóstico (dev)** traz duas chaves e os números ao vivo, a cada
+quadro processado:
+
+- **Desenhar a mão:** o esqueleto da mão por cima do vídeo (as conexões em verde e os 21 pontos),
+  com os mesmos pontos que o reconhecimento usa, sem segunda detecção. Respeita o espelhamento,
+  a opção de câmera invertida e o redimensionamento do painel. **Numerar os pontos** mostra o
+  índice de 0 a 20 de cada um.
+- **Classes mais próximas:** as três classes com a menor distância ao gesto, e a fração do voto
+  dos 5 vizinhos que cada uma levou. A decisão do quadro (aceita, ambígua, distante, sem mão, mão
+  bloqueada) aparece no alto.
+- **Classificador:** a razão entre a 1ª e a 2ª classe com o limite efetivo da razão, a distância
+  da 1ª com o limiar efetivo (os dois já com o rigor aplicado), o rigor e o tempo para confirmar.
+- **Estabilizador:** o símbolo do quadro, o vencedor da votação e quantos quadros da janela a
+  líder tem, o candidato, o progresso, a letra travada, a última confirmação e a última rejeição.
+- **Mão:** a detectada (já corrigida pela câmera invertida) com a confiança, a configurada e o
+  estado da trava de mão.
+- **Desempenho:** a latência p50 e p95 do laço (as 30 medições que regulam o recuo para 8 Hz) e
+  numa janela mais longa de 150 quadros, a taxa de inferência medida, os fps que a câmera de fato
+  apresenta (contados pelos quadros do vídeo) contra os que ela declara, e o tempo do desenho da
+  mão.
+
+Para medir o custo do desenho: com a mão na câmera, anote o p95 da latência com a chave
+**Desenhar a mão** ligada e desligada. O desenho roda no `requestAnimationFrame`, fora do tempo
+que o laço mede, e o próprio painel mostra quanto ele leva.
+
+O modo dev não grava nem envia imagem nenhuma: o canvas mostra só os pontos do quadro atual.
+
+#### Como o núcleo expõe os dados
+
+O reconhecedor publica cada quadro num canal genérico de observação (`src/canal.js`), que o
+painel oferece em `observarQuadros()` (`sidepanel/nucleo.js`). O canal não sabe quem assina: sem
+assinantes, nenhum objeto é montado, e o custo fica numa checagem por quadro. O classificador só
+calcula o ranking das classes quando há quem observe, e a decisão é a mesma com ou sem ele
+(`tests/observacao.test.mjs`). O painel dev entra pelo mesmo `montarPainel()` da produção
+(`sidepanel/montar.jsx`), que aceita seções a mais no fim da coluna.
+
+#### Separação entre os builds
+
 O código do modo dev mora em `dev/` e só anda num sentido: `dev/` importa o núcleo, e nada em
 `src/`, `sidepanel/`, `ui/`, `background/` ou `permission/` importa de `dev/`. O painel dev é
-o painel normal (o ponto de entrada dele importa `sidepanel/main.jsx`) mais o que vier de `dev/`.
+o painel normal, montado por `montarPainel()`, mais o que vier de `dev/`.
 O build dev troca, na cópia, só o nome, a descrição e o título do manifesto
 (`dev/manifest.dev.json`) e os ícones (`dev/icons/`, gerados por
 `node dev/tools/make-icons-dev.mjs`). Dois testes garantem a separação:
@@ -416,7 +456,8 @@ a desconexão física do dispositivo em uso durante a transmissão.
 manifest.json                 MV3, permissões sidePanel + storage + search, CSP com wasm-unsafe-eval
 background/service-worker.js  abre o painel lateral no clique do ícone (fallback: aba), executa a pesquisa e instala o modelo pronto na instalação
 package.json, vite.config.js build da interface (React + Radix Themes) para dist/
-dev/                          modo dev: build para dist-dev/ (dev/vite.config.js), manifesto e ícones próprios, recarga automática
+dev/                          modo dev: build para dist-dev/ (dev/vite.config.js), manifesto e ícones próprios, recarga automática,
+                              esqueleto da mão (esqueleto.js) e diagnóstico ao vivo (diagnostico.js, PainelDev.jsx)
 permission/request.html       aba de topo para o prompt nativo de câmera (Permissao.jsx)
 
 ui/tema.js                    tema Sistema / Claro / Escuro, comum às duas páginas
@@ -426,8 +467,9 @@ ui/paleta.css                 escalas de cor da marca (geradas por tools/gerar-p
 ui/marca.css                  fundos, degradê da logo e ajustes de botão comuns às páginas
 ui/loja.js                    loja mínima de estado lida pelo React (useSyncExternalStore)
 sidepanel/panel.html|css      página do painel e estilos próprios (semáforo, anel, grade)
-sidepanel/nucleo.js           câmera, reconhecedor e todas as ações do painel, sem React
+sidepanel/nucleo.js           câmera, reconhecedor e todas as ações do painel, sem React; observarQuadros()
 sidepanel/App.jsx             composição da página
+sidepanel/montar.jsx          monta o painel (montarPainel), com seções extras opcionais no fim
 sidepanel/componentes/        Topo, Palco, Controles, Reconhecimento, Treino, diálogos…
 sidepanel/dialogo.js          pedido de confirmação (window.confirm não é confiável no painel)
 sidepanel/seletor-plataforma.js  pedido de escolha do destino da pesquisa
@@ -435,7 +477,8 @@ sidepanel/janela.js           botões de janela (fechar, voltar ao painel, tela 
 icons/plataformas/            logos das plataformas de busca, empacotadas
 
 src/camera-controller.js      ciclo de vida do MediaStream, restrições de captura (1280×720 / até 60 fps) e avaliação da taxa
-src/sign-recognizer.js        orquestrador; expõe um onStateChange, como o CameraController
+src/sign-recognizer.js        orquestrador; expõe um onStateChange, como o CameraController, e o canal quadros
+src/canal.js                  canal genérico de observação (assinantes), sem custo quando ninguém assina
 src/hand-landmarker.js        adaptador do MediaPipe (único módulo dependente de WASM)
 src/inference-loop.js         agendador rVFC, throttle adaptativo, timestamp monotônico
 src/sign-features.js          landmarks → 63 números; tem VERSAO_FEATURES
