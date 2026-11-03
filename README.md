@@ -304,6 +304,36 @@ npm run build        # gera dist/
 Durante o desenvolvimento, `npm run dev` recompila a cada alteração; depois de cada uma, clique
 em ↻ no cartão da extensão em `chrome://extensions` e reabra o painel.
 
+### Dois builds: produção e dev
+
+O mesmo código gera duas extensões:
+
+| Comando | Pasta | Extensão |
+|---|---|---|
+| `npm run build` | `dist/` | **Soletra — Libras**, a versão normal |
+| `npm run build:dev` | `dist-dev/` | **Soletra — Libras (Dev)**, com ferramentas de diagnóstico |
+| `npm run dev:all` | as duas | recompila as duas a cada alteração |
+
+A versão dev tem ícone com uma faixa laranja "DEV" e um selo "DEV" no canto do painel. As duas
+podem ficar instaladas ao mesmo tempo: carregue `dist/` e `dist-dev/` em **Carregar sem
+compactação**. Cada uma tem o próprio `chrome.storage`; para levar o modelo de uma para a outra,
+use **Exportar** numa e **Importar** na outra.
+
+Com `npm run dev:all`, a versão dev recarrega sozinha depois de cada recompilação: o Chrome
+fecha o painel lateral nessa hora, e um clique no ícone o reabre já com o código novo. A versão
+normal continua pedindo ↻ em `chrome://extensions`.
+
+O código do modo dev mora em `dev/` e só anda num sentido: `dev/` importa o núcleo, e nada em
+`src/`, `sidepanel/`, `ui/`, `background/` ou `permission/` importa de `dev/`. O painel dev é
+o painel normal (o ponto de entrada dele importa `sidepanel/main.jsx`) mais o que vier de `dev/`.
+O build dev troca, na cópia, só o nome, a descrição e o título do manifesto
+(`dev/manifest.dev.json`) e os ícones (`dev/icons/`, gerados por
+`node dev/tools/make-icons-dev.mjs`). Dois testes garantem a separação:
+`tests/regra-dev.test.mjs` lê o código do núcleo atrás de referências a `dev/`, e
+`tests/builds.test.mjs` gera as duas versões e confere que a produção não resolve nenhum módulo
+de `dev/`, que o marcador do modo dev nunca aparece em `dist/` e que o manifesto de produção
+sai intacto.
+
 ## Interface
 
 A interface usa **React** com **[Radix Themes](https://www.radix-ui.com/themes)** — botões,
@@ -384,6 +414,7 @@ a desconexão física do dispositivo em uso durante a transmissão.
 manifest.json                 MV3, permissões sidePanel + storage + search, CSP com wasm-unsafe-eval
 background/service-worker.js  abre o painel lateral no clique do ícone (fallback: aba), executa a pesquisa e instala o modelo pronto na instalação
 package.json, vite.config.js build da interface (React + Radix Themes) para dist/
+dev/                          modo dev: build para dist-dev/ (dev/vite.config.js), manifesto e ícones próprios, recarga automática
 permission/request.html       aba de topo para o prompt nativo de câmera (Permissao.jsx)
 
 ui/tema.js                    tema Sistema / Claro / Escuro, comum às duas páginas
@@ -426,7 +457,8 @@ tools/make-icons.mjs          gera os ícones da extensão a partir de icons/sol
 tools/preparar-logos.mjs      limpa, apara e reduz as logos para icons/plataformas/ (origem fora do repo)
 icons/soletra-logo.png        arte da marca; origem dos ícones da extensão
 spike/spike.html|js           diagnóstico de CSP e latência (não faz parte do fluxo)
-tests/todos.mjs               roda a suíte inteira
+tests/todos.mjs               roda a suíte inteira, inclusive os dois builds
+.github/workflows/ci.yml      testes e os dois builds a cada push
 ```
 
 ## Publicação nas lojas
