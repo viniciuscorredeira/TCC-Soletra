@@ -18,10 +18,12 @@ export const PADROES_CLASSIFICADOR = {
    * fração da distância à concorrente mais próxima.
    *
    * Serve apenas para descartar empates — gestos genuinamente a meio caminho
-   * entre duas classes. Não pode ser apertado: num alfabeto manual as classes
-   * são naturalmente parecidas (M, N, S e A são todas punhos), e uma resposta
-   * CORRETA costuma vir com razão 0,83–0,93. Medido: a 0,80 o classificador
-   * acertava 95% e o portão descartava 85% desses acertos.
+   * entre duas classes. Num alfabeto manual as classes são naturalmente
+   * parecidas (M, N, S e A são todas punhos), e apertar o corte cobra dos
+   * acertos. Medido no modelo pronto (tools/medir-modelo.mjs, blocos de 17):
+   * nos acertos a razão tem mediana 0,29 e p90 0,58 nas letras (0,72 nos
+   * números); a 0,80 o teste descartaria 1,8% dos acertos nas letras e 7,2%
+   * nos números, e a 0,97 descarta 0,4% e 1,1%.
    *
    * Quem garante a segurança é o limiar de distância, não este: a rejeição de
    * mão relaxada e de gesto não treinado fica em 100% para qualquer valor aqui.

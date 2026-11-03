@@ -1070,7 +1070,7 @@ Depois do voto, dois testes decidem se a classe vencedora é aceita:
 
 | Teste | Regra | Função |
 |---|---|---|
-| **Razão** | Rejeita se a distância à vencedora passar de **97%** da distância à classe concorrente mais próxima (motivo "ambíguo") | Descartar empates. É frouxo de propósito: no alfabeto manual as classes são naturalmente parecidas (M, N, S e A são todas punhos), e uma resposta **correta** costuma vir com razão entre 0,83 e 0,93. A 0,80, o classificador acertava 95% e o teste descartava 85% desses acertos |
+| **Razão** | Rejeita se a distância à vencedora passar de **97%** da distância à classe concorrente mais próxima (motivo "ambíguo") | Descartar empates. É frouxo de propósito: no alfabeto manual as classes são naturalmente parecidas (M, N, S e A são todas punhos), e apertar o corte cobra dos acertos. No modelo pronto (`tools/medir-modelo.mjs`, blocos de 17), a razão dos acertos tem mediana 0,29 (p90 0,58 nas letras e 0,72 nos números); a 0,80, o teste descartaria 1,8% dos acertos nas letras e 7,2% nos números; a 0,97, 0,4% e 1,1% (seção 11.5) |
 | **Distância absoluta** | Rejeita se a distância à vencedora passar do limiar **τ_abs × rigor** (motivo "distante") | A rede de segurança: mão relaxada ou gesto não treinado ficam longe de tudo |
 
 O **rigor** da interface multiplica os limiares: Tolerante 1,25, Normal 1,0, Exigente 0,8.
@@ -1408,7 +1408,7 @@ proveniência.
 | **Classificar landmarks** | Classificar pixels (como o Teachable Machine) | Modelo de KB, robusto a fundo, luz e tom de pele, treinável no navegador |
 | **KNN** | Rede neural | Poucas amostras por classe, treinadas pelo usuário: não há dados nem tempo para otimizar pesos. A inferência sobre ~1.550 vetores leva frações de ms |
 | **Limiar constante (1,3)** | Limiar por dispersão interna; por separação entre classes | As duas alternativas foram implementadas e falharam (seção 9.6) |
-| **Teste de razão frouxo (0,97)** | Teste apertado (0,80) | A 0,80, 85% dos acertos eram descartados |
+| **Teste de razão frouxo (0,97)** | Teste apertado (0,80) | A 0,80, o modelo pronto perderia 1,8% dos acertos nas letras e 7,2% nos números (contra 0,4% e 1,1% a 0,97), em troca de barrar mais erros entre classes treinadas (87% contra 72% nas letras). Quem quer essa troca usa o rigor Exigente, que leva a razão a 0,78 (seção 11.5) |
 | **Rotação preservada** | Normalizar a rotação | A orientação da palma é parâmetro fonológico da Libras |
 | **Delegate CPU** | GPU | No spike (Edge 153): CPU p50 22,9 ms contra 58,4 ms no GPU, que paga a leitura de textura e exigiria um contexto WebGL vivo num painel que pode ser recolhido |
 | **`requestVideoFrameCallback`** | `setInterval` | Dispara só com quadro novo e pausa com o vídeo |
