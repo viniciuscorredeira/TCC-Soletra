@@ -759,7 +759,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 144 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
+| **Testes de interface** | Não atendido | Os 149 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito do autor** | Pendente (RNF11) | O `PRIVACY.md` afirma que o autor que gravou as amostras do modelo pronto consentiu com a distribuição das amostras. Esse consentimento precisa ser **registrado por escrito** e anexado ao TCC, assim como o de quem contribuir no futuro |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -823,7 +823,8 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 
 | Interface | Linhas | Responsabilidade |
 |---|---:|---|
-| `sidepanel/nucleo.js` | 608 | Orquestração sem React: câmera, permissão, consentimento, aviso de taxa abaixo de 60 fps, pesquisa, treino, exportar/importar/apagar |
+| `sidepanel/nucleo.js` | 605 | Orquestração sem React: câmera, permissão, consentimento, pesquisa, treino, exportar/importar/apagar |
+| `sidepanel/mensagens.js` | 68 | Que mensagem mostrar ao ligar o Reconhecimento, ao usar o modelo pronto e com a câmera abaixo de 60 fps |
 | `sidepanel/panel.html` / `.css` | 12 / 592 | Página do painel e estilos próprios (semáforo, palco, anel, grade de classes, seletor de plataforma) |
 | `sidepanel/componentes/Reconhecimento.jsx` | 341 | Anel, barra de proximidade, caixa de texto, ajustes, avisos, trava de mão com suas saídas |
 | `sidepanel/componentes/Treino.jsx` | 323 | Grade de classes com % de uso por classe, uso do armazenamento, captura, imagem da câmera (normal/invertida), boas-vindas, exportar/importar/apagar, modelo pronto |
@@ -854,7 +855,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `dev/` (raiz) | 1.165 | Build dev, painel dev, esqueleto da mão, diagnóstico ao vivo, recarga automática, ícones |
 | `dev/teste/` | 2.327 | Teste de sinais: sessão, análise da rodada, relatórios, telas e exportação (JSON, Excel, PDF, CSV) |
 | `dev/medicao/` | 1.411 | Medir o modelo no painel: Web Worker, fontes do modelo, telas, Excel e PDF |
-| `tests/` | 3.302 | 144 cenários em 19 arquivos |
+| `tests/` | 3.384 | 149 cenários em 20 arquivos |
 
 As linhas das tabelas contam o arquivo inteiro. **Total de código próprio, sem contar linhas em
 branco e incluindo testes e ferramentas: cerca de 15,3 mil linhas**, das quais 4,5 mil são do
@@ -959,7 +960,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 
 | Indicador | Resultado (03/11/2026) |
 |---|---|
-| Suíte de testes | **144 cenários em 19 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
+| Suíte de testes | **149 cenários em 20 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
 | Medição do modelo pronto | Acerto por validação em blocos de 17 / 25: **letras 93,4% / 93,0%, números 92,0% / 90,2%, juntos 87,5% / 85,8%**; rigor Normal nas letras: 93,0% de acerto, 5,1% de rejeição, 1,8% de erros que passam (`npm run medir-modelo`, `medicoes/medir-modelo-padrao.json`, 03/11/2026) |
 | Teste com participantes | **94,6% das rodadas** (264 de 279) e **97,4% dos quadros**, com 3 participantes e o modelo pronto; quem não tem a mão nas amostras dele acertou o mesmo que o autor delas (seção 8.5, `Planilhas de Testes/`) |
 | `TODO` / `FIXME` no código | Nenhum |
@@ -978,6 +979,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | `tests/text-composer.test.mjs` | 7 |
 | `tests/search-targets.test.mjs` | 7 |
 | `tests/migracao-storage.test.mjs` | 7 |
+| `tests/mensagens.test.mjs` | 5 |
 | `tests/camera-controller.test.mjs` | 7 |
 | `tests/trava-mao.test.mjs` | 6 |
 | `tests/integracao.test.mjs` | 6 |
@@ -989,7 +991,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | `tests/medir-modelo.test.mjs` | 13 |
 | `tests/observacao.test.mjs` | 4 |
 | `tests/regra-dev.test.mjs` | 2 |
-| **Total** | **144** |
+| **Total** | **149** |
 
 ### 8.3 Cenários que travam erros silenciosos
 
@@ -1118,7 +1120,7 @@ desativar a aceleração de hardware do navegador (seção 5.3).
 npm run build                            # compila a extensão em dist/
 npm run build:dev                        # compila o modo dev em dist-dev/
 npm run dev:all                          # recompila as duas a cada alteração
-npm test                                 # suíte completa — 144 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 149 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 npm run medir-modelo                     # mede o modelo pronto (node tools/medir-modelo.mjs [modelo.json])
@@ -1223,6 +1225,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 | 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
+| 03/11/2026 | — | Correção: com a câmera ligada, ligar o Reconhecimento apaga a mensagem "Ligue o Reconhecimento" deixada por "Usar modelo pronto", "Adicionar modelo pronto" ou pelo treino, e devolve o aviso de câmera abaixo de 60 fps que ela tinha substituído; com o Reconhecimento já ligado, o modelo pronto não pede mais para ligá-lo. Regra em `sidepanel/mensagens.js`, com teste |
 | 03/11/2026 | — | Autoria: o projeto pertence aos integrantes que o desenvolvem; a empresa Integrativa sai da política de privacidade, cujo contato passa a ser o repositório |
 | 03/11/2026 | — | Ferramentas do modo dev descritas por inteiro (seção 8.6): diagnóstico, teste de sinais (com as opções da sessão, os controles e a pausa automática) e medir o modelo |
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 8.5): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |

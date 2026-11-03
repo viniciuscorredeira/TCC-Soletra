@@ -303,7 +303,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-144 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+149 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
 que é uma função pura. A exceção é `tests/builds.test.mjs`, que usa o Vite (já instalado
 para o build) para gerar as duas versões numa pasta temporária e conferir a separação entre
@@ -632,6 +632,7 @@ sidepanel/nucleo.js           câmera, reconhecedor e todas as ações do painel
 sidepanel/App.jsx             composição da página
 sidepanel/montar.jsx          monta o painel (montarPainel), com seções extras opcionais no fim
 sidepanel/componentes/        Topo, Palco, Controles, Reconhecimento, Treino, diálogos…
+sidepanel/mensagens.js        que mensagem mostrar ao ligar o Reconhecimento, ao usar o modelo pronto e com a câmera lenta
 sidepanel/dialogo.js          pedido de confirmação (window.confirm não é confiável no painel)
 sidepanel/seletor-plataforma.js  pedido de escolha do destino da pesquisa
 sidepanel/janela.js           botões de janela (fechar, voltar ao painel, tela cheia)

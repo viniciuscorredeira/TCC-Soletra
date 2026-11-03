@@ -910,7 +910,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 144 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
+| **Testes de interface** | Não atendido | Os 149 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito do autor** | Pendente (RNF11) | O `PRIVACY.md` afirma que o autor que gravou as amostras do modelo pronto consentiu com a distribuição das amostras. Esse consentimento precisa ser **registrado por escrito** e anexado ao TCC, assim como o de quem contribuir no futuro |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -1472,7 +1472,7 @@ escolha com o usuário.
 node tests/todos.mjs
 ```
 
-**144 cenários em 19 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
+**149 cenários em 20 arquivos, todos passando** (03/11/2026), em Node puro, sem framework e sem
 dependências. A exceção é `builds.test.mjs`, que usa o Vite (já instalado para o build) para
 gerar as duas versões numa pasta temporária.
 
@@ -1490,6 +1490,7 @@ O GitHub Actions (`.github/workflows/ci.yml`) repete isso a cada push e pull req
 | `search-targets.test.mjs` | 7 | URLs, codificação, catálogo íntegro, logos presentes, ordem alfabética |
 | `migracao-storage.test.mjs` | 7 | Migração idempotente e sem sobrescrever dado novo |
 | `modelo-pronto.test.mjs` | 3 | Instalação do modelo pronto já calibrada, preservando o treino pessoal; treinar do zero tira só o padrão |
+| `mensagens.test.mjs` | 5 | Mensagens do painel: ligar o Reconhecimento apaga "Ligue o Reconhecimento" e devolve o aviso de taxa abaixo de 60 fps; outras mensagens ficam; câmera parada pede para iniciá-la; o modelo pronto não pede para ligar o que já está ligado; texto do aviso de taxa |
 | `camera-controller.test.mjs` | 7 | Recarregar sem ligar a câmera, limpar erro, reabrir a mesma câmera, ler os nomes sem ligar, não acessar sem permissão, teto de 60 fps e aviso abaixo disso |
 | `trava-mao.test.mjs` | 6 | Trava após quadros seguidos, oscilação ignorada, soltura, confiança baixa, reinício |
 | `integracao.test.mjs` | 6 | Pipeline completo de ponta a ponta |
@@ -1817,7 +1818,7 @@ npm run build                            # compila a extensão em dist/
 npm run build:dev                        # compila o modo dev em dist-dev/
 npm run dev                              # recompila dist/ a cada alteração
 npm run dev:all                          # recompila dist/ e dist-dev/ (a dev recarrega sozinha)
-npm test                                 # suíte completa — 144 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 149 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
@@ -1872,6 +1873,7 @@ sidepanel/montar.jsx            montarPainel(): monta o painel, com seções ext
 sidepanel/componentes/          Topo, Palco, Mensagem, Controles, Reconhecimento, Treino, Rodape,
                                 DialogoConfirmacao, SeletorPlataforma
 sidepanel/seletor-plataforma.js pedido da janela "Onde pesquisar?"
+sidepanel/mensagens.js          que mensagem mostrar ao ligar o Reconhecimento, ao usar o modelo pronto e com a câmera lenta
 sidepanel/dialogo.js            pedido da janela de confirmação
 sidepanel/janela.js             botões fechar / painel / tela cheia
 
@@ -1899,7 +1901,7 @@ tools/                          montagem e medição do modelo pronto, verifica�
 medicoes/                       medição do modelo pronto gravada por tools/medir-modelo.mjs
 Planilhas de Testes/            planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
-tests/                          144 cenários; tests/todos.mjs roda todos
+tests/                          149 cenários; tests/todos.mjs roda todos
 
 dev/vite.config.js              build do modo dev para dist-dev/, a partir da configuração da produção
 dev/main.jsx, dev/panel.html    painel dev: o mesmo montarPainel() da produção, com o diagnóstico no fim
@@ -2021,6 +2023,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 | 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
+| 03/11/2026 | — | Correção: com a câmera ligada, ligar o Reconhecimento apaga a mensagem "Ligue o Reconhecimento" deixada por "Usar modelo pronto", "Adicionar modelo pronto" ou pelo treino, e devolve o aviso de câmera abaixo de 60 fps que ela tinha substituído; com o Reconhecimento já ligado, o modelo pronto não pede mais para ligá-lo. Regra em `sidepanel/mensagens.js`, com teste |
 | 03/11/2026 | — | Autoria: o projeto pertence aos integrantes que o desenvolvem; a empresa Integrativa sai da política de privacidade, cujo contato passa a ser o repositório |
 | 03/11/2026 | — | Ferramentas do modo dev descritas por inteiro (seção 17.7): diagnóstico, teste de sinais (com as opções da sessão, os controles e a pausa automática) e medir o modelo |
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 17.6): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
