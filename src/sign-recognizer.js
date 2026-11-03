@@ -18,6 +18,7 @@ import { TextComposer } from './text-composer.js';
 import { SignModelStore, AMOSTRAS_RECOMENDADAS, VERSAO_CALIBRACAO } from './sign-model-store.js';
 import { CONJUNTO_PADRAO, classesDoConjunto } from './sign-classes.js';
 import { TravaMao } from './trava-mao.js';
+import { criarCanal } from './canal.js';
 import {
   lerModeloPadrao, calibrarModelo, instalarModeloPronto, CHAVE_ESCOLHA_PENDENTE
 } from './modelo-pronto.js';
@@ -70,6 +71,13 @@ export class SignRecognizer {
     });
 
     this.loop = new InferenceLoop(videoEl, (video, ts) => this._processarQuadro(video, ts));
+
+    /**
+     * Cada quadro processado, por dentro: pontos da mão, saída do classificador
+     * com as classes mais próximas, estado do estabilizador e limiares
+     * efetivos. Para ferramentas de diagnóstico; sem assinantes, nada é montado.
+     */
+    this.quadros = criarCanal();
 
     this.adaptador = null;
     this.ultimaConfirmacao = null;
@@ -419,9 +427,11 @@ export class SignRecognizer {
   _processarQuadro(video, ts) {
     const t = performance.now();
     const deteccao = this.adaptador?.detectar(video, ts);
+    const observando = this.quadros.ativo;
 
     if (!deteccao) {
       this._ultimoSnapshotSinal = this.estabilizador.processar({ t, temMao: false });
+      if (observando) this._observar(t, video, null, null, null);
       this._emitir();
       return;
     }
@@ -434,6 +444,7 @@ export class SignRecognizer {
 
     if (!features) {
       this._ultimoSnapshotSinal = this.estabilizador.processar({ t, temMao: false });
+      if (observando) this._observar(t, video, deteccao, null, null);
       this._emitir();
       return;
     }
@@ -449,17 +460,19 @@ export class SignRecognizer {
         ...this.estabilizador.processar({ t, temMao: false }),
         estadoVisual: 'mao-incorreta'
       };
+      if (observando) this._observar(t, video, deteccao, detectada, null);
       this._emitir();
       return;
     }
 
     if (this.captura) {
       this._capturarAmostra(features, t);
+      if (observando) this._observar(t, video, deteccao, detectada, null);
       this._emitir();
       return;
     }
 
-    const r = this.classificador.classificar(features);
+    const r = this.classificador.classificar(features, { detalhar: observando });
     this._ultimoSnapshotSinal = this.estabilizador.processar({
       t,
       classe: r.classe,
@@ -467,7 +480,40 @@ export class SignRecognizer {
       temMao: true
     });
     this._ultimoSnapshotSinal.proximidade = this.classificador.proximidade(r);
+    if (observando) this._observar(t, video, deteccao, detectada, r);
     this._emitir();
+  }
+
+  /**
+   * Publica o quadro no canal `quadros`. Só é chamado com assinantes: sem
+   * eles, nenhum destes objetos chega a ser montado.
+   * @param {number} t início do processamento do quadro
+   * @param {HTMLVideoElement} video
+   * @param {object|null} deteccao saída do adaptador
+   * @param {string|null} detectada mão detectada, já corrigida pela inversão da câmera
+   * @param {object|null} classificacao saída do classificador com `ranking`
+   */
+  _observar(t, video, deteccao, detectada, classificacao) {
+    this.quadros.emitir({
+      t,
+      /** Do início do quadro até aqui: detecção, normalização, classificação e estabilização. */
+      duracao: performance.now() - t,
+      largura: video.videoWidth,
+      altura: video.videoHeight,
+      landmarks: deteccao?.landmarks ?? null,
+      maoDetectada: detectada ?? null,
+      confiancaMao: deteccao?.confiancaMao ?? null,
+      maoConfigurada: this.mao,
+      cameraEspelhada: this.cameraEspelhada,
+      maoBloqueada: this.trava.travada,
+      captura: Boolean(this.captura),
+      classificacao,
+      limiarDistancia: this.classificador.limiarEfetivo,
+      limiarRazao: this.classificador.razaoEfetiva,
+      rigor: this.classificador.rigor,
+      permanencia: this.estabilizador.opcoes.T_PERMANENCIA,
+      estabilizador: this._ultimoSnapshotSinal
+    });
   }
 
   _capturarAmostra(features, t) {

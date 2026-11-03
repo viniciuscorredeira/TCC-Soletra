@@ -67,6 +67,7 @@ export class SignStabilizer {
      * @type {{classe: string, t: number}|null}
      */
     this._piso = null;
+    this._votosLider = 0;
   }
 
   /**
@@ -186,6 +187,7 @@ export class SignStabilizer {
   _apurar() {
     const o = this.opcoes;
     const total = this._janela.length;
+    this._votosLider = 0;
     if (total === 0) return INDEFINIDO;
 
     const contagem = new Map();
@@ -198,6 +200,7 @@ export class SignStabilizer {
     for (const [simbolo, n] of contagem) {
       if (n > melhor) { melhor = n; vencedor = simbolo; }
     }
+    this._votosLider = melhor;
 
     if (melhor / total < o.FRACAO_MIN) return INDEFINIDO;
 
@@ -228,7 +231,10 @@ export class SignStabilizer {
       travadoEm: this._travadoEm,
       confirmou,
       estadoVisual,
-      distanciaMin
+      distanciaMin,
+      /** Quadros do símbolo mais votado na janela, e quantos a janela tem. */
+      votosLider: this._votosLider,
+      quadrosJanela: this._janela.length
     };
   }
 }

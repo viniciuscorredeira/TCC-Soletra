@@ -177,10 +177,15 @@ export class SignClassifier {
 
   /**
    * @param {ArrayLike<number>} vetor
+   * @param {object} [opcoes]
+   * @param {boolean} [opcoes.detalhar] acrescenta `ranking`: as classes mais
+   *   próximas, com a menor distância de cada uma e a fração do voto. Não muda
+   *   a decisão; serve a quem observa o classificador por dentro.
    * @returns {{classe: string|null, distanciaMin: number, distanciaOutra: number,
-   *            razao: number, confianca: number, motivo: string|null}}
+   *            razao: number, confianca: number, motivo: string|null,
+   *            ranking?: Array<{classe: string, distancia: number, voto: number}>}}
    */
-  classificar(vetor) {
+  classificar(vetor, { detalhar = false } = {}) {
     const vazio = {
       classe: null,
       distanciaMin: Infinity,
@@ -246,6 +251,7 @@ export class SignClassifier {
       : 0; // classe única treinada: não há com o que comparar
 
     const base = { distanciaMin, distanciaOutra, razao, confianca };
+    if (detalhar) base.ranking = this._ranking(melhorPorClasse, pesos, total);
 
     if (razao > this.razaoEfetiva) {
       return { ...base, classe: null, motivo: 'ambiguo' };
@@ -256,6 +262,23 @@ export class SignClassifier {
       return { ...base, classe: null, motivo: 'distante' };
     }
     return { ...base, classe: vencedora, motivo: null };
+  }
+
+  /** As três classes mais próximas, pela menor distância de cada uma. */
+  _ranking(melhorPorClasse, pesos, total, quantas = 3) {
+    return [...melhorPorClasse]
+      .sort((a, b) => a[1] - b[1])
+      .slice(0, quantas)
+      .map(([classe, distancia]) => ({
+        classe,
+        distancia,
+        voto: total > 0 ? (pesos.get(classe) || 0) / total : 0
+      }));
+  }
+
+  /** Limiar de distância efetivo, já com o rigor da UI aplicado. */
+  get limiarEfetivo() {
+    return this.tauAbs * this.rigor;
   }
 
   /**

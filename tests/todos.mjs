@@ -19,6 +19,7 @@ const SUITES = [
   'modelo-pronto.test.mjs',
   'respingo.test.mjs',
   'integracao.test.mjs',
+  'observacao.test.mjs',
   'regra-dev.test.mjs',
   'builds.test.mjs'
 ];

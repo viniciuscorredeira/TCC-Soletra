@@ -55,6 +55,17 @@ const controller = new CameraController(video, aoMudarCamera);
 
 const reconhecedor = new SignRecognizer(video, (snapshot) => lojaReco.definir(snapshot));
 
+/**
+ * Assina cada quadro processado pelo reconhecedor, por dentro (ver o canal
+ * `quadros` do SignRecognizer). O painel não usa; existe para ferramentas de
+ * diagnóstico e medição montadas por cima dele.
+ * @param {(quadro: object) => void} assinante
+ * @returns {() => void} cancela a assinatura
+ */
+export function observarQuadros(assinante) {
+  return reconhecedor.quadros.assinar(assinante);
+}
+
 /** Guarda a última câmera escolhida para restaurá-la na próxima abertura. */
 async function loadPreferredDeviceId() {
   try {
