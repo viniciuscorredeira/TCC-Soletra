@@ -239,7 +239,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-122 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+129 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
 que é uma função pura. A exceção é `tests/builds.test.mjs`, que usa o Vite (já instalado
 para o build) para gerar as duas versões numa pasta temporária e conferir a separação entre
@@ -353,6 +353,46 @@ Para medir o custo do desenho: com a mão na câmera, anote o p95 da latência c
 que o laço mede, e o próprio painel mostra quanto ele leva.
 
 O modo dev não grava nem envia imagem nenhuma: o canvas mostra só os pontos do quadro atual.
+
+#### Teste de sinais
+
+A seção **Teste de sinais (dev)** mede o reconhecimento no uso real, com dois relatórios:
+
+- **Unitário:** escolha um sinal (as 21 letras estáticas e os 10 números) e faça N rodadas dele
+  (padrão 3).
+- **Geral:** a extensão pede letra por letra e depois número por número (ou só um dos dois), N
+  rodadas de cada (padrão 1), em ordem ou sorteados. A semente do sorteio vai para o arquivo.
+
+Cada rodada tem tempo fixo (padrão 5 s). Antes dela, o sinal pedido aparece sobre o vídeo, com
+3 s para se preparar com a mão baixa; durante, o tempo que falta. Dá para pausar, repetir ou
+pular a rodada (pausar e repetir descartam a rodada em andamento; a pulada fica fora das taxas).
+O teste usa o rigor e o tempo para confirmar atuais do painel e os registra; troca o painel para
+o conjunto do sinal pedido (Letras ou Números, como no uso real) e devolve no fim o conjunto e o
+texto que estavam antes. A recarga automática fica suspensa enquanto ele roda.
+
+Em cada rodada, a partir dos quadros que o reconhecimento já processa:
+
+- **Acerto por quadro:** quadros com o sinal pedido ÷ quadros em que o classificador decidiu algo
+  (o sinal pedido, outra classe ou rejeição). Quadros sem mão e com mão bloqueada são contados à
+  parte.
+- **Resultado da rodada**, pela primeira letra confirmada: **acerto** (a pedida), **troca** (outra),
+  **rejeição** (nenhuma, e mais da metade dos quadros com mão foi rejeitada) ou **tempo esgotado**
+  (nenhuma, por outro motivo).
+- Tempo até a primeira confirmação, confusões (com quais classes e em quantos quadros), maior
+  sequência seguida do sinal certo, mudanças de classe, razão e distância até o sinal pedido
+  (mediana e percentis), latência, Hz e mão detectada.
+
+O **relatório unitário** mostra esses números e uma linha do tempo de cada rodada (uma faixa por
+quadro, na cor do que o classificador viu). O **geral** traz o resumo da sessão, os piores sinais,
+os pares mais confundidos, a tabela por sinal (clicar num sinal abre o relatório dele) e a matriz
+de confusão por rodada e por quadro. Percentis por interpolação linear, como no NumPy.
+
+**Exportar JSON** baixa um arquivo com tudo: metadados (data, versão e commit, SHA-256 do modelo,
+navegador, câmera, ajustes, participante e condições), a configuração, cada rodada com a linha do
+tempo quadro a quadro, e o relatório. Só números: nenhuma imagem e nenhum ponto da mão. O SHA-256
+é calculado sobre as amostras do modelo (`dev/identidade-modelo.js`), então o modelo em uso e o
+mesmo modelo exportado têm a mesma identidade. O último teste fica salvo no `chrome.storage` da
+versão dev (inclusive um interrompido) e pode ser reaberto em **Abrir o último teste**.
 
 #### Como o núcleo expõe os dados
 
