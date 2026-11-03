@@ -145,7 +145,9 @@ try {
       assert.ok(existsSync(join(pasta, 'background', 'service-worker.js')), 'service worker fora do lugar');
     }
     assert.ok(!existsSync(join(DEV, 'dev', 'panel.html')), 'o painel dev ficou no caminho de origem');
-    console.log('OK  cenário 5 — painel, permissão e service worker onde o manifesto aponta, nas duas versões');
+    // A página de impressão do teste de sinais existe só na versão dev.
+    conferirReferencias(DEV, 'dev/relatorio.html');
+    console.log('OK  cenário 5 — páginas onde o manifesto aponta, nas duas versões, e a de impressão só na dev');
   }
 } finally {
   rmSync(TEMP, { recursive: true, force: true });

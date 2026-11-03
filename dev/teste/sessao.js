@@ -6,9 +6,15 @@
  *  - geral     letra por letra e depois número por número (ou só um dos dois
  *              conjuntos), N rodadas de cada, em ordem ou sorteados.
  *
- * Cada rodada passa por "contagem" (a pessoa se prepara, com a mão baixa) e
- * "gravando" (mantém o sinal pela duração da rodada). Ao fim da gravação, os
- * quadros recebidos viram a análise da rodada (rodada.js).
+ * Duas formas de começar cada rodada:
+ *  - reconhecer (padrão)  o sinal é pedido ("aguardando") e a gravação começa
+ *                         no quadro em que o reconhecimento o confirma. Se não
+ *                         vier dentro do tempo máximo de espera, a rodada fica
+ *                         como não reconhecida;
+ *  - contagem             uma contagem para a pessoa se preparar com a mão
+ *                         baixa, e a gravação começa no fim dela.
+ * Em ambas, a gravação dura um tempo fixo, e os quadros dela viram a análise
+ * da rodada (rodada.js).
  *
  * Máquina de estados pura: o relógio entra por argumento (t em ms, o mesmo
  * relógio dos quadros) e os efeitos colaterais — trocar o conjunto, liberar a
@@ -16,13 +22,16 @@
  * roda em Node com quadros sintéticos.
  */
 import { LETRAS_ESTATICAS, NUMEROS } from '../../src/sign-classes.js';
-import { analisarRodada } from './rodada.js';
+import { analisarRodada, resultadoDaRodada } from './rodada.js';
 
 export const PADROES_TESTE = {
   rodadasUnitario: 3,
   rodadasGeral: 1,
   duracaoMs: 5000,
-  contagemMs: 3000
+  contagemMs: 3000,
+  inicio: 'reconhecer',
+  /** Tempo máximo para o sinal pedido ser reconhecido; 0 = sem limite. */
+  esperaMaxMs: 10000
 };
 
 const CLASSES = { letras: LETRAS_ESTATICAS, numeros: NUMEROS };
@@ -78,20 +87,27 @@ export function planejar({ modo, sinal, conjuntos = ['letras', 'numeros'], rodad
   return lista;
 }
 
+const EM_ANDAMENTO = new Set(['aguardando', 'contagem', 'gravando']);
+
 export class SessaoTeste {
   /**
-   * @param {object} config ver planejar(), mais duracaoMs e contagemMs
+   * @param {object} config ver planejar(), mais duracaoMs, inicio, contagemMs e esperaMaxMs
    * @param {(evento: {tipo: string, item?: object, rodada?: object}) => void} [aoEvento]
    */
   constructor(config, aoEvento = () => {}) {
     this.config = {
       duracaoMs: PADROES_TESTE.duracaoMs,
       contagemMs: PADROES_TESTE.contagemMs,
+      inicio: PADROES_TESTE.inicio,
+      esperaMaxMs: PADROES_TESTE.esperaMaxMs,
       ...config
     };
     this.plano = planejar(this.config);
     this.aoEvento = aoEvento;
-    /** pronta → contagem ⇄ gravando → … → concluida; pausada a partir de contagem ou gravando. */
+    /**
+     * pronta → (aguardando | contagem) → gravando → … → concluida;
+     * pausada a partir de qualquer fase em andamento.
+     */
     this.fase = 'pronta';
     this.indice = 0;
     this.rodadas = [];
@@ -99,6 +115,7 @@ export class SessaoTeste {
     this.inicioRodada = null;
     this.fim = null;
     this._quadros = [];
+    this._espera = null;
   }
 
   get item() {
@@ -107,13 +124,16 @@ export class SessaoTeste {
 
   /** Retrato para a interface. */
   estado(t) {
+    const faseMs = { aguardando: this.config.esperaMaxMs || null, contagem: this.config.contagemMs, gravando: this.config.duracaoMs }[this.fase] ?? null;
     return {
       fase: this.fase,
+      inicio: this.config.inicio,
       indice: this.indice,
       total: this.plano.length,
       item: this.item,
-      restanteMs: this.fim !== null && (this.fase === 'contagem' || this.fase === 'gravando') ? Math.max(0, this.fim - t) : null,
-      faseMs: this.fase === 'contagem' ? this.config.contagemMs : this.config.duracaoMs,
+      restanteMs: this.fim !== null && EM_ANDAMENTO.has(this.fase) ? Math.max(0, this.fim - t) : null,
+      faseMs,
+      erradasNaEspera: this._espera?.erradas.length ?? 0,
       feitas: this.rodadas.filter((r) => r.estado === 'feita').length,
       puladas: this.rodadas.filter((r) => r.estado === 'pulada').length
     };
@@ -123,22 +143,37 @@ export class SessaoTeste {
     if (this.fase !== 'pronta') return;
     this.inicioSessao = t;
     if (this.plano.length === 0) this._concluir();
-    else this._contar(t);
+    else this._preparar(t);
   }
 
   aoQuadro(quadro) {
-    if (this.fase === 'gravando' && quadro.t >= this.inicioRodada && quadro.t < this.fim) this._quadros.push(quadro);
+    if (this.fase === 'gravando') {
+      if (quadro.t >= this.inicioRodada && quadro.t < this.fim) this._quadros.push(quadro);
+      return;
+    }
+    if (this.fase !== 'aguardando' || quadro.t < this._espera.inicio) return;
+
+    const confirmou = quadro.estabilizador?.confirmou;
+    if (!confirmou) return;
+    if (confirmou === this.item.sinal) {
+      this._espera.reconhecidoEmMs = quadro.t - this._espera.inicio;
+      this._gravar(quadro.t);
+      this._quadros.push(quadro);
+    } else {
+      this._espera.erradas.push({ classe: confirmou, ms: quadro.t - this._espera.inicio });
+    }
   }
 
   /** Avança as fases conforme o relógio. Chamado a cada ~100 ms. */
   tick(t) {
     if (this.fase === 'contagem' && t >= this.fim) this._gravar(this.fim);
-    else if (this.fase === 'gravando' && t >= this.fim) this._fecharRodada();
+    else if (this.fase === 'aguardando' && this.fim !== null && t >= this.fim) this._fecharRodada(this.fim, false);
+    else if (this.fase === 'gravando' && t >= this.fim) this._fecharRodada(this.fim, true);
   }
 
-  /** Pausar descarta a rodada em andamento; continuar a refaz desde a contagem. */
+  /** Pausar descarta a rodada em andamento; continuar a refaz desde o começo. */
   pausar() {
-    if (this.fase !== 'contagem' && this.fase !== 'gravando') return;
+    if (!EM_ANDAMENTO.has(this.fase)) return;
     this.fase = 'pausada';
     this.fim = null;
     this._quadros = [];
@@ -146,17 +181,17 @@ export class SessaoTeste {
   }
 
   continuar(t) {
-    if (this.fase === 'pausada') this._contar(t);
+    if (this.fase === 'pausada') this._preparar(t);
   }
 
-  /** Refaz a rodada em andamento desde a contagem, descartando o que já foi gravado. */
+  /** Refaz a rodada em andamento desde o começo, descartando o que já foi gravado. */
   repetir(t) {
-    if (this.fase === 'contagem' || this.fase === 'gravando' || this.fase === 'pausada') this._contar(t);
+    if (EM_ANDAMENTO.has(this.fase) || this.fase === 'pausada') this._preparar(t);
   }
 
   /** A rodada em andamento fica registrada como pulada (fora das taxas). */
   pular(t) {
-    if (this.fase !== 'contagem' && this.fase !== 'gravando' && this.fase !== 'pausada') return;
+    if (!EM_ANDAMENTO.has(this.fase) && this.fase !== 'pausada') return;
     const rodada = { indice: this.indice, ...this.item, estado: 'pulada' };
     this.rodadas.push(rodada);
     this.aoEvento({ tipo: 'rodada', rodada });
@@ -169,11 +204,19 @@ export class SessaoTeste {
     this._concluir();
   }
 
-  _contar(t) {
-    this.fase = 'contagem';
-    this.fim = t + this.config.contagemMs;
+  _preparar(t) {
     this._quadros = [];
-    this.aoEvento({ tipo: 'contagem', item: this.item });
+    if (this.config.inicio === 'reconhecer') {
+      this.fase = 'aguardando';
+      this._espera = { inicio: t, reconhecidoEmMs: null, erradas: [] };
+      this.fim = this.config.esperaMaxMs > 0 ? t + this.config.esperaMaxMs : null;
+      this.aoEvento({ tipo: 'aguardando', item: this.item });
+    } else {
+      this.fase = 'contagem';
+      this._espera = null;
+      this.fim = t + this.config.contagemMs;
+      this.aoEvento({ tipo: 'contagem', item: this.item });
+    }
   }
 
   _gravar(t) {
@@ -184,31 +227,32 @@ export class SessaoTeste {
     this.aoEvento({ tipo: 'gravando', item: this.item });
   }
 
-  _fecharRodada() {
-    const fim = this.fim;
+  /** @param {number} t @param {boolean} gravou se houve gravação (não há quando o sinal não foi reconhecido) */
+  _fecharRodada(t, gravou) {
+    const { sinal } = this.item;
+    const analise = gravou
+      ? analisarRodada({ sinal, inicio: this.inicioRodada, duracao: this.config.duracaoMs, quadros: this._quadros })
+      : null;
     const rodada = {
       indice: this.indice,
       ...this.item,
       estado: 'feita',
-      inicioMs: this.inicioRodada - this.inicioSessao,
-      duracaoMs: this.config.duracaoMs,
-      analise: analisarRodada({
-        sinal: this.item.sinal,
-        inicio: this.inicioRodada,
-        duracao: this.config.duracaoMs,
-        quadros: this._quadros
-      })
+      inicio: this.config.inicio,
+      ...resultadoDaRodada({ sinal, inicio: this.config.inicio, analise, espera: this._espera }),
+      inicioMs: gravou ? this.inicioRodada - this.inicioSessao : null,
+      duracaoMs: gravou ? this.config.duracaoMs : 0,
+      analise
     };
     this.rodadas.push(rodada);
     this._quadros = [];
     this.aoEvento({ tipo: 'rodada', rodada });
-    this._avancar(fim);
+    this._avancar(t);
   }
 
   _avancar(t) {
     this.indice++;
     if (this.indice >= this.plano.length) this._concluir();
-    else this._contar(t);
+    else this._preparar(t);
   }
 
   _concluir() {

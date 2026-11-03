@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import {
-  Badge, Button, Callout, Flex, Grid, Progress, SegmentedControl, Select, Text, TextArea, TextField
+  Badge, Button, Callout, DropdownMenu, Flex, Grid, Progress, SegmentedControl, Select, Text, TextArea, TextField
 } from '@radix-ui/themes';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { usarLoja } from '../../ui/loja.js';
@@ -15,7 +15,7 @@ import { LETRAS_ESTATICAS, NUMEROS } from '../../src/sign-classes.js';
 import { lojaPrefsDev, definirPrefDev } from '../preferencias.js';
 import { PADROES_TESTE } from './sessao.js';
 import { lojaTeste, iniciarTeste, acoesTeste } from './controle.js';
-import { baixar } from './exportar.js';
+import { abrirPdf, baixarCsv, baixarJson, baixarXlsx } from './exportar.js';
 import { RelatorioGeral, RelatorioUnitario } from './Relatorios.jsx';
 
 const CONFIG_PADRAO = {
@@ -26,6 +26,8 @@ const CONFIG_PADRAO = {
   rodadasUnitario: PADROES_TESTE.rodadasUnitario,
   rodadasGeral: PADROES_TESTE.rodadasGeral,
   duracaoS: PADROES_TESTE.duracaoMs / 1000,
+  inicio: PADROES_TESTE.inicio,
+  esperaS: PADROES_TESTE.esperaMaxMs / 1000,
   participante: '',
   gravouModeloPronto: 'nao',
   iluminacao: '',
@@ -58,7 +60,10 @@ function Configuracao() {
   const chaveRodadas = unitario ? 'rodadasUnitario' : 'rodadasGeral';
   const pronto = reco?.estado === 'reconhecendo';
   const totalSinais = unitario ? 1 : CONJUNTOS[c.conjuntos].reduce((n, k) => n + (k === 'letras' ? 21 : 10), 0);
-  const duracaoTotal = totalSinais * c[chaveRodadas] * (c.duracaoS + PADROES_TESTE.contagemMs / 1000);
+  const aoReconhecer = c.inicio === 'reconhecer';
+  const totalRodadas = totalSinais * c[chaveRodadas];
+  const preparoS = aoReconhecer ? 0 : PADROES_TESTE.contagemMs / 1000;
+  const duracaoTotal = totalRodadas * (c.duracaoS + preparoS);
 
   async function comecar() {
     setErro(null);
@@ -69,6 +74,8 @@ function Configuracao() {
       ordem: c.ordem,
       rodadas: c[chaveRodadas],
       duracaoMs: c.duracaoS * 1000,
+      inicio: c.inicio,
+      esperaMaxMs: c.esperaS * 1000,
       participante: c.participante.trim(),
       gravouModeloPronto: c.gravouModeloPronto === 'sim',
       condicoes: { iluminacao: c.iluminacao.trim(), distancia: c.distancia.trim(), observacoes: c.observacoes.trim() }
@@ -104,6 +111,21 @@ function Configuracao() {
         </>
       )}
 
+      <Segmentado
+        rotulo="Início da rodada"
+        valor={c.inicio}
+        opcoes={[['reconhecer', 'Ao reconhecer o sinal'], ['contagem', 'Após contagem de 3 s']]}
+        aoMudar={(v) => mudar('inicio', v)}
+      />
+      {aoReconhecer && (
+        <Segmentado
+          rotulo="Tempo máximo para reconhecer"
+          valor={c.esperaS}
+          opcoes={[[5, '5 s'], [10, '10 s'], [20, '20 s'], [0, 'Sem limite']]}
+          aoMudar={(v) => mudar('esperaS', Number(v))}
+        />
+      )}
+
       <Grid columns="2" gap="3">
         <Segmentado rotulo="Rodadas por sinal" valor={c[chaveRodadas]} opcoes={[[1, '1'], [3, '3'], [5, '5']]} aoMudar={(v) => mudar(chaveRodadas, Number(v))} />
         <Segmentado rotulo="Duração da rodada" valor={c.duracaoS} opcoes={[[3, '3 s'], [5, '5 s'], [8, '8 s']]} aoMudar={(v) => mudar('duracaoS', Number(v))} />
@@ -128,8 +150,11 @@ function Configuracao() {
       </Campo>
 
       <Text size="1" color="gray">
-        {`${totalSinais * c[chaveRodadas]} rodada(s), cerca de ${Math.ceil(duracaoTotal / 60)} min. ` +
-          `O teste usa o rigor e o tempo para confirmar atuais do painel. Antes de cada rodada há ${PADROES_TESTE.contagemMs / 1000} s para se preparar com a mão baixa.`}
+        {`${totalRodadas} rodada(s), cerca de ${Math.ceil(duracaoTotal / 60)} min${aoReconhecer ? ' mais o tempo até cada sinal ser reconhecido' : ''}. ` +
+          'O teste usa o rigor e o tempo para confirmar atuais do painel. ' +
+          (aoReconhecer
+            ? `Cada rodada só começa quando o sinal pedido é reconhecido (confirmado, como se entrasse no texto); ${c.esperaS ? `se não vier em ${c.esperaS} s, fica como não reconhecido` : 'sem limite de espera'}. Para repetir o mesmo sinal, relaxe a mão entre as rodadas.`
+            : `Antes de cada rodada há ${PADROES_TESTE.contagemMs / 1000} s para se preparar com a mão baixa.`)}
       </Text>
 
       {erro && (
@@ -158,7 +183,13 @@ function Execucao({ t }) {
     <Flex direction="column" gap="3">
       <Flex align="center" gap="2" wrap="wrap">
         <Badge size="2" color={pausada ? 'amber' : s.fase === 'gravando' ? 'green' : 'blue'}>
-          {pausada ? 'Pausado' : s.fase === 'gravando' ? `Gravando ${s.item?.sinal}` : `Prepare ${s.item?.sinal}`}
+          {pausada
+            ? 'Pausado'
+            : s.fase === 'gravando'
+              ? `Gravando ${s.item?.sinal}`
+              : s.fase === 'aguardando'
+                ? `Aguardando ${s.item?.sinal}`
+                : `Prepare ${s.item?.sinal}`}
         </Badge>
         <Text size="1" color="gray" className="numeros">{`Rodada ${s.indice + 1} de ${s.total} · ${s.feitas} feita(s) · ${s.puladas} pulada(s)`}</Text>
       </Flex>
@@ -205,7 +236,19 @@ function Resultado({ arquivo }) {
         ].filter(Boolean).join(' · ')}
       </Text>
       <Flex gap="2" wrap="wrap">
-        <Button onClick={() => baixar(arquivo)}>Exportar JSON</Button>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <Button>
+              Exportar <DropdownMenu.TriggerIcon />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Item onSelect={() => baixarJson(arquivo)}>JSON — tudo, quadro a quadro</DropdownMenu.Item>
+            <DropdownMenu.Item onSelect={() => baixarXlsx(arquivo)}>Excel (.xlsx) — planilha com abas</DropdownMenu.Item>
+            <DropdownMenu.Item onSelect={() => abrirPdf(arquivo)}>PDF — relatório para imprimir</DropdownMenu.Item>
+            <DropdownMenu.Item onSelect={() => baixarCsv(arquivo)}>CSV — uma linha por rodada</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
         <Button variant="soft" color="gray" onClick={acoesTeste.novo}>Novo teste</Button>
       </Flex>
       {arquivo.relatorio.tipo === 'unitario' ? (

@@ -57,12 +57,15 @@ function salvar(arquivo) {
 }
 
 function aoEvento(e) {
-  if (e.tipo === 'contagem') {
-    // O conjunto troca já na contagem: é o que a pessoa faria no uso real
-    // antes de fazer um número, e dá tempo ao painel de se ajustar.
+  if (e.tipo === 'contagem' || e.tipo === 'aguardando') {
+    // O conjunto troca assim que o sinal é pedido: é o que a pessoa faria no
+    // uso real antes de fazer um número.
     if (lojaReco.ler()?.conjunto !== e.item.conjunto) acoesReco.definirConjunto(e.item.conjunto);
-  } else if (e.tipo === 'gravando') {
-    // Uma trava da rodada anterior impediria confirmar a mesma letra de novo.
+  } else if (e.tipo === 'gravando' && sessao.config.inicio === 'contagem') {
+    // Após a contagem, uma trava da rodada anterior impediria confirmar a mesma
+    // letra de novo. Com início ao reconhecer, não: a rodada começou justamente
+    // por uma confirmação, e liberar a trava faria a mesma letra, ainda na mão,
+    // disparar a rodada seguinte sem a pessoa refazer o sinal.
     acoesReco.repetir();
   } else if (e.tipo === 'rodada') {
     salvar(arquivoAtual(true));
@@ -74,7 +77,7 @@ function aoEvento(e) {
 /** Se o reconhecimento parar no meio (câmera desligada, painel trocado), a rodada pausa. */
 function vigiarReconhecimento() {
   const s = lojaReco.ler();
-  if (sessao && s?.estado !== 'reconhecendo' && (sessao.fase === 'contagem' || sessao.fase === 'gravando')) {
+  if (sessao && s?.estado !== 'reconhecendo' && ['aguardando', 'contagem', 'gravando'].includes(sessao.fase)) {
     sessao.pausar();
     publicar({ aviso: 'O reconhecimento parou, e a rodada foi pausada. Religue-o e clique em Continuar.' });
   }

@@ -51,6 +51,10 @@
 }
 .dev-instrucao[data-fase="contagem"],
 .dev-instrucao[data-fase="pausada"] { background: rgba(0, 0, 0, 0.45); }
+/* Esperando o sinal: a mão precisa aparecer, então o vídeo fica quase limpo. */
+.dev-instrucao[data-fase="aguardando"] { background: linear-gradient(rgba(0, 0, 0, 0.35), transparent 55%); }
+.dev-instrucao[data-fase="aguardando"] .dev-instrucao__centro { align-self: flex-start; margin: 0 0 4px 10px; align-items: flex-start; }
+.dev-instrucao[data-fase="aguardando"] .dev-instrucao__sinal { font-size: 48px; }
 .dev-instrucao__topo {
   align-self: flex-end;
   margin: 8px;

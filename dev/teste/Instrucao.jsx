@@ -34,6 +34,17 @@ export function Instrucao() {
     <div className="dev-instrucao" data-fase={fase} aria-live="polite">
       <div className="dev-instrucao__topo">{`Rodada ${indice + 1} de ${total}`}</div>
       <div className="dev-instrucao__centro">
+        {fase === 'aguardando' && (
+          <>
+            <span className="dev-instrucao__texto">{`Faça ${nomeSinal(item.sinal)}`}</span>
+            <span className="dev-instrucao__sinal">{item.sinal}</span>
+            <span className="dev-instrucao__texto">
+              {'a rodada começa quando for reconhecido' +
+                (restanteMs !== null ? ` · ${Math.ceil(restanteMs / 1000)} s` : '') +
+                (s.erradasNaEspera ? ` · ${s.erradasNaEspera} errada(s)` : '')}
+            </span>
+          </>
+        )}
         {fase === 'contagem' && (
           <>
             <span className="dev-instrucao__texto">{`Prepare ${nomeSinal(item.sinal)}`}</span>
@@ -50,7 +61,7 @@ export function Instrucao() {
         )}
         {fase === 'pausada' && <span className="dev-instrucao__texto">Pausado</span>}
       </div>
-      {(fase === 'contagem' || fase === 'gravando') && (
+      {(fase === 'contagem' || fase === 'gravando' || (fase === 'aguardando' && restanteMs !== null)) && (
         <div className="dev-instrucao__barra" style={{ '--p': progresso }} />
       )}
     </div>,

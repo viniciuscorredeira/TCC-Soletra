@@ -23,7 +23,15 @@
  *  - rejeicao        nenhuma confirmação e mais da metade dos quadros com mão
  *                    foi rejeitada pelo classificador;
  *  - tempo-esgotado  nenhuma confirmação por outro motivo (sem mão, mão
- *                    bloqueada, candidato que não chegou a firmar).
+ *                    bloqueada, candidato que não chegou a firmar);
+ *  - nao-reconhecido (só com início ao reconhecer) o sinal pedido não foi
+ *                    confirmado dentro do tempo máximo de espera, e a rodada
+ *                    nem chegou a gravar.
+ *
+ * Com início ao reconhecer, a gravação começa no quadro em que o sinal pedido
+ * é confirmado; o que conta para o resultado é a espera até ali (ver
+ * resultadoDaRodada). Com início após contagem, conta a primeira confirmação
+ * dentro da gravação.
  */
 import { distribuicao, fracao, moda, mediana, quantil } from '../estatistica.js';
 
@@ -143,5 +151,37 @@ export function analisarRodada({ sinal, inicio, duracao, quadros }) {
         }
       : null,
     linhaDoTempo
+  };
+}
+
+/**
+ * O desfecho de uma rodada, para o relatório e para a matriz por rodada.
+ *
+ * @param {object} p
+ * @param {string} p.sinal
+ * @param {'reconhecer'|'contagem'} p.inicio como a rodada começou
+ * @param {object|null} p.analise analisarRodada() da gravação (null se não gravou)
+ * @param {{reconhecidoEmMs: number|null, erradas: Array<{classe: string, ms: number}>}} [p.espera]
+ *   só no início ao reconhecer: quando o sinal pedido foi confirmado (contado de
+ *   quando ele foi pedido) e as outras letras confirmadas antes dele
+ * @returns {{resultado: string, reconhecido: string|null, tempoAteReconhecerMs: number|null,
+ *   confirmacoesAntes: Array<{classe: string, ms: number}>}}
+ */
+export function resultadoDaRodada({ sinal, inicio, analise, espera }) {
+  if (inicio === 'reconhecer') {
+    const reconheceu = Number.isFinite(espera?.reconhecidoEmMs);
+    const erradas = espera?.erradas ?? [];
+    return {
+      resultado: !reconheceu ? 'nao-reconhecido' : erradas.length ? 'troca' : 'acerto',
+      reconhecido: erradas[0]?.classe ?? (reconheceu ? sinal : null),
+      tempoAteReconhecerMs: reconheceu ? espera.reconhecidoEmMs : null,
+      confirmacoesAntes: erradas
+    };
+  }
+  return {
+    resultado: analise?.resultado ?? 'tempo-esgotado',
+    reconhecido: analise?.reconhecido ?? null,
+    tempoAteReconhecerMs: analise?.confirmacoes.find((c) => c.classe === sinal)?.ms ?? null,
+    confirmacoesAntes: []
   };
 }

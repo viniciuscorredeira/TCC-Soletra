@@ -10,7 +10,7 @@
 import assert from 'node:assert/strict';
 import { quantil, distribuicao, moda } from '../dev/estatistica.js';
 import { identidadeModelo } from '../dev/identidade-modelo.js';
-import { analisarRodada } from '../dev/teste/rodada.js';
+import { analisarRodada, resultadoDaRodada } from '../dev/teste/rodada.js';
 import { planejar, SessaoTeste } from '../dev/teste/sessao.js';
 import { relatorioUnitario, relatorioGeral } from '../dev/teste/relatorio.js';
 import { montarArquivo, nomeDoArquivo, FORMATO } from '../dev/teste/exportar.js';
@@ -136,7 +136,7 @@ const perto = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
 // --- Cenário 4: sessão com pausar, pular e repetir -------------------------
 {
   const eventos = [];
-  const s = new SessaoTeste({ modo: 'unitario', sinal: 'B', rodadas: 3, contagemMs: 1000, duracaoMs: 1000 }, (e) => eventos.push(e.tipo));
+  const s = new SessaoTeste({ modo: 'unitario', sinal: 'B', rodadas: 3, inicio: 'contagem', contagemMs: 1000, duracaoMs: 1000 }, (e) => eventos.push(e.tipo));
   s.iniciar(0);
   assert.equal(s.fase, 'contagem');
 
@@ -173,10 +173,10 @@ const perto = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
   assert.equal(s.rodadas[2].estado, 'pulada');
   assert.equal(s.fase, 'concluida');
   assert.equal(eventos.at(-1), 'concluida');
-  assert.deepEqual(s.estado(14000), { fase: 'concluida', indice: 3, total: 3, item: null, restanteMs: null, faseMs: 1000, feitas: 2, puladas: 1 });
+  assert.deepEqual(s.estado(14000), { fase: 'concluida', inicio: 'contagem', indice: 3, total: 3, item: null, restanteMs: null, faseMs: null, erradasNaEspera: 0, feitas: 2, puladas: 1 });
 
   // Encerrar antes do fim descarta só a rodada em andamento.
-  const e = new SessaoTeste({ modo: 'unitario', sinal: 'A', rodadas: 5, contagemMs: 10, duracaoMs: 10 });
+  const e = new SessaoTeste({ modo: 'unitario', sinal: 'A', rodadas: 5, inicio: 'contagem', contagemMs: 10, duracaoMs: 10 });
   e.iniciar(0);
   e.tick(10);
   e.tick(20);
@@ -188,7 +188,8 @@ const perto = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
 
 // --- Cenário 5: relatórios -------------------------------------------------
 function rodadaFeita(sinal, repeticao, quadros, duracao = 1000) {
-  return { sinal, conjunto: NUMEROS.includes(sinal) ? 'numeros' : 'letras', repeticao, estado: 'feita', analise: analisarRodada({ sinal, inicio: 0, duracao, quadros }) };
+  const analise = analisarRodada({ sinal, inicio: 0, duracao, quadros });
+  return { sinal, conjunto: NUMEROS.includes(sinal) ? 'numeros' : 'letras', repeticao, estado: 'feita', inicio: 'contagem', ...resultadoDaRodada({ sinal, inicio: 'contagem', analise }), analise };
 }
 
 const rodadas = [
@@ -210,7 +211,7 @@ const rodadas = [
   assert.equal(u.quadros.certos, 9);
   assert.equal(u.quadros.validos, 10);
   assert.equal(u.acertoQuadros, 0.9);
-  assert.equal(u.tempoMedioAteConfirmar, 200, '(300 + 100) / 2');
+  assert.equal(u.tempoMedioAteReconhecer, 200, '(300 + 100) / 2');
   assert.deepEqual(u.confusoes, [{ classe: 'D', quadros: 1 }]);
   assert.equal(u.razaoNosCertos.n, 9);
   assert.equal(u.rodadasDetalhe.length, 2);
@@ -220,7 +221,7 @@ const rodadas = [
   assert.deepEqual(g.sinais, ['B', 'D', '0', 'O']);
   assert.equal(g.resumo.rodadas, 4, 'a pulada fica fora das taxas');
   assert.equal(g.resumo.puladas, 1);
-  assert.deepEqual(g.resumo.resultados, { acerto: 2, troca: 1, rejeicao: 1, 'tempo-esgotado': 0 });
+  assert.deepEqual(g.resumo.resultados, { acerto: 2, troca: 1, rejeicao: 1, 'tempo-esgotado': 0, 'nao-reconhecido': 0 });
   assert.equal(g.resumo.acerto, 0.5);
   assert.equal(g.resumo.taxaTroca, 0.25);
   assert.equal(g.resumo.taxaRejeicao, 0.25);
@@ -271,4 +272,139 @@ const rodadas = [
   assert.notEqual(a, outro);
   assert.notEqual(a, outraVersao);
   console.log('OK  cenário 7 — a identidade do modelo independe da ordem e do formato dos números');
+}
+
+// --- Cenário 8: rodada que começa quando o sinal é reconhecido -------------
+{
+  const eventos = [];
+  const s = new SessaoTeste({ modo: 'unitario', sinal: 'A', rodadas: 3, inicio: 'reconhecer', esperaMaxMs: 4000, duracaoMs: 1000 }, (e) => eventos.push(e.tipo));
+  s.iniciar(0);
+  assert.equal(s.fase, 'aguardando', 'pede o sinal e espera, sem contagem');
+
+  // Rodada 1: quadros antes do reconhecimento não gravam; um M confirmado antes conta como troca.
+  s.aoQuadro(quadro(300, { classe: 'A', alvo: 'A' }));
+  s.aoQuadro(quadro(600, { classe: 'M', alvo: 'A', confirmou: 'M' }));
+  s.tick(900);
+  assert.equal(s.fase, 'aguardando');
+  assert.equal(s.estado(900).erradasNaEspera, 1);
+  s.aoQuadro(quadro(1500, { classe: 'A', alvo: 'A', confirmou: 'A' }));
+  assert.equal(s.fase, 'gravando', 'a gravação começa no quadro do reconhecimento');
+  for (let t = 1600; t < 2500; t += 100) s.aoQuadro(quadro(t, { classe: 'A', alvo: 'A' }));
+  s.tick(2500);
+  const r1 = s.rodadas[0];
+  assert.equal(r1.inicio, 'reconhecer');
+  assert.equal(r1.resultado, 'troca', 'outra letra confirmada antes da pedida');
+  assert.equal(r1.reconhecido, 'M');
+  assert.equal(r1.tempoAteReconhecerMs, 1500);
+  assert.deepEqual(r1.confirmacoesAntes, [{ classe: 'M', ms: 600 }]);
+  assert.equal(r1.inicioMs, 1500);
+  assert.equal(r1.analise.quadros.total, 10, 'o quadro do reconhecimento e os 9 seguintes');
+  assert.equal(r1.analise.quadros.certos, 10);
+
+  // Rodada 2: reconhecida direto → acerto.
+  assert.equal(s.fase, 'aguardando');
+  s.aoQuadro(quadro(3200, { classe: 'A', alvo: 'A', confirmou: 'A' }));
+  for (let t = 3300; t < 4200; t += 100) s.aoQuadro(quadro(t, { classe: t < 3800 ? 'A' : 'N', alvo: 'A' }));
+  s.tick(4200);
+  assert.equal(s.rodadas[1].resultado, 'acerto');
+  assert.equal(s.rodadas[1].tempoAteReconhecerMs, 700, 'de 2500 (pedido) a 3200');
+
+  // Rodada 3: o A não vem dentro do tempo máximo → não reconhecido, sem gravação.
+  s.aoQuadro(quadro(5000, { classe: 'N', alvo: 'A' }));
+  s.tick(8199);
+  assert.equal(s.fase, 'aguardando');
+  s.tick(8200);
+  const r3 = s.rodadas[2];
+  assert.equal(r3.resultado, 'nao-reconhecido');
+  assert.equal(r3.analise, null);
+  assert.equal(r3.tempoAteReconhecerMs, null);
+  assert.equal(s.fase, 'concluida');
+  assert.deepEqual(eventos.filter((e) => e === 'aguardando').length, 3);
+
+  const u = relatorioUnitario('A', s.rodadas);
+  assert.deepEqual(u.resultados, { acerto: 1, troca: 1, rejeicao: 0, 'tempo-esgotado': 0, 'nao-reconhecido': 1 });
+  assert.equal(u.taxaNaoReconhecido, 1 / 3);
+  assert.equal(u.tempoMedioAteReconhecer, 1100, '(1500 + 700) / 2');
+  assert.equal(u.confirmacoesErradasAntes, 1);
+  assert.equal(u.quadros.total, 20, 'a rodada não reconhecida não entra nas contas por quadro');
+  assert.equal(u.quadros.certos, 16, '10 na rodada 1 + 6 na rodada 2 (3200 a 3700)');
+  assert.equal(u.rodadasDetalhe[2].linhaDoTempo.length, 0);
+
+  const g = relatorioGeral(s.rodadas);
+  assert.deepEqual(g.matrizRodadas.celulas.A, { M: 1, A: 1, 'nao-reconhecido': 1 });
+
+  // Sem limite de espera: só sai da espera reconhecendo (ou pulando).
+  const semLimite = new SessaoTeste({ modo: 'unitario', sinal: 'A', rodadas: 1, inicio: 'reconhecer', esperaMaxMs: 0, duracaoMs: 100 });
+  semLimite.iniciar(0);
+  semLimite.tick(1e9);
+  assert.equal(semLimite.fase, 'aguardando');
+  assert.equal(semLimite.estado(1e9).restanteMs, null);
+  console.log('OK  cenário 8 — com início ao reconhecer, a rodada só grava depois de o sinal pedido ser confirmado');
+}
+
+// --- Cenário 9: planilhas, Excel e CSV --------------------------------------
+{
+  const { tabelas, linhasDasRodadas } = await import('../dev/teste/tabelas.js');
+  const { gerarXlsx, crc32, letraDaColuna, escaparXml } = await import('../dev/teste/xlsx.js');
+  const { gerarCsv } = await import('../dev/teste/csv.js');
+
+  const arquivo = montarArquivo({
+    metadados: { dataHora: '2026-11-03T14:20:00.000Z', participante: 'P1', camera: { nome: 'Câmera & "teste" <1>' } },
+    configuracao: { modo: 'geral', conjuntos: ['letras', 'numeros'], rodadas: 1 },
+    plano: [],
+    rodadas,
+    relatorio: relatorioGeral(rodadas)
+  });
+
+  const abas = tabelas(arquivo);
+  assert.deepEqual(abas.map((a) => a.nome), ['Resumo', 'Por sinal', 'Rodadas', 'Matriz por rodada', 'Matriz por quadro', 'Quadros', 'Metadados']);
+  const resumo = Object.fromEntries(abas[0].linhas);
+  assert.equal(resumo['Acerto por rodada (%)'], 50);
+  assert.equal(resumo['Rodadas: troca'], 1);
+  const rod = linhasDasRodadas(arquivo);
+  assert.equal(rod.length, 1 + rodadas.length, 'cabeçalho + uma linha por rodada');
+  assert.equal(rod[1][rod[0].indexOf('Resultado')], 'acerto');
+  assert.equal(rod[5][rod[0].indexOf('Estado')], 'pulada');
+  const quadrosAba = abas.find((a) => a.nome === 'Quadros').linhas;
+  assert.equal(quadrosAba.length - 1, rodadas.filter((r) => r.analise).reduce((s, r) => s + r.analise.linhaDoTempo.length, 0));
+
+  assert.equal(letraDaColuna(0), 'A');
+  assert.equal(letraDaColuna(25), 'Z');
+  assert.equal(letraDaColuna(27), 'AB');
+  assert.equal(escaparXml('a & <b> "c"\u0001'), 'a &amp; &lt;b&gt; &quot;c&quot;');
+
+  // Abre o ZIP gerado (stored) pelo diretório central e confere cada arquivo.
+  const bytes = gerarXlsx(abas);
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const fim = bytes.length - 22;
+  assert.equal(dv.getUint32(fim, true), 0x06054b50, 'fim do diretório central');
+  const total = dv.getUint16(fim + 10, true);
+  let p = dv.getUint32(fim + 16, true);
+  const conteudo = {};
+  for (let i = 0; i < total; i++) {
+    assert.equal(dv.getUint32(p, true), 0x02014b50);
+    const crc = dv.getUint32(p + 16, true);
+    const tamanho = dv.getUint32(p + 20, true);
+    const tamNome = dv.getUint16(p + 28, true);
+    const local = dv.getUint32(p + 42, true);
+    const nome = new TextDecoder().decode(bytes.subarray(p + 46, p + 46 + tamNome));
+    assert.equal(dv.getUint32(local, true), 0x04034b50);
+    const inicio = local + 30 + dv.getUint16(local + 26, true);
+    const dados = bytes.subarray(inicio, inicio + tamanho);
+    assert.equal(crc32(dados), crc, `CRC de ${nome}`);
+    conteudo[nome] = new TextDecoder().decode(dados);
+    p += 46 + tamNome;
+  }
+  assert.ok(conteudo['[Content_Types].xml'] && conteudo['xl/workbook.xml'] && conteudo['xl/styles.xml']);
+  assert.equal(Object.keys(conteudo).filter((n) => n.startsWith('xl/worksheets/')).length, 7);
+  assert.match(conteudo['xl/workbook.xml'], /<sheet name="Matriz por quadro" sheetId="5" r:id="rId5"\/>/);
+  const resumoXml = conteudo['xl/worksheets/sheet1.xml'];
+  assert.match(resumoXml, /<c r="A1" t="inlineStr" s="1"><is><t xml:space="preserve">Medida<\/t><\/is><\/c>/, 'cabeçalho em negrito');
+  assert.match(resumoXml, /<v>50<\/v>/, 'números como números');
+  assert.match(conteudo['xl/worksheets/sheet7.xml'], /Câmera &amp; &quot;teste&quot; &lt;1&gt;/, 'texto escapado');
+  assert.deepEqual(gerarXlsx(abas), bytes, 'o mesmo conteúdo gera os mesmos bytes');
+
+  const csv = gerarCsv([['a', 'b,c', 'd"e'], [1.5, null, 'x\ny']]);
+  assert.equal(csv, '﻿a,"b,c","d""e"\r\n1.5,,"x\ny"\r\n');
+  console.log('OK  cenário 9 — planilhas, Excel (ZIP e XML conferidos) e CSV a partir do arquivo do teste');
 }

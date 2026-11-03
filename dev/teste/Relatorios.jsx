@@ -1,27 +1,15 @@
 /**
  * Soletra (modo dev) — telas dos relatórios do teste de sinais.
  *
- * Só desenham o objeto que relatorio.js monta (o mesmo que vai para o JSON).
- * O painel é estreito: tabelas largas rolam na horizontal, e a matriz mostra
- * só as colunas que tiveram algum quadro.
+ * Só desenham o objeto que relatorio.js monta (o mesmo que vai para os
+ * arquivos). O painel é estreito: tabelas largas rolam na horizontal, e a
+ * matriz mostra só as colunas que tiveram algum valor.
  */
 import { useState } from 'react';
 import { Badge, Button, DataList, Flex, SegmentedControl, Table, Text } from '@radix-ui/themes';
-import { num, pct, seg } from '../formato.js';
-import { relatorioUnitario } from './relatorio.js';
-
-const NOMES_RESULTADO = { acerto: 'acerto', troca: 'troca', rejeicao: 'rejeição', 'tempo-esgotado': 'tempo esgotado' };
-const CORES_RESULTADO = { acerto: 'green', troca: 'red', rejeicao: 'amber', 'tempo-esgotado': 'gray' };
-const NOMES_COLUNA = { rejeicao: 'rej.', 'tempo-esgotado': 'tempo', rejeitado: 'rej.', 'sem-mao': 'sem mão', bloqueada: 'bloq.' };
-const LEGENDA = [
-  ['certo', 'sinal pedido'],
-  ['outra', 'outra classe'],
-  ['rejeitado', 'rejeitado'],
-  ['sem-mao', 'sem mão'],
-  ['bloqueada', 'mão bloqueada']
-];
-
-const nomeSinal = (s) => (/^\d$/.test(s) ? `Número ${s}` : `Letra ${s}`);
+import { ms, num, pct, seg } from '../formato.js';
+import { RESULTADOS, relatorioUnitario } from './relatorio.js';
+import { CORES_RESULTADO, NOMES_CATEGORIA, NOMES_COLUNA, NOMES_INICIO, NOMES_RESULTADO, nomeSinal } from './rotulos.js';
 
 /** "0,29 (p10 0,18 · p90 0,52)" */
 function faixa(d, casas = 2) {
@@ -46,14 +34,20 @@ function Titulo({ children }) {
   );
 }
 
+/**
+ * Um selo por resultado que aconteceu (o de acerto sempre aparece), na ordem
+ * de RESULTADOS: o chrome.storage devolve as chaves em ordem alfabética.
+ */
 function Resultados({ r }) {
   return (
     <Flex gap="1" wrap="wrap">
-      {Object.entries(r).map(([k, n]) => (
-        <Badge key={k} color={CORES_RESULTADO[k]} variant={n ? 'soft' : 'outline'}>
-          {`${NOMES_RESULTADO[k]}: ${n}`}
-        </Badge>
-      ))}
+      {RESULTADOS.map((k) => [k, r[k] ?? 0])
+        .filter(([k, n]) => n || k === 'acerto')
+        .map(([k, n]) => (
+          <Badge key={k} color={CORES_RESULTADO[k]} variant={n ? 'soft' : 'outline'}>
+            {`${NOMES_RESULTADO[k]}: ${n}`}
+          </Badge>
+        ))}
     </Flex>
   );
 }
@@ -64,7 +58,7 @@ function LinhaDoTempo({ linha }) {
   return (
     <div className="dev-tl" role="img" aria-label="Linha do tempo da rodada">
       {linha.map((q, i) => (
-        <span key={i} className="dev-tl__q" data-c={q.categoria} title={`${seg(q.ms)}: ${q.classe ?? q.categoria}`} />
+        <span key={i} className="dev-tl__q" data-c={q.categoria} title={`${seg(q.ms)}: ${q.classe ?? NOMES_CATEGORIA[q.categoria]}`} />
       ))}
     </div>
   );
@@ -73,7 +67,7 @@ function LinhaDoTempo({ linha }) {
 function Legenda() {
   return (
     <Flex gap="3" wrap="wrap">
-      {LEGENDA.map(([c, rotulo]) => (
+      {Object.entries(NOMES_CATEGORIA).map(([c, rotulo]) => (
         <Flex key={c} gap="1" align="center">
           <span className="dev-tl__q dev-tl__amostra" data-c={c} />
           <Text size="1" color="gray">{rotulo}</Text>
@@ -88,12 +82,15 @@ function Agregado({ a, alvo }) {
   const q = a.quadros;
   return (
     <DataList.Root size="1">
-      <Item rotulo="Acerto por quadro">{pct(a.acertoQuadros)}</Item>
       <Item rotulo="Acerto por rodada">{`${pct(a.acerto)} (${a.resultados.acerto} de ${a.rodadas})`}</Item>
-      <Item rotulo="Tempo até confirmar">
-        {a.tempoMedioAteConfirmar !== null ? `média ${seg(a.tempoMedioAteConfirmar)} · mediana ${seg(a.tempoAteConfirmar?.mediana)}` : '—'}
+      <Item rotulo="Acerto por quadro">{pct(a.acertoQuadros)}</Item>
+      <Item rotulo="Tempo até reconhecer">
+        {a.tempoMedioAteReconhecer !== null ? `média ${seg(a.tempoMedioAteReconhecer)} · mediana ${seg(a.tempoAteReconhecer?.mediana)}` : '—'}
       </Item>
-      <Item rotulo="Quadros">
+      <Item rotulo="Confirmações erradas">
+        {`${a.confirmacoesErradasAntes} antes de reconhecer · ${a.confirmacoesErradasNaGravacao} durante a gravação`}
+      </Item>
+      <Item rotulo="Quadros gravados">
         {`${q.certos} certos · ${q.outras} outra classe · ${q.rejeitados} rejeitados · ${q.semMao} sem mão · ${q.bloqueados} bloqueados`}
       </Item>
       {q.rejeitados > 0 && <Item rotulo="Rejeições">{`${q.ambiguos} ambíguas · ${q.distantes} distantes`}</Item>}
@@ -103,7 +100,7 @@ function Agregado({ a, alvo }) {
       <Item rotulo="Razão nos quadros certos">{faixa(a.razaoNosCertos)}</Item>
       <Item rotulo="Razão na confirmação">{faixa(a.razaoNaConfirmacao)}</Item>
       <Item rotulo={alvo ? `Distância até ${alvo}` : 'Distância até o pedido'}>{faixa(a.distanciaAlvo, 3)}</Item>
-      <Item rotulo="Latência">{`p50 ${num(a.latencia.p50, 1)} ms · p95 ${num(a.latencia.p95, 1)} ms`}</Item>
+      <Item rotulo="Latência">{Number.isFinite(a.latencia.p50) ? `p50 ${ms(a.latencia.p50)} · p95 ${ms(a.latencia.p95)}` : '—'}</Item>
       <Item rotulo="Inferência">{Number.isFinite(a.hz) ? `${num(a.hz, 1)} Hz` : '—'}</Item>
     </DataList.Root>
   );
@@ -114,6 +111,7 @@ export function RelatorioUnitario({ r }) {
     <Flex direction="column" gap="3">
       <Flex direction="column" gap="1">
         <Text size="3" weight="bold">{`${nomeSinal(r.sinal)} · ${r.rodadas} rodada(s)`}</Text>
+        {r.inicio && <Text size="1" color="gray">{`Início da rodada: ${NOMES_INICIO[r.inicio]}`}</Text>}
         <Resultados r={r.resultados} />
       </Flex>
       <Agregado a={r} alvo={r.sinal} />
@@ -132,13 +130,14 @@ export function RelatorioUnitario({ r }) {
             </Badge>
             <Text size="1" color="gray" className="numeros">
               {[
-                d.primeiraConfirmacaoMs !== null ? `confirmou em ${seg(d.primeiraConfirmacaoMs)}` : null,
-                `${pct(d.acertoQuadros, 0)} dos quadros`,
-                `maior sequência ${d.maiorSequencia.quadros} quadros`
+                Number.isFinite(d.tempoAteReconhecerMs) ? `reconhecida em ${seg(d.tempoAteReconhecerMs)}` : null,
+                d.confirmacoesAntes.length ? `antes confirmou ${d.confirmacoesAntes.map((c) => c.classe).join(', ')}` : null,
+                d.linhaDoTempo.length ? `${pct(d.acertoQuadros, 0)} dos quadros` : null,
+                d.linhaDoTempo.length ? `maior sequência ${d.maiorSequencia.quadros} quadros` : null
               ].filter(Boolean).join(' · ')}
             </Text>
           </Flex>
-          <LinhaDoTempo linha={d.linhaDoTempo} />
+          {d.resultado !== 'nao-reconhecido' && <LinhaDoTempo linha={d.linhaDoTempo} />}
         </Flex>
       ))}
       <Legenda />
@@ -150,6 +149,7 @@ function Matriz({ m }) {
   const totalLinha = (s) => Object.values(m.celulas[s] || {}).reduce((t, n) => t + n, 0);
   // Só as colunas com algum valor: com 31 classes, a matriz inteira não cabe.
   const colunas = m.colunas.filter((c) => m.linhas.some((s) => m.celulas[s]?.[c]));
+  if (colunas.length === 0) return <Text size="1" color="gray">Nenhum quadro gravado.</Text>;
   return (
     <div className="dev-rolagem">
       <table className="dev-matriz numeros">
@@ -198,6 +198,7 @@ export function RelatorioGeral({ arquivo }) {
     <Flex direction="column" gap="3">
       <Flex direction="column" gap="1">
         <Text size="3" weight="bold">{`Relatório geral · ${r.sinais.length} sinais · ${r.resumo.rodadas} rodadas`}</Text>
+        {r.inicio && <Text size="1" color="gray">{`Início da rodada: ${NOMES_INICIO[r.inicio]}`}</Text>}
         <Resultados r={r.resumo.resultados} />
         {r.resumo.puladas > 0 && <Text size="1" color="gray">{`${r.resumo.puladas} rodada(s) pulada(s), fora das taxas.`}</Text>}
       </Flex>
@@ -224,8 +225,9 @@ export function RelatorioGeral({ arquivo }) {
               <Table.ColumnHeaderCell justify="end">Troca</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell justify="end">Rej.</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell justify="end">Tempo</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell justify="end">Não rec.</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell justify="end">Por quadro</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell justify="end">Confirma em</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell justify="end">Reconhece em</Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -237,8 +239,9 @@ export function RelatorioGeral({ arquivo }) {
                 <Table.Cell justify="end" className="numeros">{s.resultados.troca}</Table.Cell>
                 <Table.Cell justify="end" className="numeros">{s.resultados.rejeicao}</Table.Cell>
                 <Table.Cell justify="end" className="numeros">{s.resultados['tempo-esgotado']}</Table.Cell>
+                <Table.Cell justify="end" className="numeros">{s.resultados['nao-reconhecido']}</Table.Cell>
                 <Table.Cell justify="end" className="numeros">{pct(s.acertoQuadros, 0)}</Table.Cell>
-                <Table.Cell justify="end" className="numeros">{seg(s.tempoMedioAteConfirmar)}</Table.Cell>
+                <Table.Cell justify="end" className="numeros">{seg(s.tempoMedioAteReconhecer)}</Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
@@ -254,8 +257,8 @@ export function RelatorioGeral({ arquivo }) {
       </Flex>
       <Text size="1" color="gray">
         {matriz === 'rodadas'
-          ? 'Linha: sinal pedido. Coluna: a primeira letra confirmada em cada rodada, ou rejeição / tempo esgotado.'
-          : 'Linha: sinal pedido. Coluna: o que o classificador deu em cada quadro.'}
+          ? 'Linha: sinal pedido. Coluna: a primeira letra confirmada em cada rodada, ou o motivo de não ter havido (rejeição, tempo esgotado, não reconhecido).'
+          : 'Linha: sinal pedido. Coluna: o que o classificador deu em cada quadro gravado.'}
       </Text>
       <Matriz m={matriz === 'rodadas' ? r.matrizRodadas : r.matrizQuadros} />
     </Flex>

@@ -113,7 +113,9 @@ export default defineConfig(
     entradas: {
       ...ENTRADAS,
       panel: resolve(DEV, 'panel.html'),
-      'service-worker': resolve(DEV, 'service-worker.js')
+      'service-worker': resolve(DEV, 'service-worker.js'),
+      // Relatório do teste de sinais para imprimir ou salvar em PDF.
+      relatorio: resolve(DEV, 'relatorio.html')
     },
     plugins: [modoDev()]
   })
