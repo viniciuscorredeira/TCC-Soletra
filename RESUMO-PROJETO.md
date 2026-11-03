@@ -756,7 +756,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 | Ponto | Situação | Detalhe |
 |---|---|---|
-| **Testes de interface** | Não atendido | Os 140 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
+| **Testes de interface** | Não atendido | Os 144 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
 | **Consentimento escrito dos voluntários** | Pendente (RNF11) | O `PRIVACY.md` afirma que quem contribuiu para o modelo pronto consentiu. Esse consentimento precisa ser **registrado por escrito**, inclusive o do autor, e anexado ao TCC |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
@@ -832,7 +832,8 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | Apoio | Linhas | Responsabilidade |
 |---|---:|---|
 | `tools/montar-modelo-padrao.mjs` | 148 | Monta o modelo pronto a partir de exports de várias pessoas |
-| `tools/medir-modelo.mjs` | 625 | Mede o modelo parado: validação em blocos, razão, corte, rigor, limiar, pares próximos e comparação entre modelos |
+| `tools/medir-modelo.mjs` | 241 | Linha de comando da medição: lê o modelo, escreve a tabela e grava o JSON |
+| `tools/medicao-modelo.js` | 510 | O cálculo da medição (validação em blocos, razão, corte, rigor, limiar, pares próximos, comparação), usado também pelo modo dev |
 | `tools/verificar-vendor.mjs` | 123 | Confere os SHA-256 dos binários e diagnostica quebras de linha convertidas pelo Git |
 | `.gitattributes` | — | Marca `vendor/**` e `modelos/*.json` como `-text`, para o Git não alterar seus bytes |
 | `tools/png.mjs` | 217 | Ler, escrever e redimensionar PNG sem dependências |
@@ -940,7 +941,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 
 | Indicador | Resultado (26/10/2026) |
 |---|---|
-| Suíte de testes | **140 cenários em 19 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
+| Suíte de testes | **144 cenários em 19 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
 | Medição do modelo pronto | Acerto por validação em blocos de 17 / 25: **letras 93,4% / 93,0%, números 92,0% / 90,2%, juntos 87,5% / 85,8%**; rigor Normal nas letras: 93,0% de acerto, 5,1% de rejeição, 1,8% de erros que passam (`npm run medir-modelo`, `medicoes/medir-modelo-padrao.json`, 03/11/2026) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
@@ -966,10 +967,10 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | `tests/respingo.test.mjs` | 4 |
 | `tests/builds.test.mjs` | 5 |
 | `tests/teste-sinais.test.mjs` | 9 |
-| `tests/medir-modelo.test.mjs` | 9 |
+| `tests/medir-modelo.test.mjs` | 13 |
 | `tests/observacao.test.mjs` | 4 |
 | `tests/regra-dev.test.mjs` | 2 |
-| **Total** | **140** |
+| **Total** | **144** |
 
 ### 8.3 Cenários que travam erros silenciosos
 
@@ -1056,7 +1057,7 @@ desativar a aceleração de hardware do navegador (seção 5.3).
 npm run build                            # compila a extensão em dist/
 npm run build:dev                        # compila o modo dev em dist-dev/
 npm run dev:all                          # recompila as duas a cada alteração
-npm test                                 # suíte completa — 140 cenários (node tests/todos.mjs)
+npm test                                 # suíte completa — 144 cenários (node tests/todos.mjs)
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 npm run medir-modelo                     # mede o modelo pronto (node tools/medir-modelo.mjs [modelo.json])
@@ -1150,6 +1151,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 1: canal genérico de observação dos quadros no reconhecedor (sem custo sem assinantes); esqueleto da mão sobre o vídeo e painel de diagnóstico ao vivo na versão dev |
 | 03/11/2026 | branch `feature/modo-dev` | Modo dev, etapa 2: teste de sinais com relatório unitário (um sinal) e geral (letra por letra, número por número), rodadas de tempo fixo, exportação em JSON com metadados e SHA-256 do modelo; ranking do classificador com todas as classes quando observado |
 | 03/11/2026 | branch `feature/modo-dev` | Teste de sinais: rodada que começa quando o sinal pedido é reconhecido (com tempo máximo de espera e o resultado "não reconhecido"), contagem como opção; exportação em JSON, Excel (.xlsx), PDF (impressão do navegador) e CSV |
+| 03/11/2026 | branch `feature/modo-dev` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | branch `feature/modo-dev` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 
 ---

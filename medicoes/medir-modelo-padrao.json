@@ -1,9 +1,11 @@
 {
   "formato": "soletra-medicao-modelo",
   "versaoFormato": 1,
-  "dataHora": "2026-11-03T14:50:05.223Z",
-  "commit": "9462f4f",
-  "node": "v26.12.0",
+  "dataHora": "2026-11-03T16:21:15.889Z",
+  "commit": "b140902",
+  "ambiente": {
+    "node": "v26.12.0"
+  },
   "arquivo": "modelos/padrao.json",
   "parametros": {
     "k": 5,
@@ -78,6 +80,7 @@
       "Y": 50
     }
   },
+  "avisos": [],
   "conjuntos": {
     "letras": {
       "classes": [
@@ -108,7 +111,7 @@
           "tamanhoBloco": 17,
           "amostras": 1050,
           "acertos": 981,
-          "acerto": 0.9343,
+          "acerto": 0.934286,
           "porClasse": {
             "A": {
               "amostras": 50,
@@ -473,57 +476,57 @@
           "razao": {
             "acertos": {
               "n": 981,
-              "min": 0.0566,
-              "p10": 0.1108,
-              "p25": 0.1857,
-              "mediana": 0.2906,
-              "p75": 0.4218,
-              "p90": 0.5829,
-              "max": 1.3962
+              "min": 0.056618,
+              "p10": 0.110773,
+              "p25": 0.18574,
+              "mediana": 0.290633,
+              "p75": 0.421758,
+              "p90": 0.58293,
+              "max": 1.39618
             },
             "erros": {
               "n": 69,
-              "min": 0.2627,
-              "p10": 0.7725,
-              "p25": 0.9593,
-              "mediana": 1.1279,
-              "p75": 1.2821,
-              "p90": 1.6819,
-              "max": 3.721
+              "min": 0.262662,
+              "p10": 0.772531,
+              "p25": 0.959275,
+              "mediana": 1.127911,
+              "p75": 1.282144,
+              "p90": 1.681918,
+              "max": 3.721022
             }
           },
           "cortes": [
             {
               "corte": 0.8,
               "acertosDescartados": 18,
-              "fracaoAcertosDescartados": 0.0183,
+              "fracaoAcertosDescartados": 0.018349,
               "errosBarrados": 60,
-              "fracaoErrosBarrados": 0.8696,
-              "acertoFinal": 0.9171
+              "fracaoErrosBarrados": 0.869565,
+              "acertoFinal": 0.917143
             },
             {
               "corte": 0.9,
               "acertosDescartados": 5,
-              "fracaoAcertosDescartados": 0.0051,
+              "fracaoAcertosDescartados": 0.005097,
               "errosBarrados": 54,
-              "fracaoErrosBarrados": 0.7826,
-              "acertoFinal": 0.9295
+              "fracaoErrosBarrados": 0.782609,
+              "acertoFinal": 0.929524
             },
             {
               "corte": 0.97,
               "acertosDescartados": 4,
-              "fracaoAcertosDescartados": 0.0041,
+              "fracaoAcertosDescartados": 0.004077,
               "errosBarrados": 50,
-              "fracaoErrosBarrados": 0.7246,
-              "acertoFinal": 0.9305
+              "fracaoErrosBarrados": 0.724638,
+              "acertoFinal": 0.930476
             },
             {
               "corte": 0.99,
               "acertosDescartados": 4,
-              "fracaoAcertosDescartados": 0.0041,
+              "fracaoAcertosDescartados": 0.004077,
               "errosBarrados": 49,
-              "fracaoErrosBarrados": 0.7101,
-              "acertoFinal": 0.9305
+              "fracaoErrosBarrados": 0.710145,
+              "acertoFinal": 0.930476
             }
           ],
           "rigor": [
@@ -531,40 +534,40 @@
               "nome": "Tolerante",
               "multiplicador": 1.25,
               "razaoEfetiva": 0.99,
-              "limiarEfetivoMediano": 7.8462,
-              "acertoFinal": 0.9305,
-              "rejeicao": 0.0505,
+              "limiarEfetivoMediano": 7.846165,
+              "acertoFinal": 0.930476,
+              "rejeicao": 0.050476,
               "rejeitadasAmbiguas": 53,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.019,
+              "errosQuePassam": 0.019048,
               "errosQuePassamQuantidade": 20,
-              "precisao": 0.9799
+              "precisao": 0.97994
             },
             {
               "nome": "Normal",
               "multiplicador": 1,
               "razaoEfetiva": 0.97,
-              "limiarEfetivoMediano": 6.2769,
-              "acertoFinal": 0.9305,
-              "rejeicao": 0.0514,
+              "limiarEfetivoMediano": 6.276932,
+              "acertoFinal": 0.930476,
+              "rejeicao": 0.051429,
               "rejeitadasAmbiguas": 54,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0181,
+              "errosQuePassam": 0.018095,
               "errosQuePassamQuantidade": 19,
-              "precisao": 0.9809
+              "precisao": 0.980924
             },
             {
               "nome": "Exigente",
               "multiplicador": 0.8,
               "razaoEfetiva": 0.776,
-              "limiarEfetivoMediano": 5.0215,
-              "acertoFinal": 0.9095,
-              "rejeicao": 0.0838,
+              "limiarEfetivoMediano": 5.021546,
+              "acertoFinal": 0.909524,
+              "rejeicao": 0.08381,
               "rejeitadasAmbiguas": 88,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0067,
+              "errosQuePassam": 0.006667,
               "errosQuePassamQuantidade": 7,
-              "precisao": 0.9927
+              "precisao": 0.992723
             }
           ]
         },
@@ -572,7 +575,7 @@
           "tamanhoBloco": 25,
           "amostras": 1050,
           "acertos": 977,
-          "acerto": 0.9305,
+          "acerto": 0.930476,
           "porClasse": {
             "A": {
               "amostras": 50,
@@ -938,57 +941,57 @@
           "razao": {
             "acertos": {
               "n": 977,
-              "min": 0.034,
-              "p10": 0.1103,
-              "p25": 0.1932,
-              "mediana": 0.3157,
-              "p75": 0.4509,
-              "p90": 0.6171,
-              "max": 1.4799
+              "min": 0.034035,
+              "p10": 0.110337,
+              "p25": 0.193245,
+              "mediana": 0.315725,
+              "p75": 0.450869,
+              "p90": 0.617051,
+              "max": 1.479855
             },
             "erros": {
               "n": 73,
-              "min": 0.2627,
-              "p10": 0.7034,
-              "p25": 0.8835,
-              "mediana": 1.0446,
-              "p75": 1.2188,
-              "p90": 1.5819,
-              "max": 3.721
+              "min": 0.262662,
+              "p10": 0.703439,
+              "p25": 0.883477,
+              "mediana": 1.044624,
+              "p75": 1.218842,
+              "p90": 1.581884,
+              "max": 3.721022
             }
           },
           "cortes": [
             {
               "corte": 0.8,
               "acertosDescartados": 25,
-              "fracaoAcertosDescartados": 0.0256,
+              "fracaoAcertosDescartados": 0.025589,
               "errosBarrados": 61,
-              "fracaoErrosBarrados": 0.8356,
-              "acertoFinal": 0.9067
+              "fracaoErrosBarrados": 0.835616,
+              "acertoFinal": 0.906667
             },
             {
               "corte": 0.9,
               "acertosDescartados": 10,
-              "fracaoAcertosDescartados": 0.0102,
+              "fracaoAcertosDescartados": 0.010235,
               "errosBarrados": 53,
-              "fracaoErrosBarrados": 0.726,
-              "acertoFinal": 0.921
+              "fracaoErrosBarrados": 0.726027,
+              "acertoFinal": 0.920952
             },
             {
               "corte": 0.97,
               "acertosDescartados": 6,
-              "fracaoAcertosDescartados": 0.0061,
+              "fracaoAcertosDescartados": 0.006141,
               "errosBarrados": 46,
-              "fracaoErrosBarrados": 0.6301,
-              "acertoFinal": 0.9248
+              "fracaoErrosBarrados": 0.630137,
+              "acertoFinal": 0.924762
             },
             {
               "corte": 0.99,
               "acertosDescartados": 6,
-              "fracaoAcertosDescartados": 0.0061,
+              "fracaoAcertosDescartados": 0.006141,
               "errosBarrados": 46,
-              "fracaoErrosBarrados": 0.6301,
-              "acertoFinal": 0.9248
+              "fracaoErrosBarrados": 0.630137,
+              "acertoFinal": 0.924762
             }
           ],
           "rigor": [
@@ -996,87 +999,87 @@
               "nome": "Tolerante",
               "multiplicador": 1.25,
               "razaoEfetiva": 0.99,
-              "limiarEfetivoMediano": 7.8566,
-              "acertoFinal": 0.9248,
-              "rejeicao": 0.0495,
+              "limiarEfetivoMediano": 7.856568,
+              "acertoFinal": 0.924762,
+              "rejeicao": 0.049524,
               "rejeitadasAmbiguas": 52,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0257,
+              "errosQuePassam": 0.025714,
               "errosQuePassamQuantidade": 27,
-              "precisao": 0.9729
+              "precisao": 0.972946
             },
             {
               "nome": "Normal",
               "multiplicador": 1,
               "razaoEfetiva": 0.97,
-              "limiarEfetivoMediano": 6.2853,
-              "acertoFinal": 0.9248,
-              "rejeicao": 0.0495,
+              "limiarEfetivoMediano": 6.285254,
+              "acertoFinal": 0.924762,
+              "rejeicao": 0.049524,
               "rejeitadasAmbiguas": 52,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0257,
+              "errosQuePassam": 0.025714,
               "errosQuePassamQuantidade": 27,
-              "precisao": 0.9729
+              "precisao": 0.972946
             },
             {
               "nome": "Exigente",
               "multiplicador": 0.8,
               "razaoEfetiva": 0.776,
-              "limiarEfetivoMediano": 5.0282,
-              "acertoFinal": 0.899,
-              "rejeicao": 0.0914,
+              "limiarEfetivoMediano": 5.028204,
+              "acertoFinal": 0.899048,
+              "rejeicao": 0.091429,
               "rejeitadasAmbiguas": 96,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0095,
+              "errosQuePassam": 0.009524,
               "errosQuePassamQuantidade": 10,
-              "precisao": 0.9895
+              "precisao": 0.989518
             }
           ]
         }
       ],
       "limiar": {
         "padrao": 1.3,
-        "p90MesmaClasse": 1.2493,
-        "cincoVezesP90": 6.2467,
-        "calibrado": 6.2467,
+        "p90MesmaClasse": 1.249338,
+        "cincoVezesP90": 6.246689,
+        "calibrado": 6.246689,
         "distanciaMesmaClasse": {
           "n": 1050,
-          "min": 0.0556,
-          "p10": 0.1391,
-          "p25": 0.2262,
-          "mediana": 0.3773,
-          "p75": 0.5609,
-          "p90": 0.7967,
-          "max": 12.6565
+          "min": 0.055573,
+          "p10": 0.139095,
+          "p25": 0.226185,
+          "mediana": 0.377324,
+          "p75": 0.560881,
+          "p90": 0.796737,
+          "max": 12.656509
         },
         "distanciaOutraClasse": {
           "n": 1050,
-          "min": 0.6375,
-          "p10": 1.1056,
-          "p25": 1.4662,
-          "mediana": 1.9643,
-          "p75": 2.7792,
-          "p90": 3.9414,
-          "max": 6.8814
+          "min": 0.637468,
+          "p10": 1.105637,
+          "p25": 1.466162,
+          "mediana": 1.964337,
+          "p75": 2.779154,
+          "p90": 3.941363,
+          "max": 6.881407
         },
         "porRigor": [
           {
             "nome": "Tolerante",
-            "limiar": 7.8084,
+            "limiar": 7.808361,
             "amostrasComOutraClasseAbaixo": 1050,
             "fracao": 1
           },
           {
             "nome": "Normal",
-            "limiar": 6.2467,
+            "limiar": 6.246689,
             "amostrasComOutraClasseAbaixo": 1038,
-            "fracao": 0.9886
+            "fracao": 0.988571
           },
           {
             "nome": "Exigente",
-            "limiar": 4.9974,
+            "limiar": 4.997351,
             "amostrasComOutraClasseAbaixo": 993,
-            "fracao": 0.9457
+            "fracao": 0.945714
           }
         ]
       }
@@ -1364,30 +1367,30 @@
           "razao": {
             "acertos": {
               "n": 460,
-              "min": 0.0555,
-              "p10": 0.1259,
-              "p25": 0.183,
-              "mediana": 0.2882,
-              "p75": 0.486,
-              "p90": 0.7235,
-              "max": 1.1825
+              "min": 0.055475,
+              "p10": 0.125912,
+              "p25": 0.182975,
+              "mediana": 0.288224,
+              "p75": 0.485995,
+              "p90": 0.723466,
+              "max": 1.182533
             },
             "erros": {
               "n": 40,
-              "min": 0.6621,
-              "p10": 0.7227,
-              "p25": 0.8842,
-              "mediana": 1.0093,
-              "p75": 1.1733,
-              "p90": 1.334,
-              "max": 2.0699
+              "min": 0.662073,
+              "p10": 0.722661,
+              "p25": 0.884184,
+              "mediana": 1.009272,
+              "p75": 1.17331,
+              "p90": 1.334035,
+              "max": 2.069873
             }
           },
           "cortes": [
             {
               "corte": 0.8,
               "acertosDescartados": 33,
-              "fracaoAcertosDescartados": 0.0717,
+              "fracaoAcertosDescartados": 0.071739,
               "errosBarrados": 33,
               "fracaoErrosBarrados": 0.825,
               "acertoFinal": 0.854
@@ -1395,7 +1398,7 @@
             {
               "corte": 0.9,
               "acertosDescartados": 12,
-              "fracaoAcertosDescartados": 0.0261,
+              "fracaoAcertosDescartados": 0.026087,
               "errosBarrados": 29,
               "fracaoErrosBarrados": 0.725,
               "acertoFinal": 0.896
@@ -1403,7 +1406,7 @@
             {
               "corte": 0.97,
               "acertosDescartados": 5,
-              "fracaoAcertosDescartados": 0.0109,
+              "fracaoAcertosDescartados": 0.01087,
               "errosBarrados": 23,
               "fracaoErrosBarrados": 0.575,
               "acertoFinal": 0.91
@@ -1411,7 +1414,7 @@
             {
               "corte": 0.99,
               "acertosDescartados": 4,
-              "fracaoAcertosDescartados": 0.0087,
+              "fracaoAcertosDescartados": 0.008696,
               "errosBarrados": 21,
               "fracaoErrosBarrados": 0.525,
               "acertoFinal": 0.912
@@ -1422,7 +1425,7 @@
               "nome": "Tolerante",
               "multiplicador": 1.25,
               "razaoEfetiva": 0.99,
-              "limiarEfetivoMediano": 7.7888,
+              "limiarEfetivoMediano": 7.788809,
               "acertoFinal": 0.912,
               "rejeicao": 0.05,
               "rejeitadasAmbiguas": 25,
@@ -1435,27 +1438,27 @@
               "nome": "Normal",
               "multiplicador": 1,
               "razaoEfetiva": 0.97,
-              "limiarEfetivoMediano": 6.231,
+              "limiarEfetivoMediano": 6.231048,
               "acertoFinal": 0.886,
               "rejeicao": 0.084,
               "rejeitadasAmbiguas": 28,
               "rejeitadasDistantes": 14,
               "errosQuePassam": 0.03,
               "errosQuePassamQuantidade": 15,
-              "precisao": 0.9672
+              "precisao": 0.967249
             },
             {
               "nome": "Exigente",
               "multiplicador": 0.8,
               "razaoEfetiva": 0.776,
-              "limiarEfetivoMediano": 4.9848,
+              "limiarEfetivoMediano": 4.984838,
               "acertoFinal": 0.84,
               "rejeicao": 0.146,
               "rejeitadasAmbiguas": 67,
               "rejeitadasDistantes": 6,
               "errosQuePassam": 0.014,
               "errosQuePassamQuantidade": 7,
-              "precisao": 0.9836
+              "precisao": 0.983607
             }
           ]
         },
@@ -1755,56 +1758,56 @@
           "razao": {
             "acertos": {
               "n": 451,
-              "min": 0.0431,
-              "p10": 0.1225,
-              "p25": 0.1839,
-              "mediana": 0.2866,
-              "p75": 0.5129,
-              "p90": 0.7239,
-              "max": 1.1825
+              "min": 0.04309,
+              "p10": 0.122507,
+              "p25": 0.183869,
+              "mediana": 0.286567,
+              "p75": 0.512888,
+              "p90": 0.723886,
+              "max": 1.182533
             },
             "erros": {
               "n": 49,
-              "min": 0.6573,
-              "p10": 0.7205,
-              "p25": 0.8409,
-              "mediana": 0.9791,
-              "p75": 1.1639,
-              "p90": 1.3641,
-              "max": 2.3022
+              "min": 0.657267,
+              "p10": 0.720507,
+              "p25": 0.840902,
+              "mediana": 0.979109,
+              "p75": 1.163891,
+              "p90": 1.364149,
+              "max": 2.302183
             }
           },
           "cortes": [
             {
               "corte": 0.8,
               "acertosDescartados": 30,
-              "fracaoAcertosDescartados": 0.0665,
+              "fracaoAcertosDescartados": 0.066519,
               "errosBarrados": 38,
-              "fracaoErrosBarrados": 0.7755,
+              "fracaoErrosBarrados": 0.77551,
               "acertoFinal": 0.842
             },
             {
               "corte": 0.9,
               "acertosDescartados": 10,
-              "fracaoAcertosDescartados": 0.0222,
+              "fracaoAcertosDescartados": 0.022173,
               "errosBarrados": 34,
-              "fracaoErrosBarrados": 0.6939,
+              "fracaoErrosBarrados": 0.693878,
               "acertoFinal": 0.882
             },
             {
               "corte": 0.97,
               "acertosDescartados": 5,
-              "fracaoAcertosDescartados": 0.0111,
+              "fracaoAcertosDescartados": 0.011086,
               "errosBarrados": 27,
-              "fracaoErrosBarrados": 0.551,
+              "fracaoErrosBarrados": 0.55102,
               "acertoFinal": 0.892
             },
             {
               "corte": 0.99,
               "acertosDescartados": 4,
-              "fracaoAcertosDescartados": 0.0089,
+              "fracaoAcertosDescartados": 0.008869,
               "errosBarrados": 24,
-              "fracaoErrosBarrados": 0.4898,
+              "fracaoErrosBarrados": 0.489796,
               "acertoFinal": 0.894
             }
           ],
@@ -1813,85 +1816,85 @@
               "nome": "Tolerante",
               "multiplicador": 1.25,
               "razaoEfetiva": 0.99,
-              "limiarEfetivoMediano": 7.75,
+              "limiarEfetivoMediano": 7.750039,
               "acertoFinal": 0.894,
               "rejeicao": 0.056,
               "rejeitadasAmbiguas": 28,
               "rejeitadasDistantes": 0,
               "errosQuePassam": 0.05,
               "errosQuePassamQuantidade": 25,
-              "precisao": 0.947
+              "precisao": 0.947034
             },
             {
               "nome": "Normal",
               "multiplicador": 1,
               "razaoEfetiva": 0.97,
-              "limiarEfetivoMediano": 6.2,
+              "limiarEfetivoMediano": 6.200031,
               "acertoFinal": 0.866,
               "rejeicao": 0.094,
               "rejeitadasAmbiguas": 32,
               "rejeitadasDistantes": 15,
               "errosQuePassam": 0.04,
               "errosQuePassamQuantidade": 20,
-              "precisao": 0.9558
+              "precisao": 0.95585
             },
             {
               "nome": "Exigente",
               "multiplicador": 0.8,
               "razaoEfetiva": 0.776,
-              "limiarEfetivoMediano": 4.96,
+              "limiarEfetivoMediano": 4.960025,
               "acertoFinal": 0.82,
               "rejeicao": 0.158,
               "rejeitadasAmbiguas": 73,
               "rejeitadasDistantes": 6,
               "errosQuePassam": 0.022,
               "errosQuePassamQuantidade": 11,
-              "precisao": 0.9739
+              "precisao": 0.973872
             }
           ]
         }
       ],
       "limiar": {
         "padrao": 1.3,
-        "p90MesmaClasse": 1.2493,
-        "cincoVezesP90": 6.2467,
-        "calibrado": 6.2467,
+        "p90MesmaClasse": 1.249338,
+        "cincoVezesP90": 6.246689,
+        "calibrado": 6.246689,
         "distanciaMesmaClasse": {
           "n": 500,
-          "min": 0.0581,
-          "p10": 0.2119,
-          "p25": 0.379,
-          "mediana": 0.6432,
-          "p75": 1.1958,
-          "p90": 2.114,
-          "max": 10.4971
+          "min": 0.058123,
+          "p10": 0.211909,
+          "p25": 0.379048,
+          "mediana": 0.643231,
+          "p75": 1.195768,
+          "p90": 2.114037,
+          "max": 10.497083
         },
         "distanciaOutraClasse": {
           "n": 500,
-          "min": 0.8622,
-          "p10": 2.0176,
-          "p25": 2.4162,
-          "mediana": 3.0735,
-          "p75": 4.1594,
-          "p90": 6.554,
-          "max": 9.4895
+          "min": 0.862159,
+          "p10": 2.017613,
+          "p25": 2.416172,
+          "mediana": 3.073509,
+          "p75": 4.159437,
+          "p90": 6.553972,
+          "max": 9.489468
         },
         "porRigor": [
           {
             "nome": "Tolerante",
-            "limiar": 7.8084,
+            "limiar": 7.808361,
             "amostrasComOutraClasseAbaixo": 480,
             "fracao": 0.96
           },
           {
             "nome": "Normal",
-            "limiar": 6.2467,
+            "limiar": 6.246689,
             "amostrasComOutraClasseAbaixo": 443,
             "fracao": 0.886
           },
           {
             "nome": "Exigente",
-            "limiar": 4.9974,
+            "limiar": 4.997351,
             "amostrasComOutraClasseAbaixo": 423,
             "fracao": 0.846
           }
@@ -1937,7 +1940,7 @@
           "tamanhoBloco": 17,
           "amostras": 1550,
           "acertos": 1356,
-          "acerto": 0.8748,
+          "acerto": 0.874839,
           "porClasse": {
             "0": {
               "amostras": 50,
@@ -2670,57 +2673,57 @@
           "razao": {
             "acertos": {
               "n": 1356,
-              "min": 0.0627,
-              "p10": 0.1386,
-              "p25": 0.2112,
-              "mediana": 0.3413,
-              "p75": 0.5134,
-              "p90": 0.7301,
-              "max": 1.4318
+              "min": 0.062694,
+              "p10": 0.138623,
+              "p25": 0.211243,
+              "mediana": 0.341312,
+              "p75": 0.513356,
+              "p90": 0.73007,
+              "max": 1.431807
             },
             "erros": {
               "n": 194,
-              "min": 0.2578,
-              "p10": 0.5194,
-              "p25": 0.7289,
-              "mediana": 0.8891,
+              "min": 0.257789,
+              "p10": 0.519377,
+              "p25": 0.728859,
+              "mediana": 0.889064,
               "p75": 1.0272,
-              "p90": 1.3343,
-              "max": 2.5294
+              "p90": 1.334315,
+              "max": 2.529389
             }
           },
           "cortes": [
             {
               "corte": 0.8,
               "acertosDescartados": 94,
-              "fracaoAcertosDescartados": 0.0693,
+              "fracaoAcertosDescartados": 0.069322,
               "errosBarrados": 122,
-              "fracaoErrosBarrados": 0.6289,
-              "acertoFinal": 0.8142
+              "fracaoErrosBarrados": 0.628866,
+              "acertoFinal": 0.814194
             },
             {
               "corte": 0.9,
               "acertosDescartados": 61,
-              "fracaoAcertosDescartados": 0.045,
+              "fracaoAcertosDescartados": 0.044985,
               "errosBarrados": 96,
-              "fracaoErrosBarrados": 0.4948,
-              "acertoFinal": 0.8355
+              "fracaoErrosBarrados": 0.494845,
+              "acertoFinal": 0.835484
             },
             {
               "corte": 0.97,
               "acertosDescartados": 50,
-              "fracaoAcertosDescartados": 0.0369,
+              "fracaoAcertosDescartados": 0.036873,
               "errosBarrados": 73,
-              "fracaoErrosBarrados": 0.3763,
-              "acertoFinal": 0.8426
+              "fracaoErrosBarrados": 0.376289,
+              "acertoFinal": 0.842581
             },
             {
               "corte": 0.99,
               "acertosDescartados": 47,
-              "fracaoAcertosDescartados": 0.0347,
+              "fracaoAcertosDescartados": 0.034661,
               "errosBarrados": 66,
-              "fracaoErrosBarrados": 0.3402,
-              "acertoFinal": 0.8445
+              "fracaoErrosBarrados": 0.340206,
+              "acertoFinal": 0.844516
             }
           ],
           "rigor": [
@@ -2728,40 +2731,40 @@
               "nome": "Tolerante",
               "multiplicador": 1.25,
               "razaoEfetiva": 0.99,
-              "limiarEfetivoMediano": 7.8212,
-              "acertoFinal": 0.8445,
-              "rejeicao": 0.0729,
+              "limiarEfetivoMediano": 7.821186,
+              "acertoFinal": 0.844516,
+              "rejeicao": 0.072903,
               "rejeitadasAmbiguas": 113,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0826,
+              "errosQuePassam": 0.082581,
               "errosQuePassamQuantidade": 128,
-              "precisao": 0.9109
+              "precisao": 0.910926
             },
             {
               "nome": "Normal",
               "multiplicador": 1,
               "razaoEfetiva": 0.97,
-              "limiarEfetivoMediano": 6.2569,
-              "acertoFinal": 0.8426,
+              "limiarEfetivoMediano": 6.256949,
+              "acertoFinal": 0.842581,
               "rejeicao": 0.08,
               "rejeitadasAmbiguas": 123,
               "rejeitadasDistantes": 1,
-              "errosQuePassam": 0.0774,
+              "errosQuePassam": 0.077419,
               "errosQuePassamQuantidade": 120,
-              "precisao": 0.9158
+              "precisao": 0.915849
             },
             {
               "nome": "Exigente",
               "multiplicador": 0.8,
               "razaoEfetiva": 0.776,
-              "limiarEfetivoMediano": 5.0056,
-              "acertoFinal": 0.8039,
-              "rejeicao": 0.1568,
+              "limiarEfetivoMediano": 5.005559,
+              "acertoFinal": 0.803871,
+              "rejeicao": 0.156774,
               "rejeitadasAmbiguas": 243,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0394,
+              "errosQuePassam": 0.039355,
               "errosQuePassamQuantidade": 61,
-              "precisao": 0.9533
+              "precisao": 0.953328
             }
           ]
         },
@@ -2769,7 +2772,7 @@
           "tamanhoBloco": 25,
           "amostras": 1550,
           "acertos": 1330,
-          "acerto": 0.8581,
+          "acerto": 0.858065,
           "porClasse": {
             "0": {
               "amostras": 50,
@@ -3538,57 +3541,57 @@
           "razao": {
             "acertos": {
               "n": 1330,
-              "min": 0.0403,
-              "p10": 0.1367,
-              "p25": 0.2188,
-              "mediana": 0.3568,
-              "p75": 0.5352,
-              "p90": 0.7518,
-              "max": 1.4318
+              "min": 0.040326,
+              "p10": 0.136655,
+              "p25": 0.218842,
+              "mediana": 0.356811,
+              "p75": 0.535229,
+              "p90": 0.751759,
+              "max": 1.431807
             },
             "erros": {
               "n": 220,
-              "min": 0.2578,
-              "p10": 0.514,
-              "p25": 0.7007,
-              "mediana": 0.886,
-              "p75": 1.0312,
-              "p90": 1.3319,
-              "max": 2.5294
+              "min": 0.257789,
+              "p10": 0.513967,
+              "p25": 0.700729,
+              "mediana": 0.885999,
+              "p75": 1.031167,
+              "p90": 1.331929,
+              "max": 2.529389
             }
           },
           "cortes": [
             {
               "corte": 0.8,
               "acertosDescartados": 99,
-              "fracaoAcertosDescartados": 0.0744,
+              "fracaoAcertosDescartados": 0.074436,
               "errosBarrados": 133,
-              "fracaoErrosBarrados": 0.6045,
-              "acertoFinal": 0.7942
+              "fracaoErrosBarrados": 0.604545,
+              "acertoFinal": 0.794194
             },
             {
               "corte": 0.9,
               "acertosDescartados": 52,
-              "fracaoAcertosDescartados": 0.0391,
+              "fracaoAcertosDescartados": 0.039098,
               "errosBarrados": 108,
-              "fracaoErrosBarrados": 0.4909,
-              "acertoFinal": 0.8245
+              "fracaoErrosBarrados": 0.490909,
+              "acertoFinal": 0.824516
             },
             {
               "corte": 0.97,
               "acertosDescartados": 41,
-              "fracaoAcertosDescartados": 0.0308,
+              "fracaoAcertosDescartados": 0.030827,
               "errosBarrados": 83,
-              "fracaoErrosBarrados": 0.3773,
-              "acertoFinal": 0.8316
+              "fracaoErrosBarrados": 0.377273,
+              "acertoFinal": 0.831613
             },
             {
               "corte": 0.99,
               "acertosDescartados": 37,
-              "fracaoAcertosDescartados": 0.0278,
+              "fracaoAcertosDescartados": 0.02782,
               "errosBarrados": 75,
-              "fracaoErrosBarrados": 0.3409,
-              "acertoFinal": 0.8342
+              "fracaoErrosBarrados": 0.340909,
+              "acertoFinal": 0.834194
             }
           ],
           "rigor": [
@@ -3596,87 +3599,87 @@
               "nome": "Tolerante",
               "multiplicador": 1.25,
               "razaoEfetiva": 0.99,
-              "limiarEfetivoMediano": 7.8431,
-              "acertoFinal": 0.8342,
-              "rejeicao": 0.0723,
+              "limiarEfetivoMediano": 7.84312,
+              "acertoFinal": 0.834194,
+              "rejeicao": 0.072258,
               "rejeitadasAmbiguas": 112,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0935,
+              "errosQuePassam": 0.093548,
               "errosQuePassamQuantidade": 145,
-              "precisao": 0.8992
+              "precisao": 0.899166
             },
             {
               "nome": "Normal",
               "multiplicador": 1,
               "razaoEfetiva": 0.97,
-              "limiarEfetivoMediano": 6.2745,
-              "acertoFinal": 0.8316,
-              "rejeicao": 0.0806,
+              "limiarEfetivoMediano": 6.274496,
+              "acertoFinal": 0.831613,
+              "rejeicao": 0.080645,
               "rejeitadasAmbiguas": 124,
               "rejeitadasDistantes": 1,
-              "errosQuePassam": 0.0877,
+              "errosQuePassam": 0.087742,
               "errosQuePassamQuantidade": 136,
-              "precisao": 0.9046
+              "precisao": 0.904561
             },
             {
               "nome": "Exigente",
               "multiplicador": 0.8,
               "razaoEfetiva": 0.776,
-              "limiarEfetivoMediano": 5.0196,
-              "acertoFinal": 0.7819,
-              "rejeicao": 0.1665,
+              "limiarEfetivoMediano": 5.019597,
+              "acertoFinal": 0.781935,
+              "rejeicao": 0.166452,
               "rejeitadasAmbiguas": 258,
               "rejeitadasDistantes": 0,
-              "errosQuePassam": 0.0516,
+              "errosQuePassam": 0.051613,
               "errosQuePassamQuantidade": 80,
-              "precisao": 0.9381
+              "precisao": 0.93808
             }
           ]
         }
       ],
       "limiar": {
         "padrao": 1.3,
-        "p90MesmaClasse": 1.2493,
-        "cincoVezesP90": 6.2467,
-        "calibrado": 6.2467,
+        "p90MesmaClasse": 1.249338,
+        "cincoVezesP90": 6.246689,
+        "calibrado": 6.246689,
         "distanciaMesmaClasse": {
           "n": 1550,
-          "min": 0.0556,
-          "p10": 0.1472,
-          "p25": 0.2604,
-          "mediana": 0.4364,
-          "p75": 0.6899,
-          "p90": 1.2493,
-          "max": 12.6565
+          "min": 0.055573,
+          "p10": 0.147181,
+          "p25": 0.260372,
+          "mediana": 0.436371,
+          "p75": 0.689876,
+          "p90": 1.249338,
+          "max": 12.656509
         },
         "distanciaOutraClasse": {
           "n": 1550,
-          "min": 0.2676,
-          "p10": 0.8549,
-          "p25": 1.3243,
-          "mediana": 2.0319,
-          "p75": 2.8513,
-          "p90": 3.8279,
-          "max": 7.8963
+          "min": 0.267554,
+          "p10": 0.854918,
+          "p25": 1.324272,
+          "mediana": 2.03191,
+          "p75": 2.851334,
+          "p90": 3.827927,
+          "max": 7.896296
         },
         "porRigor": [
           {
             "nome": "Tolerante",
-            "limiar": 7.8084,
+            "limiar": 7.808361,
             "amostrasComOutraClasseAbaixo": 1549,
-            "fracao": 0.9994
+            "fracao": 0.999355
           },
           {
             "nome": "Normal",
-            "limiar": 6.2467,
+            "limiar": 6.246689,
             "amostrasComOutraClasseAbaixo": 1546,
-            "fracao": 0.9974
+            "fracao": 0.997419
           },
           {
             "nome": "Exigente",
-            "limiar": 4.9974,
+            "limiar": 4.997351,
             "amostrasComOutraClasseAbaixo": 1510,
-            "fracao": 0.9742
+            "fracao": 0.974194
           }
         ]
       }
@@ -3685,63 +3688,63 @@
   "paresMaisProximos": [
     {
       "par": "S/8",
-      "distanciaMediana": 0.5588,
-      "menor": 0.3381
+      "distanciaMediana": 0.558832,
+      "menor": 0.338115
     },
     {
       "par": "O/0",
-      "distanciaMediana": 0.7175,
-      "menor": 0.2676
+      "distanciaMediana": 0.717465,
+      "menor": 0.267554
     },
     {
       "par": "R/U",
-      "distanciaMediana": 1.1112,
-      "menor": 0.9762
+      "distanciaMediana": 1.111222,
+      "menor": 0.976164
     },
     {
       "par": "F/T",
-      "distanciaMediana": 1.2438,
-      "menor": 0.6375
+      "distanciaMediana": 1.243805,
+      "menor": 0.637468
     },
     {
       "par": "D/G",
-      "distanciaMediana": 1.4554,
-      "menor": 0.985
+      "distanciaMediana": 1.455448,
+      "menor": 0.98497
     },
     {
       "par": "U/V",
-      "distanciaMediana": 1.5497,
-      "menor": 0.8942
+      "distanciaMediana": 1.549686,
+      "menor": 0.894186
     },
     {
       "par": "E/8",
-      "distanciaMediana": 1.7611,
-      "menor": 1.1717
+      "distanciaMediana": 1.761074,
+      "menor": 1.171671
     },
     {
       "par": "G/L",
-      "distanciaMediana": 1.8962,
-      "menor": 1.5106
+      "distanciaMediana": 1.896199,
+      "menor": 1.510584
     },
     {
       "par": "R/V",
-      "distanciaMediana": 1.9133,
-      "menor": 0.7095
+      "distanciaMediana": 1.913255,
+      "menor": 0.709544
     },
     {
       "par": "A/S",
-      "distanciaMediana": 1.9185,
-      "menor": 1.0114
+      "distanciaMediana": 1.918476,
+      "menor": 1.011434
     },
     {
       "par": "V/5",
-      "distanciaMediana": 2.0238,
-      "menor": 1.0884
+      "distanciaMediana": 2.023805,
+      "menor": 1.088402
     },
     {
       "par": "B/F",
-      "distanciaMediana": 2.0511,
-      "menor": 1.3447
+      "distanciaMediana": 2.051115,
+      "menor": 1.344697
     }
   ],
   "conferenciaTcc": {
@@ -3751,14 +3754,14 @@
         "conjunto": "letras",
         "tamanhoBloco": 17,
         "esperado": 0.934,
-        "medido": 0.9343,
+        "medido": 0.934286,
         "bate": true
       },
       {
         "conjunto": "letras",
         "tamanhoBloco": 25,
         "esperado": 0.93,
-        "medido": 0.9305,
+        "medido": 0.930476,
         "bate": true
       },
       {
@@ -3779,14 +3782,14 @@
         "conjunto": "juntos",
         "tamanhoBloco": 17,
         "esperado": 0.875,
-        "medido": 0.8748,
+        "medido": 0.874839,
         "bate": true
       },
       {
         "conjunto": "juntos",
         "tamanhoBloco": 25,
         "esperado": 0.858,
-        "medido": 0.8581,
+        "medido": 0.858065,
         "bate": true
       }
     ]

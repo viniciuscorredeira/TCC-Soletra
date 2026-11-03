@@ -196,6 +196,7 @@ Mede um modelo parado, sem câmera, de forma reproduzível, com o próprio `src/
 npm run medir-modelo                                   # o modelo pronto (modelos/padrao.json)
 node tools/medir-modelo.mjs meu-modelo.json            # um modelo exportado no painel
 node tools/medir-modelo.mjs --comparar outro.json      # compara com outro modelo
+node tools/medir-modelo.mjs --blocos 5,10              # blocos menores, para um treino pequeno
 node tools/medir-modelo.mjs --saida x.json | --sem-json
 ```
 
@@ -207,7 +208,8 @@ confusões), a razão vencedora/segunda nos acertos e nos erros, o que os cortes
 como na extensão), o limiar calculado e os pares de classes mais próximos. Com `--comparar`,
 também treina com um modelo e testa com o outro, para saber o quanto um modelo serve à mão de
 quem não o gravou. Sai uma tabela no terminal, com vírgula decimal, e um JSON em `medicoes/`
-com data, commit e SHA-256 do modelo (o mesmo dos relatórios do teste de sinais).
+com data, commit e SHA-256 do modelo (o mesmo dos relatórios do teste de sinais). A mesma
+medição roda no painel da versão dev, sem terminal (seção "Medir o modelo (dev)", abaixo).
 
 No modelo pronto, a medição gravada em `medicoes/medir-modelo-padrao.json` dá:
 
@@ -278,7 +280,7 @@ rastreamento o MediaPipe roda o detector de palma a cada quadro.
 npm test             # o mesmo que node tests/todos.mjs
 ```
 
-140 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
+144 cenários, em Node puro, sem framework e sem dependências — testam `src/`, que não
 depende do React nem do build, e o gerador da tinta da troca de tema (`ui/respingo.js`),
 que é uma função pura. A exceção é `tests/builds.test.mjs`, que usa o Vite (já instalado
 para o build) para gerar as duas versões numa pasta temporária e conferir a separação entre
@@ -449,6 +451,30 @@ O SHA-256
 mesmo modelo exportado têm a mesma identidade. O último teste fica salvo no `chrome.storage` da
 versão dev (inclusive um interrompido) e pode ser reaberto em **Abrir o último teste**.
 
+#### Medir o modelo (dev)
+
+A seção **Medir o modelo (dev)** roda a medição do `tools/medir-modelo.mjs` no painel, com o
+mesmo código (`tools/medicao-modelo.js`) e os mesmos números, sem terminal:
+
+- **Modelo:** o modelo em uso (pronto + treino pessoal), o modelo pronto empacotado, só o treino
+  pessoal ou um arquivo exportado (de outra pessoa, de outra máquina).
+- **Comparar com:** outro modelo, medido do mesmo jeito, e o cruzamento: treinar com um e testar
+  com o outro. Com o treino pessoal de um lado e o modelo pronto do outro, responde se o modelo
+  pronto reconhece a mão de quem treinou; o painel sugere essa combinação quando há treino pessoal.
+- **Blocos:** 17 e 25, como no TCC, ou 5 e 10, para um treino de 20 amostras por classe. Uma classe
+  com amostras de menos para o bloco é avisada, porque sairia inteira do treino.
+
+O cálculo roda num Web Worker, com barra de progresso e Cancelar: o painel e a câmera continuam
+funcionando (o modelo pronto leva de 5 a 15 s, conforme o computador). O resultado mostra a tabela
+de acerto, o selo de conferência com a tabela do TCC quando o modelo é o pronto, e uma vista por
+vez para o conjunto e o bloco escolhidos: acerto por classe (barras, pior primeiro), matriz de
+confusão, caixas da razão nos acertos e nos erros (com os cortes 0,80 e 0,97), efeito do corte,
+efeito do rigor (com o rigor atual marcado), limiar, pares mais próximos e comparação. Exporta em
+**JSON** (o mesmo formato do terminal), **Excel** (abas Resumo, Por classe, Confusões, Razão, Corte
+da razão, Rigor, Limiar, Pares próximos, Comparação e Metadados) e **PDF** (pela mesma página de
+impressão do teste). A última medição fica salva, e **Abrir medição salva…** abre um JSON exportado
+antes, daqui ou do terminal.
+
 #### Como o núcleo expõe os dados
 
 O reconhecedor publica cada quadro num canal genérico de observação (`src/canal.js`), que o
@@ -593,6 +619,7 @@ modelos/padrao.json           modelo pronto (opcional), gerado por tools/montar-
 tools/montar-modelo-padrao.mjs  junta exports de várias pessoas no modelo pronto, balanceado por pessoa
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados e diagnostica CRLF
 tools/medir-modelo.mjs        mede um modelo parado: validação em blocos, razão, corte, rigor e comparação
+tools/medicao-modelo.js       o cálculo da medição, usado pelo script e pelo modo dev (sem Node nem DOM)
 medicoes/                     medições gravadas pelo tools/medir-modelo.mjs (a do modelo pronto)
 .gitattributes                impede o Git de converter as quebras de linha dos binários
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
