@@ -748,8 +748,9 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 
 - **Sistema:** a extensão traz um modelo com 31 classes (21 letras e 10 números) e 50 amostras
   por classe, que funciona sem treino e sem baixar nada.
-- **Ressalva:** o modelo atual foi gravado por **uma pessoa só**, então pode reconhecer pior a
-  mão de outras pessoas (seção 7.1).
+- **Ressalva:** o modelo atual foi gravado por **uma pessoa só**. No teste com participantes,
+  duas pessoas que não o gravaram acertaram 94,6% das rodadas, como o autor (seção 17.6), mas
+  ainda é uma amostra pequena (seção 7.1).
 
 #### RF65 — Reforçar uma letra do modelo pronto ✅
 
@@ -876,8 +877,8 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 | **Sinais de palavras e frases da Libras** | Fora do escopo | O projeto trata da datilologia, não da língua completa, que tem sinais com movimento, expressão facial e duas mãos | O Soletra soletra; não traduz Libras | Trabalho de outra ordem de grandeza |
 | **Sinais com as duas mãos** | Não atendido | O detector é configurado para uma mão (`numHands: 1`) | Nenhum para o alfabeto manual, que usa uma mão | — |
 | **Detecção da mão dominante** | Atendido parcialmente (RF28) | A indicação de mão do MediaPipe pressupõe imagem espelhada, e webcams virtuais (Iriun, OBS, DroidCam) às vezes espelham na origem, sem como detectar | A mão errada trava a tradução; a inversão da câmera é marcada pelo usuário, uma vez por câmera (RF46) | Perguntar a marcação na primeira vez que cada câmera nova é usada: uma imagem espelhada é geometricamente idêntica à da outra mão, então não há como inferi-la do quadro |
-| **Avaliação de acurácia** | Atendido para o modelo parado | Validação em blocos com matriz de confusão, razão, corte e rigor (`tools/medir-modelo.mjs` e "Medir o modelo" no modo dev): letras 93,4%, números 92,0% e juntos 87,5% com blocos de 17 | As confusões entre letras e números medidas são O→0 (26) e 8→S (20). O uso ao vivo ainda não foi medido com participantes | Rodar o teste de sinais do modo dev com participantes e registrar os resultados no TCC |
-| **Generalização do modelo pronto** | Não validado (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`) | Pode falhar com mãos diferentes da do autor, sem erro aparente | Medir com a mão de outra pessoa: o treino pessoal dela comparado com o modelo pronto, em "Medir o modelo" (modo dev). Depois, coletar exports com consentimento e regenerar com a ferramenta de montagem |
+| **Avaliação de acurácia** | Atendido (modelo parado e teste com 3 participantes) | Validação em blocos com matriz de confusão, razão, corte e rigor (`tools/medir-modelo.mjs` e "Medir o modelo" no modo dev): letras 93,4%, números 92,0% e juntos 87,5% com blocos de 17. Ao vivo, com o teste de sinais: 94,6% das rodadas e 97,4% dos quadros (seção 17.6) | As confusões entre letras e números medidas são O→0 (26) e 8→S (20). O teste ao vivo teve só 3 participantes, em condições diferentes | Ampliar o teste com mais participantes e condições controladas |
+| **Generalização do modelo pronto** | Verificado com 2 pessoas (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`). No teste com participantes, duas pessoas que não o gravaram acertaram 94,6% das rodadas, o mesmo que o autor (seção 17.6) | Duas pessoas ainda são pouco para afirmar que o modelo serve a qualquer mão | Testar com mais pessoas, fora da equipe; coletar exports com consentimento e regenerar com a ferramenta de montagem |
 | **Velocidade de soletração** | Limitação de projeto | Cada letra exige ~700 ms de permanência mais a votação, para evitar letras falsas a cada tremor | Soletração mais lenta que a natural | Ajuste "Rápido" (450 ms) já disponível |
 
 ### 7.2 Plataforma e interface
@@ -1241,8 +1242,8 @@ node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json 
 ### 11.4 O arquivo atual
 
 Gerado a partir do modelo do autor (31 classes × 60 amostras, **uma pessoa**), reduzido a 50
-amostras por classe escolhidas espalhadas pela sessão. A generalização para outras mãos não foi
-medida (seção 7.1).
+amostras por classe escolhidas espalhadas pela sessão. No teste com participantes (seção 17.6),
+duas pessoas que não o gravaram acertaram 94,6% das rodadas, o mesmo que o autor.
 
 ### 11.5 Medição do modelo (`tools/medir-modelo.mjs`)
 
@@ -1552,6 +1553,80 @@ de custo diferentes (sem rastreamento, o detector de palma roda a cada quadro).
 node tools/verificar-vendor.mjs          # integridade dos binários do MediaPipe
 ```
 
+### 17.6 Teste com participantes (`Planilhas de Testes/`)
+
+Teste de uso real com o **Teste de sinais (relatório geral)** do modo dev, em 03/11/2026, com três
+participantes, cada um no próprio computador. As planilhas exportadas estão em
+`Planilhas de Testes/`: uma por participante (`Teste Vinicius.xlsx`, `Teste Lucas.xlsx` e
+`Teste Raul.xlsx`, com as abas Resumo, Por sinal, Rodadas, Matriz por rodada, Matriz por quadro,
+Quadros e Metadados) e `soletra-testes-medias-Vinicius-Lucas-Raul.xlsx`, com as médias, o desvio
+padrão e as condições de cada teste.
+
+**Método comum.** Código do commit `830f4f3`, modelo pronto sem treino pessoal (SHA-256
+`313a5735…`, o mesmo medido na seção 11.5), rigor Normal, confirmação em 700 ms, mão direita.
+Os 31 sinais (21 letras e 10 números), 3 rodadas cada, em ordem: 93 rodadas por participante,
+279 no total. Cada rodada começa quando o sinal pedido é reconhecido (confirmado, como se
+entrasse no texto) e então grava os quadros enquanto a mão é mantida. **Troca** é uma rodada em
+que outra letra foi confirmada antes do sinal pedido; **não reconhecido**, uma em que o sinal
+pedido não veio dentro da espera máxima.
+
+| | Vinicius (P1) | Lucas (P2) | Raul (P2 no arquivo) |
+|---|---|---|---|
+| Gravou o modelo pronto | sim | não | não |
+| Câmera | Iriun Webcam, 1280×720, 30 fps medidos | webcam USB genérica, 1280×720, 12,5 fps medidos | Iriun Webcam, 1280×960, 30 fps medidos |
+| Iluminação e distância | luz natural, 30 cm | luz natural, 30 cm | luz noturna, 40 cm |
+| Rodada · espera máxima | 5 s · 10 s | 5 s · 20 s | 8 s · 20 s |
+| Latência p50 · p95 | 26,4 · 27,6 ms | 43,3 · 51,9 ms | 22,3 · 27,4 ms |
+| Inferência | 7,5 Hz | 6,4 Hz | 10,7 Hz |
+
+| Resultado | Vinicius | Lucas | Raul | Os três (279 rodadas) |
+|---|---:|---:|---:|---:|
+| Acerto por rodada | 94,6% (88) | 95,7% (89) | 93,5% (87) | **94,6%** (264) |
+| Troca | 4 | 4 | 5 | 13 (4,7%) |
+| Não reconhecido | 1 | 0 | 1 | 2 (0,7%) |
+| Acerto por quadro | 97,5% | 98,3% | 97,0% | **97,4%** (13.937 de 14.314) |
+| Tempo até reconhecer: mediana · p90 | 2,76 · 4,73 s | 3,56 · 4,76 s | 2,51 · 4,50 s | 3,00 · 4,76 s |
+| Razão nos quadros certos (mediana) | 0,54 | 0,55 | 0,63 | 0,60 |
+| Quadros rejeitados por distância | 0 | 0 | 0 | 0 |
+
+A coluna dos três soma rodadas e quadros; não é a média das porcentagens. A planilha de médias
+traz a média simples e o desvio padrão amostral: 94,6% ± 1,1 por rodada e 97,6% ± 0,7 por quadro.
+
+O que os números mostram:
+
+- **Generalização.** Lucas e Raul, que não gravaram o modelo pronto, acertaram 94,6% das rodadas
+  (176 de 186) e 97,3% dos quadros; o Vinicius, que o gravou, 94,6% e 97,5%. Com três pessoas a
+  amostra é pequena, mas não apareceu a queda temida para mãos diferentes da do autor (seção 7.1).
+- **Letras e números.** Letras: 95,8% das rodadas (181 de 189) e 96,6% dos quadros. Números: 92,2%
+  (83 de 90) e 99,5%. Os números erram na chegada, quando a mão passa por outro número até
+  formar o pedido (1→2, 1→5, 2→5, 3→2, 7→2, 0→9), e quase nunca depois de reconhecidos.
+- **Sinais mais difíceis.** Por rodada, o 1 (6 de 9) e o T (7 de 9); por quadro, U (81%), T (90%),
+  R (90%) e S (91%). As trocas nas letras foram T→B, T→A, U→R, R→U, F→T, Y→A, G→D e S→E. Os pares
+  que mais trocaram quadros foram A↔S (35, todos do Raul, com luz noturna), B↔T (22) e O↔P (13),
+  esses dois do Vinicius.
+- **Rejeição.** Nenhum quadro foi rejeitado por distância: todas as rejeições foram por
+  ambiguidade (razão acima de 0,97). É, ao vivo, o que a seção 11.5 mediu: o limiar calculado
+  (6,247) só barra o que está longe de tudo, e quem desempata é a razão.
+- **Tempo.** A mediana de 3,0 s até reconhecer inclui levar a mão à posição; a permanência para
+  confirmar é de 700 ms. 90% das rodadas foram reconhecidas em até 4,8 s.
+- **Desempenho.** A inferência ficou entre 6,4 e 10,7 Hz, abaixo dos 15 Hz que o agendador busca,
+  o que vale investigar. Com a webcam que entregava 12,5 fps (Lucas), a latência subiu para
+  43 ms e a inferência caiu para 6,4 Hz, sem perda de acerto.
+
+Este teste e a medição da seção 11.5 medem coisas diferentes: lá, cada amostra é classificada
+sozinha, sem estabilizador; aqui conta a letra confirmada, depois da votação e da permanência.
+
+Cuidados ao citar:
+
+- O Raul está marcado como "P2" no arquivo, o mesmo código do Lucas; aqui ele aparece pelo nome.
+- O arquivo do Vinicius foi montado a partir de três exportações: o teste geral de letras, um
+  teste unitário do E (rodadas 13 a 15, no lugar das do geral, que não tinha incluído o E) e um
+  teste geral de números (rodadas 64 a 93). As linhas `mescla.*` da aba Metadados registram isso.
+- As condições não são iguais: o Raul usou luz noturna, 40 cm e rodadas de 8 s (por isso tem
+  mais quadros, 85 por rodada, contra 32 a 37), e o Lucas, uma câmera de 12,5 fps. A diferença
+  entre participantes mistura pessoa, câmera e ambiente.
+- Três participantes são uma amostra pequena: os resultados indicam, não generalizam.
+
 ---
 
 ## 18. Privacidade e LGPD
@@ -1732,6 +1807,7 @@ modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
 tools/                          montagem e medição do modelo pronto, verificação do vendor, PNG, ícones, logos
 medicoes/                       medição do modelo pronto gravada por tools/medir-modelo.mjs
+Planilhas de Testes/            planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
 tests/                          144 cenários; tests/todos.mjs roda todos
 
@@ -1794,10 +1870,10 @@ do modo dev, tinha **cerca de 9 mil** (8,9 mil no commit `c9ae141`).
 
 Em ordem de prioridade para o TCC:
 
-1. **Medir a generalização com participantes:** o treino pessoal de quem não gravou o modelo
-   pronto comparado com ele, em "Medir o modelo" (modo dev), e o teste de sinais ao vivo. A
-   avaliação do modelo parado já existe (`tools/medir-modelo.mjs`, seção 11.5); falta a de
-   outras mãos.
+1. **Ampliar o teste com participantes:** mais pessoas, de fora da equipe, com condições
+   controladas (mesma câmera, luz e duração de rodada) e códigos de participante únicos. O
+   primeiro teste, com 3 pessoas, deu 94,6% das rodadas e o mesmo acerto para quem não gravou o
+   modelo pronto (seção 17.6).
 2. **Modelo pronto com várias pessoas**, com consentimento por escrito, regenerado pela
    ferramenta de montagem.
 3. **Opção "Mesclar" na importação**, que o armazenamento já suporta.
@@ -1856,6 +1932,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 | 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
+| 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 17.6): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não gravou o modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 
 ---

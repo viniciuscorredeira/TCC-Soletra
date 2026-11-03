@@ -600,8 +600,9 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 
 - **Sistema:** a extensão traz um modelo com 31 classes (21 letras e 10 números) e 50 amostras
   por classe, que funciona sem treino e sem baixar nada.
-- **Ressalva:** o modelo atual foi gravado por **uma pessoa só**, então pode reconhecer pior a
-  mão de outras pessoas (seção 5.1).
+- **Ressalva:** o modelo atual foi gravado por **uma pessoa só**. No teste com participantes,
+  duas pessoas que não o gravaram acertaram 94,6% das rodadas, como o autor (seção 8.5), mas
+  ainda é uma amostra pequena (seção 5.1).
 
 #### RF65 — Reforçar uma letra do modelo pronto ✅
 
@@ -725,8 +726,8 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 | **Sinais de palavras e frases da Libras** | Fora do escopo | O projeto trata da datilologia, não da língua completa, que tem sinais com movimento, expressão facial e duas mãos | O Soletra soletra; não traduz Libras | Trabalho de outra ordem de grandeza |
 | **Sinais com as duas mãos** | Não atendido | O detector é configurado para uma mão (`numHands: 1`) | Nenhum para o alfabeto manual, que usa uma mão | — |
 | **Detecção da mão dominante** | Atendido parcialmente (RF28) | A indicação de mão do MediaPipe pressupõe imagem espelhada, e webcams virtuais (Iriun, OBS, DroidCam) às vezes espelham na origem, sem como detectar | A mão errada trava a tradução; a inversão da câmera é marcada pelo usuário, uma vez por câmera (RF46) | Perguntar a marcação na primeira vez que cada câmera nova é usada: uma imagem espelhada é geometricamente idêntica à da outra mão, então não há como inferi-la do quadro |
-| **Avaliação de acurácia** | Atendido para o modelo parado | Validação em blocos com matriz de confusão, razão, corte e rigor (`tools/medir-modelo.mjs` e "Medir o modelo" no modo dev): letras 93,4%, números 92,0% e juntos 87,5% com blocos de 17 | As confusões entre letras e números medidas são O→0 (26) e 8→S (20). O uso ao vivo ainda não foi medido com participantes | Rodar o teste de sinais do modo dev com participantes e registrar os resultados no TCC |
-| **Generalização do modelo pronto** | Não validado (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`) | Pode falhar com mãos diferentes da do autor, sem erro aparente | Medir com a mão de outra pessoa: o treino pessoal dela comparado com o modelo pronto, em "Medir o modelo" (modo dev). Depois, coletar exports com consentimento e regenerar com a ferramenta de montagem |
+| **Avaliação de acurácia** | Atendido (modelo parado e teste com 3 participantes) | Validação em blocos com matriz de confusão, razão, corte e rigor (`tools/medir-modelo.mjs` e "Medir o modelo" no modo dev): letras 93,4%, números 92,0% e juntos 87,5% com blocos de 17. Ao vivo, com o teste de sinais: 94,6% das rodadas e 97,4% dos quadros (seção 8.5) | As confusões entre letras e números medidas são O→0 (26) e 8→S (20). O teste ao vivo teve só 3 participantes, em condições diferentes | Ampliar o teste com mais participantes e condições controladas |
+| **Generalização do modelo pronto** | Verificado com 2 pessoas (RF64) | O `padrao.json` atual vem de **uma pessoa só** (`pessoas: 1`). No teste com participantes, duas pessoas que não o gravaram acertaram 94,6% das rodadas, o mesmo que o autor (seção 8.5) | Duas pessoas ainda são pouco para afirmar que o modelo serve a qualquer mão | Testar com mais pessoas, fora da equipe; coletar exports com consentimento e regenerar com a ferramenta de montagem |
 | **Velocidade de soletração** | Limitação de projeto | Cada letra exige ~700 ms de permanência mais a votação, para evitar letras falsas a cada tremor | Soletração mais lenta que a natural | Ajuste "Rápido" (450 ms) já disponível |
 
 ### 5.2 Plataforma e interface
@@ -958,6 +959,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 |---|---|
 | Suíte de testes | **144 cenários em 19 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
 | Medição do modelo pronto | Acerto por validação em blocos de 17 / 25: **letras 93,4% / 93,0%, números 92,0% / 90,2%, juntos 87,5% / 85,8%**; rigor Normal nas letras: 93,0% de acerto, 5,1% de rejeição, 1,8% de erros que passam (`npm run medir-modelo`, `medicoes/medir-modelo-padrao.json`, 03/11/2026) |
+| Teste com participantes | **94,6% das rodadas** (264 de 279) e **97,4% dos quadros**, com 3 participantes e o modelo pronto; quem não o gravou acertou o mesmo que o autor (seção 8.5, `Planilhas de Testes/`) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
 | Integridade do vendor | **4/4 arquivos íntegros** (`node tools/verificar-vendor.mjs`), inclusive em clone no Windows |
@@ -1017,6 +1019,30 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
   relógio e agendador no loop.
 - Versionamento de esquema (`VERSAO_FEATURES`, `ESQUEMA`) com recusa explícita de dados
   incompatíveis; o modelo pronto passa pela mesma validação de um arquivo importado.
+
+### 8.5 Teste com participantes
+
+Teste de sinais (relatório geral) do modo dev, em 03/11/2026: três participantes, os 31 sinais,
+3 rodadas cada (279 rodadas), com o modelo pronto sem treino pessoal, rigor Normal e confirmação
+em 700 ms. As planilhas estão em `Planilhas de Testes/` (uma por participante e uma de médias).
+
+| Resultado | Vinicius | Lucas | Raul | Os três (279 rodadas) |
+|---|---:|---:|---:|---:|
+| Gravou o modelo pronto | sim | não | não | — |
+| Acerto por rodada | 94,6% | 95,7% | 93,5% | **94,6%** (264) |
+| Troca · não reconhecido | 4 · 1 | 4 · 0 | 5 · 1 | 13 · 2 |
+| Acerto por quadro | 97,5% | 98,3% | 97,0% | **97,4%** |
+| Tempo até reconhecer (mediana) | 2,76 s | 3,56 s | 2,51 s | 3,00 s |
+
+- **Generalização:** quem não gravou o modelo pronto (Lucas e Raul) acertou 94,6% das rodadas,
+  o mesmo que o autor (Vinicius).
+- **Letras e números:** 95,8% e 92,2% das rodadas. Os números erram ao passar por outro número
+  até formar o pedido (1→2, 3→2, 7→2…).
+- **Mais difíceis:** o 1 e o T por rodada; U, T, R e S por quadro. Nenhum quadro foi rejeitado por
+  distância, só por ambiguidade.
+- **Cuidados:** condições diferentes (câmera, luz, distância, duração da rodada), o Raul marcado
+  como "P2" no arquivo e o teste do Vinicius montado a partir de três exportações. Detalhes na
+  seção 17.6 da documentação completa.
 
 ---
 
@@ -1111,9 +1137,9 @@ quadros com e sem mão rastreada.
 
 Em ordem de prioridade para o TCC:
 
-1. **Medir a generalização com participantes:** o treino pessoal de quem não gravou o modelo
-   pronto comparado com ele, em "Medir o modelo" (modo dev), e o teste de sinais ao vivo. A
-   avaliação do modelo parado já existe (`tools/medir-modelo.mjs`); falta a de outras mãos.
+1. **Ampliar o teste com participantes:** mais pessoas, de fora da equipe, com condições
+   controladas e códigos de participante únicos. O primeiro teste, com 3 pessoas, deu 94,6% das
+   rodadas e o mesmo acerto para quem não gravou o modelo pronto (seção 8.5).
 2. **Coletar exports de várias pessoas**, com consentimento por escrito, e regenerar o
    `padrao.json`.
 3. **Opção "Mesclar" na importação**, que o armazenamento já suporta.
@@ -1171,6 +1197,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | `32b9dc6` a `2fa7bfb` | `tools/medir-modelo.mjs`: medição reproduzível do modelo parado (validação em blocos de 17 e 25, razão nos acertos e erros, efeito do corte e do rigor, limiar calculado, pares mais próximos, comparação entre modelos), com tabela e JSON; reproduz a tabela do TCC e um teste garante isso. Medição do modelo pronto em `medicoes/` |
 | 03/11/2026 | `a187594` a `830f4f3` | Seção "Medir o modelo (dev)": a mesma medição no painel dev, num Web Worker, sobre o modelo em uso, o modelo pronto, o treino pessoal ou um arquivo, com comparação entre dois modelos, gráficos e exportação em JSON, Excel e PDF; cálculo separado em `tools/medicao-modelo.js` |
 | 03/11/2026 | `main` | Modo dev, medição do modelo, CI e documentação levados à `main` (avanço direto até `830f4f3`): um código só, dois builds |
+| 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 8.5): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não gravou o modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 
 ---

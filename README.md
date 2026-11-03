@@ -230,6 +230,27 @@ distância de cada amostra à vizinha da mesma classe): ele só barra o que est�
 quase toda amostra tem uma de outra classe abaixo dele. Entre duas classes treinadas, quem
 decide é o voto e a razão. Os pares mais próximos são S/8, O/0, R/U, F/T, D/G e U/V.
 
+### Teste com participantes (`Planilhas de Testes/`)
+
+Em 03/11/2026, três pessoas fizeram o **Teste de sinais (relatório geral)** do modo dev: os 31
+sinais, 3 rodadas cada, com o modelo pronto sem treino pessoal, rigor Normal e confirmação em
+700 ms. As planilhas exportadas, uma por participante e uma com as médias, estão em
+`Planilhas de Testes/`.
+
+| Resultado | Vinicius | Lucas | Raul | Os três (279 rodadas) |
+|---|---:|---:|---:|---:|
+| Gravou o modelo pronto | sim | não | não | — |
+| Acerto por rodada | 94,6% | 95,7% | 93,5% | **94,6%** (264) |
+| Troca · não reconhecido | 4 · 1 | 4 · 0 | 5 · 1 | 13 · 2 |
+| Acerto por quadro | 97,5% | 98,3% | 97,0% | **97,4%** |
+| Tempo até reconhecer (mediana) | 2,76 s | 3,56 s | 2,51 s | 3,00 s |
+
+Quem não gravou o modelo pronto acertou tanto quanto o autor (94,6% das rodadas). As letras
+ficaram em 95,8% e os números em 92,2%, que erram ao passar por outro número até formar o
+pedido. Nenhum quadro foi rejeitado por distância, só por ambiguidade. As condições não foram
+iguais (câmera, luz, distância e duração da rodada), e três pessoas são uma amostra pequena; os
+detalhes e os cuidados ao citar estão na seção 17.6 da `DOCUMENTACAO-COMPLETA.md`.
+
 ## MediaPipe vendorizado e a CSP do Manifest V3
 
 O Manifest V3 proíbe `'unsafe-eval'`, e é comum ler que isso impede usar MediaPipe em
@@ -622,6 +643,7 @@ tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados e di
 tools/medir-modelo.mjs        mede um modelo parado: validação em blocos, razão, corte, rigor e comparação
 tools/medicao-modelo.js       o cálculo da medição, usado pelo script e pelo modo dev (sem Node nem DOM)
 medicoes/                     medições gravadas pelo tools/medir-modelo.mjs (a do modelo pronto)
+Planilhas de Testes/          planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 .gitattributes                impede o Git de converter as quebras de linha dos binários
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
 tools/make-icons.mjs          gera os ícones da extensão a partir de icons/soletra-logo.png
@@ -643,9 +665,8 @@ gravação nem transmissão."*
 
 - **Letras dinâmicas (H, J, K, X, Z e o Ç)** — exigem um segundo pipeline com componente
   temporal: buffer de landmarks e classificador de sequência, com dataset próprio.
-- **Medir com outras mãos** — a matriz de confusão e a validação em blocos já existem
-  (`tools/medir-modelo.mjs`); falta medir o modelo pronto com quem não o gravou, pela comparação
-  em "Medir o modelo" no modo dev.
+- **Ampliar o teste com participantes** — o primeiro, com 3 pessoas (duas que não gravaram o
+  modelo pronto), deu 94,6% de acerto por rodada; faltam mais pessoas e condições controladas.
 - **Ablação da normalização** — rotação ligada versus desligada, peso do eixo z, e o efeito de
   acrescentar as distâncias ponta-de-dedo→punho ao vetor (`VERSAO_FEATURES` 2).
 - Captura em segundo plano via `offscreen` document, para manter o modelo quente entre
