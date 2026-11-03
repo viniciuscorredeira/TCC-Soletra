@@ -1,0 +1,17 @@
+/* Soletra (modo dev) — estilos que só existem na versão dev. */
+
+/* O laranja dos ícones dev, fora da paleta da marca de propósito. */
+.dev-selo {
+  position: fixed;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2147483647;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #ff7a00;
+  color: #fff;
+  font: 700 10px/1 system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  opacity: 0.9;
+}

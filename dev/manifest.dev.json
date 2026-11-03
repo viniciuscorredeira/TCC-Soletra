@@ -1,0 +1,7 @@
+{
+  "name": "Soletra — Libras (Dev)",
+  "description": "Versão de desenvolvimento do Soletra: mostra o MediaPipe, inspeciona o classificador e mede o reconhecimento. 100% local.",
+  "action": {
+    "default_title": "Soletra Dev — abrir painel"
+  }
+}
