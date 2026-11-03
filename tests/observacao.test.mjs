@@ -79,7 +79,7 @@ function modelo() {
     assert.deepEqual(detalhado, simples, `detalhar mudou a decisão (forma ${forma})`);
     assert.equal(simples.ranking, undefined, 'sem detalhar, nada a mais no resultado');
 
-    assert.ok(ranking.length >= 2 && ranking.length <= 3, 'ranking com até três classes');
+    assert.equal(ranking.length, 4, 'ranking com todas as classes do modelo');
     for (let i = 1; i < ranking.length; i++) {
       assert.ok(ranking[i - 1].distancia <= ranking[i].distancia, 'ranking em ordem de distância');
     }

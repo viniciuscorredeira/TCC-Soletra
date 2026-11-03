@@ -88,7 +88,7 @@ function Ranking({ d }) {
         </Table.Row>
       </Table.Header>
       <Table.Body>
-        {d.ranking.map((r) => (
+        {d.ranking.slice(0, 3).map((r) => (
           <Table.Row key={r.classe}>
             <Table.RowHeaderCell>
               {r.classe === d.classe ? <Badge color="green">{r.classe}</Badge> : r.classe}

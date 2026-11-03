@@ -178,9 +178,11 @@ export class SignClassifier {
   /**
    * @param {ArrayLike<number>} vetor
    * @param {object} [opcoes]
-   * @param {boolean} [opcoes.detalhar] acrescenta `ranking`: as classes mais
-   *   próximas, com a menor distância de cada uma e a fração do voto. Não muda
-   *   a decisão; serve a quem observa o classificador por dentro.
+   * @param {boolean} [opcoes.detalhar] acrescenta `ranking`: todas as classes do
+   *   conjunto, da mais próxima à mais distante, com a menor distância de cada
+   *   uma e a fração do voto. Não muda a decisão; serve a quem observa o
+   *   classificador por dentro — inclusive para medir a distância até uma
+   *   classe que não ficou entre as primeiras.
    * @returns {{classe: string|null, distanciaMin: number, distanciaOutra: number,
    *            razao: number, confianca: number, motivo: string|null,
    *            ranking?: Array<{classe: string, distancia: number, voto: number}>}}
@@ -264,11 +266,10 @@ export class SignClassifier {
     return { ...base, classe: vencedora, motivo: null };
   }
 
-  /** As três classes mais próximas, pela menor distância de cada uma. */
-  _ranking(melhorPorClasse, pesos, total, quantas = 3) {
+  /** Todas as classes do conjunto, pela menor distância de cada uma. */
+  _ranking(melhorPorClasse, pesos, total) {
     return [...melhorPorClasse]
       .sort((a, b) => a[1] - b[1])
-      .slice(0, quantas)
       .map(([classe, distancia]) => ({
         classe,
         distancia,

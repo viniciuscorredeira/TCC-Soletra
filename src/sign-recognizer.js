@@ -74,7 +74,7 @@ export class SignRecognizer {
 
     /**
      * Cada quadro processado, por dentro: pontos da mão, saída do classificador
-     * com as classes mais próximas, estado do estabilizador e limiares
+     * com a distância de cada classe, estado do estabilizador e limiares
      * efetivos. Para ferramentas de diagnóstico; sem assinantes, nada é montado.
      */
     this.quadros = criarCanal();
