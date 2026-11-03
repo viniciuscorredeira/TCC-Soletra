@@ -9,7 +9,7 @@
 import { SignModelStore } from '../../src/sign-model-store.js';
 import { lojaCamera, lojaReco } from '../../sidepanel/nucleo.js';
 import { lojaDiagnostico } from '../diagnostico.js';
-import { identidadeModelo } from '../identidade-modelo.js';
+import { identidadeModelo } from '../../src/identidade-modelo.js';
 
 /**
  * Trocado pelo build dev (dev/vite.config.js) pelo commit do código. Um

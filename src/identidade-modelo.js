@@ -1,5 +1,5 @@
 /**
- * Soletra (modo dev) — identidade de um modelo treinado (SHA-256).
+ * Soletra — identidade de um modelo treinado (SHA-256).
  *
  * Calculada sobre o que define o modelo — a versão da normalização e as
  * amostras de cada classe —, e não sobre os bytes de um arquivo: assim o modelo
@@ -9,7 +9,10 @@
  * modelo) e cada número é arredondado a 4 casas, a precisão com que o store
  * grava.
  *
- * Roda no navegador e no Node (crypto.subtle existe nos dois).
+ * Roda no navegador e no Node (crypto.subtle existe nos dois). Não é usada
+ * pela extensão normal: serve aos relatórios do modo dev e ao
+ * tools/medir-modelo.mjs, para que uma medição do modelo parado e um teste ao
+ * vivo possam ser ligados ao mesmo modelo pelo mesmo número.
  *
  * @param {{versaoFeatures: number, classes: Record<string, ArrayLike<number>[]>}} modelo
  * @returns {Promise<string>} SHA-256 em hexadecimal

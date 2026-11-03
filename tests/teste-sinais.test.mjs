@@ -9,7 +9,7 @@
  */
 import assert from 'node:assert/strict';
 import { quantil, distribuicao, moda } from '../dev/estatistica.js';
-import { identidadeModelo } from '../dev/identidade-modelo.js';
+import { identidadeModelo } from '../src/identidade-modelo.js';
 import { analisarRodada, resultadoDaRodada } from '../dev/teste/rodada.js';
 import { planejar, SessaoTeste } from '../dev/teste/sessao.js';
 import { relatorioUnitario, relatorioGeral } from '../dev/teste/relatorio.js';
