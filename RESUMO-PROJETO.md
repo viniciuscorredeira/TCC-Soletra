@@ -1,6 +1,6 @@
 # Soletra — Documentação do Projeto
 
-**Documento atualizado em:** 03/11/2026
+**Documento atualizado em:** 09/11/2026
 **Versão do projeto:** 0.3.0 (`manifest.json`)
 **Repositório:** `github.com/viniciuscorredeira/TCC-Soletra`
 **Natureza:** Trabalho de Conclusão de Curso — extensão de navegador para reconhecimento do
@@ -769,7 +769,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 |---|---|---|
 | **Testes de interface** | Não atendido | Os 149 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
-| **Consentimento escrito do autor** | Pendente (RNF11) | O `PRIVACY.md` afirma que o autor que gravou as amostras do modelo pronto consentiu com a distribuição das amostras. Esse consentimento precisa ser **registrado por escrito** e anexado ao TCC, assim como o de quem contribuir no futuro |
+| **Consentimento dos autores** | Atendido (09/11/2026) | Todos os integrantes do grupo concordaram em compartilhar os próprios dados usados no projeto e no TCC: as amostras do modelo pronto, as imagens das telas e os resultados do teste com participantes. A concordância está registrada na Seção 3.6 do TCC, sem termo anexo. Quem contribuir com amostras no futuro precisa dar o mesmo consentimento |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
 | **Nomenclatura mista** | Menor | O código de câmera herdado da v0.1.0 usa nomes em inglês (`CameraController`, `showMessage`); o resto, português |
 
@@ -1243,6 +1243,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | — | Ferramentas do modo dev descritas por inteiro (seção 8.6): diagnóstico, teste de sinais (com as opções da sessão, os controles e a pausa automática) e medir o modelo |
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 8.5): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
+| 09/11/2026 | — | Registro das sessões de latência da Tabela 3 do TCC em `medicoes/latencia-sessoes.md`, com as capturas de onde saiu cada valor; consentimento dos autores atendido; papel do limiar de distância alinhado ao teste com participantes |
 
 ---
 

@@ -7,7 +7,7 @@
 | **Natureza** | Trabalho de Conclusão de Curso |
 | **Autoria** | Os integrantes que desenvolvem o projeto, a quem ele pertence |
 | **Versão do produto** | 0.3.0 (`manifest.json`) |
-| **Documento atualizado em** | 03/11/2026 |
+| **Documento atualizado em** | 09/11/2026 |
 | **Repositório** | `github.com/viniciuscorredeira/TCC-Soletra` |
 | **Plataforma** | Extensão para Google Chrome e Microsoft Edge (Manifest V3), versão 114 ou superior |
 
@@ -920,7 +920,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 |---|---|---|
 | **Testes de interface** | Não atendido | Os 149 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
-| **Consentimento escrito do autor** | Pendente (RNF11) | O `PRIVACY.md` afirma que o autor que gravou as amostras do modelo pronto consentiu com a distribuição das amostras. Esse consentimento precisa ser **registrado por escrito** e anexado ao TCC, assim como o de quem contribuir no futuro |
+| **Consentimento dos autores** | Atendido (09/11/2026) | Todos os integrantes do grupo concordaram em compartilhar os próprios dados usados no projeto e no TCC: as amostras do modelo pronto, as imagens das telas e os resultados do teste com participantes. A concordância está registrada na Seção 3.6 do TCC, sem termo anexo. Quem contribuir com amostras no futuro precisa dar o mesmo consentimento |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
 | **Nomenclatura mista** | Menor | O código de câmera herdado da v0.1.0 usa nomes em inglês (`CameraController`, `showMessage`); o resto, português |
 
@@ -1082,7 +1082,7 @@ Depois do voto, dois testes decidem se a classe vencedora é aceita:
 | Teste | Regra | Função |
 |---|---|---|
 | **Razão** | Rejeita se a distância à vencedora passar de **97%** da distância à classe concorrente mais próxima (motivo "ambíguo") | Descartar empates. É frouxo de propósito: no alfabeto manual as classes são naturalmente parecidas (M, N, S e A são todas punhos), e apertar o corte cobra dos acertos. No modelo pronto (`tools/medir-modelo.mjs`, blocos de 17), a razão dos acertos tem mediana 0,29 (p90 0,58 nas letras e 0,72 nos números); a 0,80, o teste descartaria 1,8% dos acertos nas letras e 7,2% nos números; a 0,97, 0,4% e 1,1% (seção 11.5) |
-| **Distância absoluta** | Rejeita se a distância à vencedora passar do limiar **τ_abs × rigor** (motivo "distante") | A rede de segurança: mão relaxada ou gesto não treinado ficam longe de tudo |
+| **Distância absoluta** | Rejeita se a distância à vencedora passar do limiar **τ_abs × rigor** (motivo "distante") | A rede de segurança, para o gesto que fica longe de todas as classes. É aplicado depois da razão; no modelo pronto o limiar calculado é 6,247, e por isso quase toda rejeição vem da razão: no teste com participantes, todas (seção 17.6) |
 
 O **rigor** da interface multiplica os limiares: Tolerante 1,25, Normal 1,0, Exigente 0,8.
 
@@ -1579,6 +1579,9 @@ de custo diferentes (sem rastreamento, o detector de palma roda a cada quadro).
 node tools/verificar-vendor.mjs          # integridade dos binários do MediaPipe
 ```
 
+**Latência em uso real.** Os valores da Tabela 3 do TCC (latência do painel em quatro sessões de uso) e as
+capturas de onde saiu cada um estão em `medicoes/latencia-sessoes.md`.
+
 ### 17.6 Teste com participantes (`Planilhas de Testes/`)
 
 Teste de uso real com o **Teste de sinais (relatório geral)** do modo dev, em 03/11/2026, com três
@@ -1911,7 +1914,7 @@ vendor/mediapipe/               tasks-vision 1.0.1 + hand_landmarker.task + INTE
 modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
 tools/                          montagem e medição do modelo pronto, verificação do vendor, PNG, ícones, logos
-medicoes/                       medição do modelo pronto gravada por tools/medir-modelo.mjs
+medicoes/                       medição do modelo pronto (tools/medir-modelo.mjs) e registro das sessões de latência (latencia-sessoes.md)
 Planilhas de Testes/            planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
 tests/                          149 cenários; tests/todos.mjs roda todos
@@ -2041,6 +2044,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | — | Ferramentas do modo dev descritas por inteiro (seção 17.7): diagnóstico, teste de sinais (com as opções da sessão, os controles e a pausa automática) e medir o modelo |
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 17.6): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
+| 09/11/2026 | — | Registro das sessões de latência da Tabela 3 do TCC em `medicoes/latencia-sessoes.md`, com as capturas de onde saiu cada valor; consentimento dos autores atendido; papel do limiar de distância alinhado ao teste com participantes |
 
 ---
 
