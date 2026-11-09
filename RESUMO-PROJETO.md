@@ -769,6 +769,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 |---|---|---|
 | **Testes de interface** | Não atendido | Os 149 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 10) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
+| **Revisão jurídica da política de privacidade** | Pendente (RNF11) | O `PRIVACY.md` não substitui parecer jurídico e deve ser revisado por quem responde juridicamente pela publicação antes da submissão às lojas |
 | **Consentimento dos autores** | Atendido (09/11/2026) | Todos os integrantes do grupo concordaram em compartilhar os próprios dados usados no projeto e no TCC: as amostras do modelo pronto, as imagens das telas e os resultados do teste com participantes. A concordância está registrada na Seção 3.6 do TCC, sem termo anexo. Quem contribuir com amostras no futuro precisa dar o mesmo consentimento |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
 | **Nomenclatura mista** | Menor | O código de câmera herdado da v0.1.0 usa nomes em inglês (`CameraController`, `showMessage`); o resto, português |
@@ -817,10 +818,10 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `hand-landmarker.js` | 104 | Adaptador do MediaPipe (único módulo dependente de WASM) |
 | `inference-loop.js` | 138 | Agendador rVFC, taxa adaptativa, timestamp monotônico |
 | `sign-features.js` | 134 | Landmarks → 63 números; carrega `VERSAO_FEATURES` |
-| `sign-classifier.js` | 299 | KNN ponderado, rejeição, teste de razão, calibração do limiar; ranking de todas as classes quando observado |
+| `sign-classifier.js` | 303 | KNN ponderado, rejeição, teste de razão, calibração do limiar; ranking de todas as classes quando observado |
 | `sign-stabilizer.js` | 240 | Máquina de confirmação e trava anti-repetição |
 | `trava-mao.js` | 70 | Trava de mão diferente da configurada, com histerese |
-| `sign-classes.js` | 49 | Catálogo de letras estáticas, dinâmicas e números |
+| `sign-classes.js` | 50 | Catálogo de letras estáticas, dinâmicas e números |
 | `sign-model-store.js` | 423 | Persistência com origem (padrão × pessoal), teto, quota, export/import validado |
 | `text-composer.js` | 75 | Composição do texto e preparo para a busca |
 | `search-targets.js` | 118 | Catálogo de plataformas (marcas em ordem alfabética) e montagem das URLs |
@@ -848,6 +849,8 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 |---|---:|---|
 | `tools/montar-modelo-padrao.mjs` | 148 | Monta o modelo pronto a partir de exports de várias pessoas |
 | `tools/medir-modelo.mjs` | 241 | Linha de comando da medição: lê o modelo, escreve a tabela e grava o JSON |
+| `tools/roc-modelo.mjs` | 305 | Curvas ROC do modelo parado: AUC de cada classe contra as demais e de acerto contra erro pela razão (Figura 8 do TCC) |
+| `tools/figuras-tcc.py` | 186 | Desenha as Figuras 8 e 9 do TCC (Python, com matplotlib e openpyxl; só para as figuras) |
 | `tools/medicao-modelo.js` | 510 | O cálculo da medição (validação em blocos, razão, corte, rigor, limiar, pares próximos, comparação), usado também pelo modo dev |
 | `tools/verificar-vendor.mjs` | 123 | Confere os SHA-256 dos binários e diagnostica quebras de linha convertidas pelo Git |
 | `.gitattributes` | — | Marca `vendor/**` e `modelos/*.json` como `-text`, para o Git não alterar seus bytes |
@@ -866,7 +869,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `tests/` | 3.384 | 149 cenários em 20 arquivos |
 
 As linhas das tabelas contam o arquivo inteiro. **Total de código próprio, sem contar linhas em
-branco e incluindo testes e ferramentas: cerca de 15,4 mil linhas**, das quais 4,5 mil são do
+branco e incluindo testes e ferramentas: cerca de 15,9 mil linhas**, das quais 4,5 mil são do
 modo dev. A extensão descrita no TCC, antes do modo dev, tinha **cerca de 9 mil** (8,9 mil no
 commit `c9ae141`).
 
@@ -970,6 +973,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 |---|---|
 | Suíte de testes | **149 cenários em 20 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
 | Medição do modelo pronto | Acerto por validação em blocos de 17 / 25: **letras 93,4% / 93,0%, números 92,0% / 90,2%, juntos 87,5% / 85,8%**; rigor Normal nas letras: 93,0% de acerto, 5,1% de rejeição, 1,8% de erros que passam (`npm run medir-modelo`, `medicoes/medir-modelo-padrao.json`, 03/11/2026) |
+| Curvas ROC do modelo pronto | AUC de cada classe contra as demais: **letras 0,978, números 0,950**; acerto contra erro pela razão: **0,979 e 0,973** (`npm run roc-modelo`, `medicoes/roc-modelo-padrao.json`, 09/11/2026) |
 | Teste com participantes | **94,6% das rodadas** (264 de 279) e **97,4% dos quadros**, com 3 participantes e o modelo pronto; quem não tem a mão nas amostras dele acertou o mesmo que o autor delas (seção 8.5, `Planilhas de Testes/`) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
@@ -1135,6 +1139,7 @@ npm test                                 # suíte completa — 149 cenários (no
 node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 npm run medir-modelo                     # mede o modelo pronto (node tools/medir-modelo.mjs [modelo.json])
+npm run roc-modelo                       # curvas ROC do modelo pronto (node tools/roc-modelo.mjs [modelo.json])
 ```
 
 ### 10.3 Roteiro de teste manual
@@ -1244,6 +1249,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 8.5): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 | 09/11/2026 | — | Registro das sessões de latência da Tabela 3 do TCC em `medicoes/latencia-sessoes.md`, com as capturas de onde saiu cada valor; consentimento dos autores atendido; papel do limiar de distância alinhado ao teste com participantes |
+| 09/11/2026 | — | `tools/roc-modelo.mjs`: curvas ROC e AUC do modelo pronto (Figura 8 do TCC), reproduzíveis pelo repositório; `tools/figuras-tcc.py` desenha as Figuras 8 e 9; ressalva do RNF11 (revisão jurídica) de volta à seção de pendências; comentário do teste de razão alinhado ao modelo pronto |
 
 ---
 
