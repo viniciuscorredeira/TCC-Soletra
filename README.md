@@ -92,7 +92,7 @@ alfa pré-multiplicado — de 167 KB de entrada para ~20 KB empacotados.
 |---|---|---|
 | Detecção dos pontos | `@mediapipe/tasks-vision` 1.0.1, delegate **CPU** | Medido no spike (Edge 153): CPU p50 22,9 ms contra 58,4 ms no GPU, que ainda paga readback de textura e exige um contexto WebGL num painel que o usuário recolhe |
 | Normalização | [src/sign-features.js](src/sign-features.js) | Invariante a posição, escala e resolução; **preserva** rotação, que é parâmetro fonológico da língua |
-| Classificação | [src/sign-classifier.js](src/sign-classifier.js) | KNN k=5 ponderado por 1/d, com limiar de distância constante (1,3) — possível porque a normalização dá escala física fixa ao espaço de 63 dimensões — e teste de razão frouxo (0,97) só para descartar empates |
+| Classificação | [src/sign-classifier.js](src/sign-classifier.js) | KNN k=5 ponderado por 1/d, com teste de razão frouxo (0,97), que rejeita quando a vencedora não se destaca da segunda, e limiar de distância como rede de segurança: parte da constante 1,3 — possível porque a normalização dá escala física fixa ao espaço de 63 dimensões — e é recalibrado pelas amostras (6,247 no modelo pronto, em que quase toda rejeição vem da razão) |
 | Confirmação | [src/sign-stabilizer.js](src/sign-stabilizer.js) | O sinal precisa persistir ~700 ms (ajustável entre 450 e 1000 ms); a mesma letra não repete enquanto a mão não sai dela |
 
 ### Cobertura
@@ -109,8 +109,8 @@ alterna entre eles.
 
 ### Como digitar letra dupla
 
-Formar o sinal, **relaxar a mão por meio segundo**, formar de novo. Ao relaxar, o vetor sai da
-vizinhança de toda classe e o classificador rejeita — é essa rejeição que destrava a repetição.
+Formar o sinal, **relaxar a mão por meio segundo**, formar de novo. Ao relaxar, a mão deixa de
+formar a letra e o classificador rejeita o quadro — é essa rejeição que destrava a repetição.
 Sem ela, "PASSO" sairia "PASO". Há também um botão "Repetir letra" como via de escape acessível.
 
 Trocar de letra não exige pausa: a troca é inequívoca e confirma direto.
@@ -661,7 +661,7 @@ tools/montar-modelo-padrao.mjs  junta exports de várias pessoas no modelo pront
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados e diagnostica CRLF
 tools/medir-modelo.mjs        mede um modelo parado: validação em blocos, razão, corte, rigor e comparação
 tools/medicao-modelo.js       o cálculo da medição, usado pelo script e pelo modo dev (sem Node nem DOM)
-medicoes/                     medições gravadas pelo tools/medir-modelo.mjs (a do modelo pronto)
+medicoes/                     medições gravadas pelo tools/medir-modelo.mjs (a do modelo pronto) e registro das sessões de latência (latencia-sessoes.md)
 Planilhas de Testes/          planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 .gitattributes                impede o Git de converter as quebras de linha dos binários
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
