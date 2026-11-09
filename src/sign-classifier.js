@@ -17,7 +17,7 @@ export const PADROES_CLASSIFICADOR = {
    * Teste de razão: rejeita quando a distância à classe vencedora passa desta
    * fração da distância à concorrente mais próxima.
    *
-   * Serve apenas para descartar empates — gestos genuinamente a meio caminho
+   * Foi pensado para descartar empates — gestos genuinamente a meio caminho
    * entre duas classes. Num alfabeto manual as classes são naturalmente
    * parecidas (M, N, S e A são todas punhos), e apertar o corte cobra dos
    * acertos. Medido no modelo pronto (tools/medir-modelo.mjs, blocos de 17):
@@ -25,10 +25,14 @@ export const PADROES_CLASSIFICADOR = {
    * números); a 0,80 o teste descartaria 1,8% dos acertos nas letras e 7,2%
    * nos números, e a 0,97 descarta 0,4% e 1,1%.
    *
-   * Quem garante a segurança é o limiar de distância, não este: a rejeição de
-   * mão relaxada e de gesto não treinado fica em 100% para qualquer valor aqui.
-   * Este só desempata entre duas classes treinadas, então fica frouxo — quem
-   * quiser mais precisão usa o controle de rigor.
+   * O limiar de distância é a rede de segurança para o que fica longe de tudo.
+   * Com o limiar padrão de 1,3 (treino próprio), ele barra a mão relaxada e o
+   * gesto não treinado, que em modelo sintético ficam acima de 2,1. Com o
+   * modelo pronto, o limiar calculado sobe para 6,247 e quase toda rejeição
+   * passa a vir deste teste: no teste com participantes, todas
+   * (DOCUMENTACAO-COMPLETA.md, seção 17.6). Mesmo assim ele fica frouxo,
+   * porque apertá-lo cobra dos acertos — quem quiser mais precisão usa o
+   * controle de rigor.
    */
   razaoMax: 0.97
 };

@@ -920,6 +920,7 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 |---|---|---|
 | **Testes de interface** | Não atendido | Os 149 cenários cobrem a lógica, o gerador da tinta da troca de tema e a separação entre os builds de produção e dev. Interface (DOM), integração com o Chrome e o adaptador do MediaPipe não têm teste automatizado; o adaptador é validado pelo spike de diagnóstico e o resto, por roteiro manual (seção 17.4) |
 | **Publicação nas lojas** | Não atendido | Não publicado na Chrome Web Store nem no Edge Add-ons. Falta hospedar a política de privacidade numa URL pública e preencher as justificativas de câmera e de `search` |
+| **Revisão jurídica da política de privacidade** | Pendente (RNF11) | O `PRIVACY.md` não substitui parecer jurídico e deve ser revisado por quem responde juridicamente pela publicação antes da submissão às lojas |
 | **Consentimento dos autores** | Atendido (09/11/2026) | Todos os integrantes do grupo concordaram em compartilhar os próprios dados usados no projeto e no TCC: as amostras do modelo pronto, as imagens das telas e os resultados do teste com participantes. A concordância está registrada na Seção 3.6 do TCC, sem termo anexo. Quem contribuir com amostras no futuro precisa dar o mesmo consentimento |
 | **Imagens de origem das logos** | Fora do repositório | `tools/preparar-logos.mjs` não pode ser reexecutado; os PNGs finais estão empacotados e sua presença é conferida por teste |
 | **Nomenclatura mista** | Menor | O código de câmera herdado da v0.1.0 usa nomes em inglês (`CameraController`, `showMessage`); o resto, português |
@@ -1303,6 +1304,39 @@ O limiar calculado é 6,247 (5 × 1,249). Ele só barra o que está longe de tud
 tem uma de outra classe abaixo dele (98,9% nas letras, no rigor Normal). Entre duas classes
 treinadas, quem decide é o voto e a razão. As confusões mais frequentes juntando letras e
 números são O→0 (26) e 8→S (20); os pares mais próximos, S/8, O/0, R/U, F/T, D/G e U/V.
+
+### 11.6 Curvas ROC (`tools/roc-modelo.mjs`)
+
+```
+npm run roc-modelo                                  # mede modelos/padrao.json
+node tools/roc-modelo.mjs modelo.json [--blocos 17] [--saida x.json | --sem-json]
+python3 tools/figuras-tcc.py                        # desenha as Figuras 8 e 9 do TCC (matplotlib e openpyxl)
+```
+
+Usa a mesma validação em blocos da seção 11.5, com o mesmo classificador e sem cortes, e guarda,
+para cada amostra, a distância até cada classe e a razão vencedora/segunda. Daí saem duas curvas
+ROC, para letras e para números:
+
+| Curva | Pontuação | Positivo |
+|---|---|---|
+| Cada classe contra as demais | Distância da amostra até a classe (menor é melhor) | A amostra é da classe |
+| Acerto contra erro | Razão vencedora/segunda, o critério do teste de razão | A resposta está certa |
+
+A AUC é a estatística de Mann-Whitney, com empates contando meio (a área sob a curva em escada),
+sem dependência nenhuma; os valores conferem com os da biblioteca scikit-learn. O JSON em
+`medicoes/roc-modelo-padrao.json` traz as AUC (global, média das classes e por classe), o ponto de
+cada corte da razão e os pontos das curvas. Quando o modelo é o pronto, o script confere as seis
+AUC da Figura 8 do TCC.
+
+| Modelo pronto, blocos de 17 | Letras (21) | Números (10) |
+|---|---:|---:|
+| Cada classe contra as demais: AUC global · média das classes | 0,978 · 0,975 | 0,950 · 0,946 |
+| Classe mais fraca | E (0,76) | 9 (0,71) |
+| Acerto contra erro, pela razão: AUC | 0,979 | 0,973 |
+
+O `tools/figuras-tcc.py` desenha as Figuras 8 e 9 do TCC a partir desse JSON e da planilha de
+médias do teste com participantes, e as grava em `medicoes/figuras/`. É a única ferramenta em
+Python e só serve às figuras; a extensão, os testes e as outras ferramentas não dependem dele.
 
 ---
 
@@ -1839,6 +1873,7 @@ node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troca intencional)
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 npm run medir-modelo                     # mede o modelo pronto (node tools/medir-modelo.mjs [modelo.json])
+npm run roc-modelo                       # curvas ROC do modelo pronto (node tools/roc-modelo.mjs [modelo.json])
 node tools/make-icons.mjs                # regenera os ícones da extensão
 node dev/tools/make-icons-dev.mjs        # regenera os ícones do modo dev (depois do anterior)
 node tools/gerar-paleta.mjs              # regenera ui/paleta.css a partir do azul da logo
@@ -1913,8 +1948,8 @@ src/identidade-modelo.js        SHA-256 do modelo, independente da ordem das amo
 vendor/mediapipe/               tasks-vision 1.0.1 + hand_landmarker.task + INTEGRIDADE.json
 modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
-tools/                          montagem e medição do modelo pronto, verificação do vendor, PNG, ícones, logos
-medicoes/                       medição do modelo pronto (tools/medir-modelo.mjs) e registro das sessões de latência (latencia-sessoes.md)
+tools/                          montagem e medição do modelo pronto (inclusive curvas ROC), figuras do TCC, verificação do vendor, PNG, ícones, logos
+medicoes/                       medição e curvas ROC do modelo pronto, Figuras 8 e 9 do TCC (figuras/) e registro das sessões de latência (latencia-sessoes.md)
 Planilhas de Testes/            planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
 tests/                          149 cenários; tests/todos.mjs roda todos
@@ -1942,7 +1977,7 @@ DOCUMENTACAO-COMPLETA.md        este documento
 ```
 
 Total de código próprio, sem contar linhas em branco e incluindo testes e ferramentas: cerca de
-**15,4 mil linhas**, das quais 4,5 mil são do modo dev (`dev/`). A extensão descrita no TCC, antes
+**15,9 mil linhas**, das quais 4,5 mil são do modo dev (`dev/`). A extensão descrita no TCC, antes
 do modo dev, tinha **cerca de 9 mil** (8,9 mil no commit `c9ae141`).
 
 ---
@@ -2045,6 +2080,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | — | Teste com participantes (Vinicius, Lucas e Raul): planilhas do teste de sinais em `Planilhas de Testes/` e resultados na documentação (seção 17.6): 94,6% das rodadas, 97,4% dos quadros, e o mesmo acerto para quem não tem a mão no modelo pronto |
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 | 09/11/2026 | — | Registro das sessões de latência da Tabela 3 do TCC em `medicoes/latencia-sessoes.md`, com as capturas de onde saiu cada valor; consentimento dos autores atendido; papel do limiar de distância alinhado ao teste com participantes |
+| 09/11/2026 | — | `tools/roc-modelo.mjs`: curvas ROC e AUC do modelo pronto (Figura 8 do TCC), reproduzíveis pelo repositório; `tools/figuras-tcc.py` desenha as Figuras 8 e 9; ressalva do RNF11 (revisão jurídica) de volta à seção de pendências; comentário do teste de razão alinhado ao modelo pronto |
 
 ---
 

@@ -230,6 +230,12 @@ distância de cada amostra à vizinha da mesma classe): ele só barra o que est�
 quase toda amostra tem uma de outra classe abaixo dele. Entre duas classes treinadas, quem
 decide é o voto e a razão. Os pares mais próximos são S/8, O/0, R/U, F/T, D/G e U/V.
 
+`npm run roc-modelo` (`tools/roc-modelo.mjs`) usa a mesma validação para as curvas ROC: cada classe
+contra as demais, pela distância até a classe, e acerto contra erro, pela razão. No modelo pronto,
+a AUC é 0,978 nas letras e 0,950 nos números, e 0,979 e 0,973 na separação entre acertos e erros
+(`medicoes/roc-modelo-padrao.json`). `python3 tools/figuras-tcc.py` desenha com esses dados as
+Figuras 8 e 9 do TCC; é a única ferramenta em Python e precisa de matplotlib e openpyxl.
+
 ### Teste com participantes (`Planilhas de Testes/`)
 
 Em 03/11/2026, três pessoas fizeram o **Teste de sinais (relatório geral)** do modo dev: os 31
@@ -661,7 +667,9 @@ tools/montar-modelo-padrao.mjs  junta exports de várias pessoas no modelo pront
 tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados e diagnostica CRLF
 tools/medir-modelo.mjs        mede um modelo parado: validação em blocos, razão, corte, rigor e comparação
 tools/medicao-modelo.js       o cálculo da medição, usado pelo script e pelo modo dev (sem Node nem DOM)
-medicoes/                     medições gravadas pelo tools/medir-modelo.mjs (a do modelo pronto) e registro das sessões de latência (latencia-sessoes.md)
+tools/roc-modelo.mjs          curvas ROC e AUC do modelo parado (Figura 8 do TCC)
+tools/figuras-tcc.py          desenha as Figuras 8 e 9 do TCC (Python, matplotlib e openpyxl)
+medicoes/                     medição e curvas ROC do modelo pronto, Figuras 8 e 9 do TCC (figuras/) e registro das sessões de latência (latencia-sessoes.md)
 Planilhas de Testes/          planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 .gitattributes                impede o Git de converter as quebras de linha dos binários
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências
