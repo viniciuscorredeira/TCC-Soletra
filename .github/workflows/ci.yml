@@ -1,4 +1,5 @@
-# A cada push e pull request: confere os binários do MediaPipe, roda a suíte
+# A cada push e pull request: confere as dependências do npm contra o banco de
+# vulnerabilidades (npm audit), confere os binários do MediaPipe, roda a suíte
 # (que já gera as duas versões numa pasta temporária) e gera dist/ e dist-dev/
 # como um desenvolvedor faria.
 name: CI
@@ -20,6 +21,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm audit
       - run: npm run verificar-vendor
       - run: npm test
       - run: npm run build
