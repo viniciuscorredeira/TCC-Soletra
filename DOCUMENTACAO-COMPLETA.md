@@ -863,11 +863,11 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 7)
 | RNF02 | **Sem código remoto** | MediaPipe vendorizado (~20 MB) e versão fixada em 1.0.1; a CSP do Manifest V3 bloquearia CDN | ✅ |
 | RNF03 | **Integridade dos binários** | SHA-256 de cada arquivo em `INTEGRIDADE.json`, conferidos por `tools/verificar-vendor.mjs`. O `.gitattributes` impede o Git de converter as quebras de linha dos binários, e o verificador distingue "quebras de linha convertidas" de "arquivo adulterado", indicando a correção | ✅ |
 | RNF04 | **Permissões mínimas** | Só `sidePanel`, `storage` e `search` | ✅ |
-| RNF05 | **Desempenho** | Detecção a 15 Hz com recuo para 8 Hz; detector criado sob demanda; render da grade só no que mudou. Medido no spike (Edge 153, CPU): p50 22,9 ms por quadro | ✅ |
+| RNF05 | **Desempenho** | Detecção a 15 Hz com recuo para 8 Hz; detector criado sob demanda; render da grade só no que mudou. Medido no spike (Edge 153, CPU): p50 22,9 ms por quadro. No uso real, a taxa ficou em 8 Hz na maioria das telas registradas e entre 6,4 e 10,7 Hz no teste com os autores, e a latência passou de 50 ms em duas das quatro sessões (`medicoes/latencia-sessoes.md`) | ⚠️ |
 | RNF06 | **Robustez a câmera e resolução** | Normalização invariante a posição, escala e proporção da imagem; timestamp monotônico na troca de câmera | ✅ |
 | RNF07 | **Armazenamento dentro da quota** | 31 classes × 100 amostras ficam bem abaixo dos 10 MB do `storage.local`; o teto por classe impede o crescimento sem limite, e o uso é exibido por classe e no total, com aviso a partir de 80% (RF61, RF62) | ✅ |
 | RNF08 | **Testabilidade** | Lógica isolada em funções puras e classes com relógio injetado; só um módulo depende de WASM | ✅ |
-| RNF09 | **Sem dependências externas em execução** | Nada é baixado da rede: React e Radix UI são empacotados no build (Vite). A lógica em `src/` e os testes rodam em Node puro, sem dependências; `npm audit` sem vulnerabilidades (03/11/2026) | ✅ |
+| RNF09 | **Sem dependências externas em execução** | Nada é baixado da rede: React e Radix UI são empacotados no build (Vite). A lógica em `src/` e os testes rodam em Node puro, sem dependências; `npm audit` a cada envio, na integração contínua | ✅ |
 | RNF10 | **Acessibilidade básica** | Rótulos ARIA, região `aria-live` para mensagens, foco gerenciado nos modais, navegação por teclado no seletor | ⚠️ |
 | RNF11 | **Conformidade com a LGPD** | Consentimento, eliminação, portabilidade e política de privacidade (seção 18) | ⚠️ |
 | RNF12 | **Compatibilidade** | Chrome e Edge 114+ (Manifest V3) | ⚠️ |
@@ -1337,6 +1337,38 @@ AUC da Figura 8 do TCC.
 O `tools/figuras-tcc.py` desenha as Figuras 8 e 9 do TCC a partir desse JSON e da planilha de
 médias do teste com participantes, e as grava em `medicoes/figuras/`. É a única ferramenta em
 Python e só serve às figuras; a extensão, os testes e as outras ferramentas não dependem dele.
+
+### 11.7 Limiar absoluto (`tools/limiar-modelo.mjs`)
+
+```
+npm run limiar-modelo                               # mede modelos/padrao.json
+node tools/limiar-modelo.mjs modelo.json [--blocos 17] [--saida x.json | --sem-json]
+```
+
+Mede, com dados reais do modelo, as distâncias que o limiar absoluto precisa separar. O limiar é o
+da extensão (`calibrarTauAbs`, sobre o modelo inteiro): o maior valor entre o piso de 1,3 e cinco
+vezes o p90 da distância de cada amostra até a vizinha da mesma classe. Para letras e números:
+
+- **Consulta legítima:** cada bloco de amostras seguidas sai do modelo, e cada amostra dele é medida
+  até a amostra mais próxima da própria classe que ficou.
+- **Fora do conjunto:** cada amostra do outro conjunto (números no modo Letras, letras no modo
+  Números) é medida até a amostra mais próxima do conjunto ativo. É um sinal real que o modo não
+  conhece, usado como aproximação do gesto não treinado.
+
+| Modelo pronto, blocos de 17 | Mediana | p95 | Acima de 1,3 | Acima de 6,247 |
+|---|---:|---:|---:|---:|
+| Letras, consulta legítima | 0,58 | 1,62 | 9,2% | 2,4% |
+| Letras, sinal fora do conjunto | 4,13 | 5,78 | 80,8% | 2,0% |
+| Números, consulta legítima | 0,96 | 5,56 | 33,4% | 4,4% |
+| Números, sinal fora do conjunto | 3,18 | 4,74 | 92,3% | 0,2% |
+
+Com o modelo pronto, cujas amostras foram escolhidas espalhadas pela gravação, o p90 da distância
+à vizinha da mesma classe é 1,249, e o limiar sobe para 6,247. Nesse valor ele quase não barra
+sinais fora do conjunto (2,0% e 0,2%): a rejeição fica por conta do teste de razão. O piso de 1,3
+barraria a maioria deles (80,8% e 92,3%), mas também 9,2% das consultas legítimas nas letras e
+33,4% nos números. Os valores de referência nos comentários de `calibrarTauAbs` (p95 de 0,75 na
+consulta legítima e gesto não treinado acima de 2,1) vêm de dados sintéticos do desenvolvimento;
+os desta seção são os do modelo real (`medicoes/limiar-modelo-padrao.json`).
 
 ---
 
@@ -1874,6 +1906,7 @@ node tools/verificar-vendor.mjs --gerar  # regrava INTEGRIDADE.json (só em troc
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 npm run medir-modelo                     # mede o modelo pronto (node tools/medir-modelo.mjs [modelo.json])
 npm run roc-modelo                       # curvas ROC do modelo pronto (node tools/roc-modelo.mjs [modelo.json])
+npm run limiar-modelo                    # distâncias do limiar no modelo pronto (node tools/limiar-modelo.mjs [modelo.json])
 node tools/make-icons.mjs                # regenera os ícones da extensão
 node dev/tools/make-icons-dev.mjs        # regenera os ícones do modo dev (depois do anterior)
 node tools/gerar-paleta.mjs              # regenera ui/paleta.css a partir do azul da logo
@@ -1949,7 +1982,7 @@ vendor/mediapipe/               tasks-vision 1.0.1 + hand_landmarker.task + INTE
 modelos/padrao.json             modelo pronto (31 classes × 50 amostras)
 icons/                          ícones da extensão e logos das plataformas
 tools/                          montagem e medição do modelo pronto (inclusive curvas ROC), figuras do TCC, verificação do vendor, PNG, ícones, logos
-medicoes/                       medição e curvas ROC do modelo pronto, Figuras 8 e 9 do TCC (figuras/) e registro das sessões de latência (latencia-sessoes.md)
+medicoes/                       medição, curvas ROC e distâncias do limiar do modelo pronto, Figuras 8 e 9 do TCC (figuras/) e registro das sessões de latência (latencia-sessoes.md)
 Planilhas de Testes/            planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 spike/spike.html|js             diagnóstico de CSP e latência (fora do fluxo)
 tests/                          149 cenários; tests/todos.mjs roda todos
@@ -1977,7 +2010,7 @@ DOCUMENTACAO-COMPLETA.md        este documento
 ```
 
 Total de código próprio, sem contar linhas em branco e incluindo testes e ferramentas: cerca de
-**15,9 mil linhas**, das quais 4,5 mil são do modo dev (`dev/`). A extensão descrita no TCC, antes
+**16,0 mil linhas**, das quais 4,5 mil são do modo dev (`dev/`). A extensão descrita no TCC, antes
 do modo dev, tinha **cerca de 9 mil** (8,9 mil no commit `c9ae141`).
 
 ---
@@ -2081,6 +2114,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 | 09/11/2026 | — | Registro das sessões de latência da Tabela 3 do TCC em `medicoes/latencia-sessoes.md`, com as capturas de onde saiu cada valor; consentimento dos autores atendido; papel do limiar de distância alinhado ao teste com participantes |
 | 09/11/2026 | — | `tools/roc-modelo.mjs`: curvas ROC e AUC do modelo pronto (Figura 8 do TCC), reproduzíveis pelo repositório; `tools/figuras-tcc.py` desenha as Figuras 8 e 9; ressalva do RNF11 (revisão jurídica) de volta à seção de pendências; comentário do teste de razão alinhado ao modelo pronto |
+| 18/11/2026 | — | `tools/limiar-modelo.mjs`: distâncias reais que o limiar absoluto precisa separar no modelo pronto (consulta legítima e sinal fora do conjunto), no lugar dos valores sintéticos citados no TCC; `npm audit` na integração contínua, a cada envio |
 
 ---
 

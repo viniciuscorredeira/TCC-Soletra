@@ -236,6 +236,12 @@ a AUC é 0,978 nas letras e 0,950 nos números, e 0,979 e 0,973 na separação e
 (`medicoes/roc-modelo-padrao.json`). `python3 tools/figuras-tcc.py` desenha com esses dados as
 Figuras 8 e 9 do TCC; é a única ferramenta em Python e precisa de matplotlib e openpyxl.
 
+`npm run limiar-modelo` (`tools/limiar-modelo.mjs`) mede as distâncias que o limiar absoluto precisa
+separar: a consulta legítima (bloco retirado) até a própria classe e o sinal fora do conjunto
+(números no modo Letras, letras no modo Números) até o conjunto ativo. No modelo pronto, o limiar
+de 6,247 barra só 2,0% e 0,2% desses sinais, e a rejeição fica com o teste de razão
+(`medicoes/limiar-modelo-padrao.json`).
+
 ### Teste com participantes (`Planilhas de Testes/`)
 
 Em 03/11/2026, três pessoas fizeram o **Teste de sinais (relatório geral)** do modo dev: os 31
@@ -668,8 +674,9 @@ tools/verificar-vendor.mjs    confere os SHA-256 dos binários vendorizados e di
 tools/medir-modelo.mjs        mede um modelo parado: validação em blocos, razão, corte, rigor e comparação
 tools/medicao-modelo.js       o cálculo da medição, usado pelo script e pelo modo dev (sem Node nem DOM)
 tools/roc-modelo.mjs          curvas ROC e AUC do modelo parado (Figura 8 do TCC)
+tools/limiar-modelo.mjs       distâncias que o limiar absoluto precisa separar no modelo parado
 tools/figuras-tcc.py          desenha as Figuras 8 e 9 do TCC (Python, matplotlib e openpyxl)
-medicoes/                     medição e curvas ROC do modelo pronto, Figuras 8 e 9 do TCC (figuras/) e registro das sessões de latência (latencia-sessoes.md)
+medicoes/                     medição, curvas ROC e distâncias do limiar do modelo pronto, Figuras 8 e 9 do TCC (figuras/) e registro das sessões de latência (latencia-sessoes.md)
 Planilhas de Testes/          planilhas do teste com participantes (modo dev): uma por pessoa e as médias
 .gitattributes                impede o Git de converter as quebras de linha dos binários
 tools/png.mjs                 ler, escrever e redimensionar PNG, sem dependências

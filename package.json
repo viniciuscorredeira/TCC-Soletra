@@ -12,6 +12,7 @@
     "test": "node tests/todos.mjs",
     "medir-modelo": "node tools/medir-modelo.mjs",
     "roc-modelo": "node tools/roc-modelo.mjs",
+    "limiar-modelo": "node tools/limiar-modelo.mjs",
     "verificar-vendor": "node tools/verificar-vendor.mjs"
   },
   "dependencies": {

@@ -712,11 +712,11 @@ Legenda: ✅ atendido · ⚠️ atendido com ressalva (detalhada na seção 5)
 | RNF02 | **Sem código remoto** | MediaPipe vendorizado (~20 MB) e versão fixada em 1.0.1; a CSP do Manifest V3 bloquearia CDN | ✅ |
 | RNF03 | **Integridade dos binários** | SHA-256 de cada arquivo em `INTEGRIDADE.json`, conferidos por `tools/verificar-vendor.mjs`. O `.gitattributes` impede o Git de converter as quebras de linha dos binários, e o verificador distingue "quebras de linha convertidas" de "arquivo adulterado", indicando a correção | ✅ |
 | RNF04 | **Permissões mínimas** | Só `sidePanel`, `storage` e `search` | ✅ |
-| RNF05 | **Desempenho** | Detecção a 15 Hz com recuo para 8 Hz; detector criado sob demanda; render da grade só no que mudou. Medido no spike (Edge 153, CPU): p50 22,9 ms por quadro | ✅ |
+| RNF05 | **Desempenho** | Detecção a 15 Hz com recuo para 8 Hz; detector criado sob demanda; render da grade só no que mudou. Medido no spike (Edge 153, CPU): p50 22,9 ms por quadro. No uso real, a taxa ficou em 8 Hz na maioria das telas registradas e entre 6,4 e 10,7 Hz no teste com os autores, e a latência passou de 50 ms em duas das quatro sessões (`medicoes/latencia-sessoes.md`) | ⚠️ |
 | RNF06 | **Robustez a câmera e resolução** | Normalização invariante a posição, escala e proporção da imagem; timestamp monotônico na troca de câmera | ✅ |
 | RNF07 | **Armazenamento dentro da quota** | 31 classes × 100 amostras ficam bem abaixo dos 10 MB do `storage.local`; o teto por classe impede o crescimento sem limite, e o uso é exibido por classe e no total, com aviso a partir de 80% (RF61, RF62) | ✅ |
 | RNF08 | **Testabilidade** | Lógica isolada em funções puras e classes com relógio injetado; só um módulo depende de WASM | ✅ |
-| RNF09 | **Sem dependências externas em execução** | Nada é baixado da rede: React e Radix UI são empacotados no build (Vite). A lógica em `src/` e os testes rodam em Node puro, sem dependências; `npm audit` sem vulnerabilidades (03/11/2026) | ✅ |
+| RNF09 | **Sem dependências externas em execução** | Nada é baixado da rede: React e Radix UI são empacotados no build (Vite). A lógica em `src/` e os testes rodam em Node puro, sem dependências; `npm audit` a cada envio, na integração contínua | ✅ |
 | RNF10 | **Acessibilidade básica** | Rótulos ARIA, região `aria-live` para mensagens, foco gerenciado nos modais, navegação por teclado no seletor | ⚠️ |
 | RNF11 | **Conformidade com a LGPD** | Consentimento, eliminação, portabilidade e política de privacidade (seção 9) | ⚠️ |
 | RNF12 | **Compatibilidade** | Chrome e Edge 114+ (Manifest V3) | ⚠️ |
@@ -850,6 +850,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `tools/montar-modelo-padrao.mjs` | 148 | Monta o modelo pronto a partir de exports de várias pessoas |
 | `tools/medir-modelo.mjs` | 241 | Linha de comando da medição: lê o modelo, escreve a tabela e grava o JSON |
 | `tools/roc-modelo.mjs` | 305 | Curvas ROC do modelo parado: AUC de cada classe contra as demais e de acerto contra erro pela razão (Figura 8 do TCC) |
+| `tools/limiar-modelo.mjs` | 197 | Distâncias que o limiar absoluto precisa separar no modelo parado: consulta legítima e sinal fora do conjunto, contra o piso e o limiar calibrado |
 | `tools/figuras-tcc.py` | 186 | Desenha as Figuras 8 e 9 do TCC (Python, com matplotlib e openpyxl; só para as figuras) |
 | `tools/medicao-modelo.js` | 510 | O cálculo da medição (validação em blocos, razão, corte, rigor, limiar, pares próximos, comparação), usado também pelo modo dev |
 | `tools/verificar-vendor.mjs` | 123 | Confere os SHA-256 dos binários e diagnostica quebras de linha convertidas pelo Git |
@@ -869,7 +870,7 @@ A interface segue um padrão único: cada controlador expõe **um** callback de 
 | `tests/` | 3.384 | 149 cenários em 20 arquivos |
 
 As linhas das tabelas contam o arquivo inteiro. **Total de código próprio, sem contar linhas em
-branco e incluindo testes e ferramentas: cerca de 15,9 mil linhas**, das quais 4,5 mil são do
+branco e incluindo testes e ferramentas: cerca de 16,0 mil linhas**, das quais 4,5 mil são do
 modo dev. A extensão descrita no TCC, antes do modo dev, tinha **cerca de 9 mil** (8,9 mil no
 commit `c9ae141`).
 
@@ -974,6 +975,7 @@ Em `chrome.storage.session` (some ao fechar o navegador): `soletra.texto` (texto
 | Suíte de testes | **149 cenários em 20 arquivos, todos passando** (`node tests/todos.mjs`, 03/11/2026) |
 | Medição do modelo pronto | Acerto por validação em blocos de 17 / 25: **letras 93,4% / 93,0%, números 92,0% / 90,2%, juntos 87,5% / 85,8%**; rigor Normal nas letras: 93,0% de acerto, 5,1% de rejeição, 1,8% de erros que passam (`npm run medir-modelo`, `medicoes/medir-modelo-padrao.json`, 03/11/2026) |
 | Curvas ROC do modelo pronto | AUC de cada classe contra as demais: **letras 0,978, números 0,950**; acerto contra erro pela razão: **0,979 e 0,973** (`npm run roc-modelo`, `medicoes/roc-modelo-padrao.json`, 09/11/2026) |
+| Limiar absoluto no modelo pronto | Limiar calibrado **6,247**; barra **2,0%** dos números mostrados no modo Letras e **0,2%** das letras no modo Números (o piso de 1,3 barraria 80,8% e 92,3%, mas também 9,2% e 33,4% das consultas legítimas) (`npm run limiar-modelo`, `medicoes/limiar-modelo-padrao.json`, 18/11/2026) |
 | Teste com participantes | **94,6% das rodadas** (264 de 279) e **97,4% dos quadros**, com 3 participantes e o modelo pronto; quem não tem a mão nas amostras dele acertou o mesmo que o autor delas (seção 8.5, `Planilhas de Testes/`) |
 | `TODO` / `FIXME` no código | Nenhum |
 | Dependências vulneráveis | **Nenhuma**: `npm audit` sem vulnerabilidades em React, Radix UI e Vite |
@@ -1140,6 +1142,7 @@ node tools/verificar-vendor.mjs          # confere os SHA-256 dos binários
 node tools/montar-modelo-padrao.mjs --por-classe 50 --saida modelos/padrao.json *.json
 npm run medir-modelo                     # mede o modelo pronto (node tools/medir-modelo.mjs [modelo.json])
 npm run roc-modelo                       # curvas ROC do modelo pronto (node tools/roc-modelo.mjs [modelo.json])
+npm run limiar-modelo                    # distâncias do limiar no modelo pronto (node tools/limiar-modelo.mjs [modelo.json])
 ```
 
 ### 10.3 Roteiro de teste manual
@@ -1250,6 +1253,7 @@ Em ordem de prioridade para o TCC:
 | 03/11/2026 | — | Documentação revisada: confusões medidas (O com 0, 8 com S) no lugar de O≡0, V≡2, W≡3; modelo pronto gravado por um dos autores; centroide da palma; avaliação de acurácia atendida para o modelo parado; contagem de linhas; histórico completo |
 | 09/11/2026 | — | Registro das sessões de latência da Tabela 3 do TCC em `medicoes/latencia-sessoes.md`, com as capturas de onde saiu cada valor; consentimento dos autores atendido; papel do limiar de distância alinhado ao teste com participantes |
 | 09/11/2026 | — | `tools/roc-modelo.mjs`: curvas ROC e AUC do modelo pronto (Figura 8 do TCC), reproduzíveis pelo repositório; `tools/figuras-tcc.py` desenha as Figuras 8 e 9; ressalva do RNF11 (revisão jurídica) de volta à seção de pendências; comentário do teste de razão alinhado ao modelo pronto |
+| 18/11/2026 | — | `tools/limiar-modelo.mjs`: distâncias reais que o limiar absoluto precisa separar no modelo pronto (consulta legítima e sinal fora do conjunto), no lugar dos valores sintéticos citados no TCC; `npm audit` na integração contínua, a cada envio |
 
 ---
 
