@@ -1,0 +1,83 @@
+{
+  "formato": "soletra-limiar-modelo",
+  "versaoFormato": 1,
+  "dataHora": "2026-11-18T17:48:23.181Z",
+  "commit": "c2aa76e",
+  "ambiente": {
+    "node": "v22.23.4"
+  },
+  "arquivo": "modelos/padrao.json",
+  "parametros": {
+    "bloco": 17,
+    "fatorDispersao": 5,
+    "percentilDispersao": 0.9
+  },
+  "modelo": {
+    "sha256": "313a5735d88001c80bc393ccee451618a43c690d7445b783eb9403f078b41d7c",
+    "sha256Arquivo": "56544dae718e6115f72da0f5dac2c39d57131efc317e73271e2221c14897f0ae",
+    "classes": 31,
+    "amostras": 1550
+  },
+  "limiar": {
+    "piso": 1.3,
+    "calibrado": 6.246689
+  },
+  "conjuntos": {
+    "letras": {
+      "legitima": {
+        "n": 1050,
+        "min": 0.146465,
+        "p10": 0.300261,
+        "p25": 0.411783,
+        "mediana": 0.580833,
+        "p75": 0.84216,
+        "p90": 1.265944,
+        "max": 13.625527,
+        "p95": 1.616678,
+        "acimaDoPiso": 0.092381,
+        "acimaDoLimiar": 0.02381
+      },
+      "foraDoConjunto": {
+        "n": 500,
+        "min": 0.267554,
+        "p10": 0.631636,
+        "p25": 2.163285,
+        "mediana": 4.129377,
+        "p75": 5.037094,
+        "p90": 5.391976,
+        "max": 8.25849,
+        "p95": 5.782276,
+        "acimaDoPiso": 0.808,
+        "acimaDoLimiar": 0.02
+      }
+    },
+    "numeros": {
+      "legitima": {
+        "n": 500,
+        "min": 0.265591,
+        "p10": 0.449078,
+        "p25": 0.61539,
+        "mediana": 0.963489,
+        "p75": 1.560195,
+        "p90": 2.919769,
+        "max": 10.497083,
+        "p95": 5.559499,
+        "acimaDoPiso": 0.334,
+        "acimaDoLimiar": 0.044
+      },
+      "foraDoConjunto": {
+        "n": 1050,
+        "min": 0.267554,
+        "p10": 1.525835,
+        "p25": 2.15566,
+        "mediana": 3.179497,
+        "p75": 4.064152,
+        "p90": 4.634295,
+        "max": 7.346513,
+        "p95": 4.743528,
+        "acimaDoPiso": 0.922857,
+        "acimaDoLimiar": 0.001905
+      }
+    }
+  }
+}
